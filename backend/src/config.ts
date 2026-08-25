@@ -9,6 +9,7 @@ function required(name: string): string {
 export const config = {
   rpcUrl: required("RPC_URL"),
   chainId: Number(required("CHAIN_ID")),
+  registryAddress: required("REGISTRY_ADDRESS"),
   escrowAddress: required("ESCROW_ADDRESS"),
   confirmations: Number(process.env.CONFIRMATIONS ?? "12"),
   pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? "10000"),
