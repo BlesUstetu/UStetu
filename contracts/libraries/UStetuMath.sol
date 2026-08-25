@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {UStetuErrors} from "./UStetuErrors.sol";
 
 /// @title UStetuMath
@@ -18,9 +19,6 @@ library UStetuMath {
             revert UStetuErrors.InvalidAmount();
         }
 
-        // Solidity 0.8 checked arithmetic protects multiplication overflow.
-        // The protocol implementation must additionally bound grossPayment
-        // according to the supported payment-token denomination.
         fee = (grossPayment * feeBps) / BPS_DENOMINATOR;
         sellerProceeds = grossPayment - fee;
 
@@ -29,15 +27,22 @@ library UStetuMath {
         }
     }
 
-    function calculateGrossPayment(uint256 tokenAmount, uint256 unitPrice)
-        internal
-        pure
-        returns (uint256 grossPayment)
-    {
+    /// @notice Converts a token-denominated amount into payment-token units.
+    /// @dev `unitPrice` is the price of one whole token in payment-token
+    ///      smallest units. `tokenAmount` is in the listed token's smallest units.
+    function calculateGrossPayment(
+        uint256 tokenAmount,
+        uint256 unitPrice,
+        uint8 tokenDecimals
+    ) internal pure returns (uint256 grossPayment) {
         if (tokenAmount == 0 || unitPrice == 0) {
             revert UStetuErrors.InvalidAmount();
         }
 
-        grossPayment = tokenAmount * unitPrice;
+        uint256 scale = 10 ** uint256(tokenDecimals);
+        grossPayment = Math.mulDiv(tokenAmount, unitPrice, scale);
+        if (grossPayment == 0) {
+            revert UStetuErrors.InvalidAmount();
+        }
     }
 }
