@@ -16,6 +16,7 @@ contract UStetuSellerRegistry is AccessControl {
 
     mapping(address => UStetuTypes.Seller) private _sellers;
     mapping(address => bool) private _sellerExists;
+    mapping(address => address) private _pendingWithdrawalWallet;
 
     event SellerRegistered(address indexed seller, address indexed withdrawalWallet);
     event SellerVerificationUpdated(address indexed seller, UStetuTypes.VerificationStatus status);
@@ -69,7 +70,7 @@ contract UStetuSellerRegistry is AccessControl {
         if (newWallet == _sellers[msg.sender].withdrawalWallet) revert UStetuErrors.InvalidAddress();
 
         uint64 effectiveAt = uint64(block.timestamp + WITHDRAWAL_WALLET_CHANGE_DELAY);
-        _sellers[msg.sender].withdrawalWallet = newWallet;
+        _pendingWithdrawalWallet[msg.sender] = newWallet;
         _sellers[msg.sender].withdrawalWalletChangeEffectiveAt = effectiveAt;
         emit WithdrawalWalletChangeRequested(msg.sender, newWallet, effectiveAt);
     }
@@ -81,8 +82,18 @@ contract UStetuSellerRegistry is AccessControl {
         if (effectiveAt == 0 || block.timestamp < effectiveAt) revert UStetuErrors.WithdrawalLocked();
 
         address oldWallet = seller.withdrawalWallet;
+        address newWallet = _pendingWithdrawalWallet[msg.sender];
+        if (newWallet == address(0)) revert UStetuErrors.InvalidAddress();
+
+        seller.withdrawalWallet = newWallet;
         seller.withdrawalWalletChangeEffectiveAt = 0;
-        emit WithdrawalWalletChanged(msg.sender, oldWallet, seller.withdrawalWallet);
+        delete _pendingWithdrawalWallet[msg.sender];
+        emit WithdrawalWalletChanged(msg.sender, oldWallet, newWallet);
+    }
+
+    function getPendingWithdrawalWallet(address seller) external view returns (address) {
+        if (!_sellerExists[seller]) revert UStetuErrors.NotRegisteredSeller();
+        return _pendingWithdrawalWallet[seller];
     }
 
     function setActiveListingCount(address seller, uint32 count) external onlyRole(CONFIG_ROLE) {
