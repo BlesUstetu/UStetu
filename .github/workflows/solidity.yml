@@ -22,8 +22,8 @@ jobs:
 
       - name: Install pinned dependencies
         run: |
-          forge install OpenZeppelin/openzeppelin-contracts@v5.4.0 --no-commit
-          forge install foundry-rs/forge-std@v1.9.7 --no-commit
+          forge install OpenZeppelin/openzeppelin-contracts@v5.4.0
+          forge install foundry-rs/forge-std@v1.9.7
 
       - name: Format check
         run: forge fmt --check
