@@ -24,7 +24,7 @@ contract UStetuEscrowStage1Test is Test {
         vm.chainId(8453);
         vm.startPrank(admin);
         registry = new UStetuRegistry(8453, admin);
-        escrow = new UStetuEscrow(address(registry));
+        escrow = new UStetuEscrow(address(registry), admin);
 
         asset = new MockERC20("Test Asset", "TAST", 18);
         usdc = new MockERC20("USD Coin", "USDC", 6);
@@ -41,16 +41,7 @@ contract UStetuEscrowStage1Test is Test {
     function testSellerCanCreateListingAndDepositExactInventory() public {
         vm.startPrank(seller);
         asset.approve(address(escrow), 500 ether);
-        escrow.createListingAndDeposit(
-            1,
-            tokenId,
-            seller,
-            address(usdc),
-            2_700_000,
-            500 ether,
-            1 ether,
-            500 ether
-        );
+        escrow.createListingAndDeposit(1, tokenId, seller, address(usdc), 2_700_000, 500 ether, 1 ether, 500 ether);
         vm.stopPrank();
 
         UStetuTypes.Listing memory listing = escrow.getListing(1);
@@ -108,14 +99,75 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(order.paidAt, uint64(block.timestamp));
     }
 
-    function testFundingAfterExpiryReverts() public {
+    function testBuyerCanCompleteAndSellerFeeIsOnePercent() public {
         _createListing(500 ether, 2_700_000);
 
         vm.prank(buyer);
         uint256 orderId = escrow.createOrder(1, 100 ether);
 
-        vm.warp(block.timestamp + 1 days);
+        vm.startPrank(buyer);
+        usdc.approve(address(escrow), 270e6);
+        escrow.fundOrder(orderId);
+        uint256 buyerTokenBefore = asset.balanceOf(buyer);
+        escrow.completeOrder(orderId);
+        vm.stopPrank();
 
+        UStetuTypes.Order memory order = escrow.getOrder(orderId);
+        UStetuTypes.Listing memory listing = escrow.getListing(1);
+
+        assertEq(uint8(order.state), uint8(UStetuTypes.OrderState.COMPLETED));
+        assertEq(asset.balanceOf(buyer) - buyerTokenBefore, 100 ether);
+        assertEq(escrow.claimable(seller, address(usdc)), 267.3e6);
+        assertEq(escrow.claimable(admin, address(usdc)), 2.7e6);
+        assertEq(listing.inventoryLocked, 0);
+        assertEq(listing.inventoryDeposited, 400 ether);
+        assertEq(escrow.sellerInventory(seller, address(asset)), 400 ether);
+        assertEq(usdc.balanceOf(address(escrow)), 270e6);
+    }
+
+    function testCannotCompleteOrderByAttacker() public {
+        _createListing(500 ether, 2_700_000);
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+
+        vm.startPrank(buyer);
+        usdc.approve(address(escrow), 270e6);
+        escrow.fundOrder(orderId);
+        vm.stopPrank();
+
+        vm.expectRevert();
+        vm.prank(attacker);
+        escrow.completeOrder(orderId);
+    }
+
+    function testExpiredPaidOrderCanBeRefunded() public {
+        _createListing(500 ether, 2_700_000);
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+
+        vm.startPrank(buyer);
+        usdc.approve(address(escrow), 270e6);
+        escrow.fundOrder(orderId);
+        uint256 balanceBefore = usdc.balanceOf(buyer);
+        vm.warp(block.timestamp + 1 days);
+        escrow.refundExpiredOrder(orderId);
+        vm.stopPrank();
+
+        UStetuTypes.Order memory order = escrow.getOrder(orderId);
+        UStetuTypes.Listing memory listing = escrow.getListing(1);
+        assertEq(uint8(order.state), uint8(UStetuTypes.OrderState.REFUNDED));
+        assertEq(usdc.balanceOf(buyer) - balanceBefore, 270e6);
+        assertEq(listing.inventoryLocked, 0);
+        assertEq(listing.inventoryDeposited, 500 ether);
+        assertEq(escrow.sellerInventory(seller, address(asset)), 500 ether);
+    }
+
+    function testFundingAfterExpiryReverts() public {
+        _createListing(500 ether, 2_700_000);
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+
+        vm.warp(block.timestamp + 1 days);
         vm.startPrank(buyer);
         usdc.approve(address(escrow), 270e6);
         vm.expectRevert();
@@ -125,7 +177,6 @@ contract UStetuEscrowStage1Test is Test {
 
     function testCannotCreateOrderAboveAvailableInventory() public {
         _createListing(50 ether, 2_700_000);
-
         vm.expectRevert();
         vm.prank(buyer);
         escrow.createOrder(1, 51 ether);
@@ -133,36 +184,17 @@ contract UStetuEscrowStage1Test is Test {
 
     function testCannotDuplicateListingId() public {
         _createListing(500 ether, 2_700_000);
-
         vm.startPrank(seller);
         asset.approve(address(escrow), 500 ether);
         vm.expectRevert();
-        escrow.createListingAndDeposit(
-            1,
-            tokenId,
-            seller,
-            address(usdc),
-            2_700_000,
-            500 ether,
-            1 ether,
-            500 ether
-        );
+        escrow.createListingAndDeposit(1, tokenId, seller, address(usdc), 2_700_000, 500 ether, 1 ether, 500 ether);
         vm.stopPrank();
     }
 
     function _createListing(uint256 inventoryAmount, uint256 price) internal {
         vm.startPrank(seller);
         asset.approve(address(escrow), inventoryAmount);
-        escrow.createListingAndDeposit(
-            1,
-            tokenId,
-            seller,
-            address(usdc),
-            price,
-            inventoryAmount,
-            1 ether,
-            inventoryAmount
-        );
+        escrow.createListingAndDeposit(1, tokenId, seller, address(usdc), price, inventoryAmount, 1 ether, inventoryAmount);
         vm.stopPrank();
     }
 }
