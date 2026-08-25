@@ -108,9 +108,13 @@ contract UStetuEscrow is ReentrancyGuard {
         uint256 available = listing.inventoryDeposited - listing.inventoryLocked;
         if (available < tokenAmount) revert UStetuErrors.InsufficientInventory();
 
-        uint256 grossPayment = UStetuMath.calculateGrossPayment(tokenAmount, listing.price);
-        (uint256 fee, uint256 sellerProceeds) = UStetuMath.calculateFee(grossPayment, FEE_BPS);
         UStetuTypes.Token memory tokenInfo = registry.getToken(bytes32(listing.tokenId));
+        uint256 grossPayment = UStetuMath.calculateGrossPayment(
+            tokenAmount,
+            listing.price,
+            tokenInfo.decimalsSnapshot
+        );
+        (uint256 fee, uint256 sellerProceeds) = UStetuMath.calculateFee(grossPayment, FEE_BPS);
 
         orderId = _nextOrderId++;
         _orders[orderId] = UStetuTypes.Order({
