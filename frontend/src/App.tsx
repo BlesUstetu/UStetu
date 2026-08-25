@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import type { Listing } from "./lib/api";
 import { fetchListings } from "./lib/api";
+import { buyListing, type BuyState } from "./lib/escrow";
 import { connectWallet } from "./lib/wallet";
 
 export default function App() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [wallet, setWallet] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busyListing, setBusyListing] = useState<string | null>(null);
+  const [buyState, setBuyState] = useState<BuyState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -34,6 +37,22 @@ export default function App() {
     }
   }
 
+  async function handleBuy(listing: Listing) {
+    if (!wallet) return handleConnect();
+    try {
+      setError(null);
+      setBusyListing(listing.listing_id);
+      const amount = BigInt(window.prompt("Enter token amount", listing.min_order_amount) ?? "0");
+      if (amount <= 0n) throw new Error("Token amount must be greater than zero");
+      const result = await buyListing(BigInt(listing.listing_id), amount, setBuyState);
+      if (result.stage === "COMPLETE") await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Purchase failed");
+    } finally {
+      setBusyListing(null);
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -55,6 +74,7 @@ export default function App() {
       </section>
 
       {error && <div className="error">{error}</div>}
+      {buyState && <div className="state">Purchase status: <strong>{buyState.stage}</strong>{buyState.orderId ? ` · Order #${buyState.orderId}` : ""}</div>}
       {loading ? <div className="state">Loading active listings…</div> : (
         <section className="grid">
           {listings.map((listing) => (
@@ -64,7 +84,9 @@ export default function App() {
               <div className="meta"><span>Seller</span><strong>{listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}</strong></div>
               <div className="meta"><span>Price</span><strong>{listing.price}</strong></div>
               <div className="meta"><span>Available</span><strong>{listing.available_inventory}</strong></div>
-              <button className="buy-button" disabled={!wallet}>Buy — Connect wallet to continue</button>
+              <button className="buy-button" disabled={busyListing === listing.listing_id} onClick={() => void handleBuy(listing)}>
+                {busyListing === listing.listing_id ? "Processing…" : wallet ? "Buy" : "Connect Wallet"}
+              </button>
             </article>
           ))}
         </section>
