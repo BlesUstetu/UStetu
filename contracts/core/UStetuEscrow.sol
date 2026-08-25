@@ -27,6 +27,19 @@ contract UStetuEscrow is ReentrancyGuard {
     mapping(address => mapping(address => uint256)) public claimable;
 
     event InventoryDeposited(uint256 indexed listingId, address indexed seller, address indexed token, uint256 amount);
+    event InventoryWithdrawn(uint256 indexed listingId, address indexed seller, address indexed token, uint256 amount);
+    event ListingPriceUpdated(uint256 indexed listingId, address indexed seller, uint256 oldPrice, uint256 newPrice);
+    event ListingOrderLimitsUpdated(
+        uint256 indexed listingId,
+        address indexed seller,
+        uint256 oldMinOrderAmount,
+        uint256 oldMaxOrderAmount,
+        uint256 newMinOrderAmount,
+        uint256 newMaxOrderAmount
+    );
+    event ListingPaused(uint256 indexed listingId, address indexed seller);
+    event ListingResumed(uint256 indexed listingId, address indexed seller);
+    event ListingClosed(uint256 indexed listingId, address indexed seller);
     event OrderCreated(
         uint256 indexed orderId,
         uint256 indexed listingId,
@@ -61,6 +74,7 @@ contract UStetuEscrow is ReentrancyGuard {
         uint256 minOrderAmount,
         uint256 maxOrderAmount
     ) external nonReentrant {
+        if (msg.sender != seller) revert UStetuErrors.Unauthorized();
         if (seller == address(0) || paymentToken == address(0)) revert UStetuErrors.InvalidAddress();
         if (listingId == 0 || inventoryAmount == 0) revert UStetuErrors.InvalidAmount();
         if (price == 0) revert UStetuErrors.InvalidPrice();
@@ -92,6 +106,102 @@ contract UStetuEscrow is ReentrancyGuard {
 
         sellerInventory[seller][tokenInfo.contractAddress] += received;
         emit InventoryDeposited(listingId, seller, tokenInfo.contractAddress, received);
+    }
+
+    function addListingInventory(uint256 listingId, uint256 amount) external nonReentrant {
+        UStetuTypes.Listing storage listing = _listings[listingId];
+        _requireSeller(listing);
+        if (amount == 0) revert UStetuErrors.InvalidAmount();
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
+            revert UStetuErrors.InvalidListingState();
+        }
+
+        UStetuTypes.Token memory tokenInfo = registry.getToken(bytes32(listing.tokenId));
+        IERC20 token = IERC20(tokenInfo.contractAddress);
+        uint256 balanceBefore = token.balanceOf(address(this));
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 received = token.balanceOf(address(this)) - balanceBefore;
+        if (received != amount) revert UStetuErrors.UnsupportedToken();
+
+        listing.inventoryDeposited += received;
+        listing.updatedAt = uint64(block.timestamp);
+        sellerInventory[msg.sender][tokenInfo.contractAddress] += received;
+        emit InventoryDeposited(listingId, msg.sender, tokenInfo.contractAddress, received);
+    }
+
+    function withdrawListingInventory(uint256 listingId, uint256 amount) external nonReentrant {
+        UStetuTypes.Listing storage listing = _listings[listingId];
+        _requireSeller(listing);
+        if (amount == 0) revert UStetuErrors.InvalidAmount();
+        if (listing.inventoryDeposited - listing.inventoryLocked < amount) revert UStetuErrors.InsufficientInventory();
+
+        UStetuTypes.Token memory tokenInfo = registry.getToken(bytes32(listing.tokenId));
+        listing.inventoryDeposited -= amount;
+        listing.updatedAt = uint64(block.timestamp);
+        sellerInventory[msg.sender][tokenInfo.contractAddress] -= amount;
+        IERC20(tokenInfo.contractAddress).safeTransfer(msg.sender, amount);
+        emit InventoryWithdrawn(listingId, msg.sender, tokenInfo.contractAddress, amount);
+    }
+
+    function updateListingPrice(uint256 listingId, uint256 newPrice) external {
+        UStetuTypes.Listing storage listing = _listings[listingId];
+        _requireSeller(listing);
+        if (newPrice == 0) revert UStetuErrors.InvalidPrice();
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
+            revert UStetuErrors.InvalidListingState();
+        }
+
+        uint256 oldPrice = listing.price;
+        listing.price = newPrice;
+        listing.updatedAt = uint64(block.timestamp);
+        emit ListingPriceUpdated(listingId, msg.sender, oldPrice, newPrice);
+    }
+
+    function updateListingOrderLimits(uint256 listingId, uint256 newMinOrderAmount, uint256 newMaxOrderAmount) external {
+        UStetuTypes.Listing storage listing = _listings[listingId];
+        _requireSeller(listing);
+        if (newMinOrderAmount == 0 || newMaxOrderAmount < newMinOrderAmount) {
+            revert UStetuErrors.InvalidOrderLimits();
+        }
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
+            revert UStetuErrors.InvalidListingState();
+        }
+
+        uint256 oldMin = listing.minOrderAmount;
+        uint256 oldMax = listing.maxOrderAmount;
+        listing.minOrderAmount = newMinOrderAmount;
+        listing.maxOrderAmount = newMaxOrderAmount;
+        listing.updatedAt = uint64(block.timestamp);
+        emit ListingOrderLimitsUpdated(listingId, msg.sender, oldMin, oldMax, newMinOrderAmount, newMaxOrderAmount);
+    }
+
+    function pauseListing(uint256 listingId) external {
+        UStetuTypes.Listing storage listing = _listings[listingId];
+        _requireSeller(listing);
+        if (listing.status != UStetuTypes.ListingStatus.ACTIVE) revert UStetuErrors.InvalidListingState();
+        listing.status = UStetuTypes.ListingStatus.PAUSED;
+        listing.updatedAt = uint64(block.timestamp);
+        emit ListingPaused(listingId, msg.sender);
+    }
+
+    function resumeListing(uint256 listingId) external {
+        UStetuTypes.Listing storage listing = _listings[listingId];
+        _requireSeller(listing);
+        if (listing.status != UStetuTypes.ListingStatus.PAUSED) revert UStetuErrors.InvalidListingState();
+        listing.status = UStetuTypes.ListingStatus.ACTIVE;
+        listing.updatedAt = uint64(block.timestamp);
+        emit ListingResumed(listingId, msg.sender);
+    }
+
+    function closeListing(uint256 listingId) external {
+        UStetuTypes.Listing storage listing = _listings[listingId];
+        _requireSeller(listing);
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
+            revert UStetuErrors.InvalidListingState();
+        }
+        listing.status = UStetuTypes.ListingStatus.CLOSED;
+        listing.updatedAt = uint64(block.timestamp);
+        emit ListingClosed(listingId, msg.sender);
     }
 
     function createOrder(uint256 listingId, uint256 tokenAmount)
@@ -221,5 +331,10 @@ contract UStetuEscrow is ReentrancyGuard {
 
     function getOrder(uint256 orderId) external view returns (UStetuTypes.Order memory) {
         return _orders[orderId];
+    }
+
+    function _requireSeller(UStetuTypes.Listing storage listing) internal view {
+        if (listing.seller == address(0)) revert UStetuErrors.InvalidListingState();
+        if (msg.sender != listing.seller) revert UStetuErrors.Unauthorized();
     }
 }
