@@ -1,0 +1,27 @@
+* { box-sizing: border-box; }
+:root { font-family: Inter, system-ui, sans-serif; color: #eef2ff; background: #070912; }
+body { margin: 0; min-width: 320px; background: radial-gradient(circle at top, #151a35, #070912 55%); }
+button { font: inherit; cursor: pointer; }
+.app-shell { width: min(1200px, 92%); margin: 0 auto; padding: 28px 0 64px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.brand { font-size: 28px; font-weight: 800; letter-spacing: -.04em; }
+.subtitle { color: #8f98b3; font-size: 13px; margin-top: 2px; }
+.wallet-button, .buy-button { border: 1px solid #38405f; border-radius: 12px; background: #12172a; color: #fff; padding: 11px 16px; }
+.wallet-button:hover, .buy-button:not(:disabled):hover { border-color: #7c8cff; background: #181f3b; }
+.hero { margin: 72px 0 36px; max-width: 760px; }
+.eyebrow { color: #8d9bff; font-size: 12px; font-weight: 800; letter-spacing: .14em; }
+h1 { font-size: clamp(38px, 7vw, 72px); line-height: .98; letter-spacing: -.055em; margin: 12px 0 20px; }
+.hero p { color: #9da6c0; font-size: 17px; line-height: 1.6; max-width: 650px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.card { border: 1px solid #252c48; background: rgba(15,19,35,.86); border-radius: 18px; padding: 20px; box-shadow: 0 18px 60px rgba(0,0,0,.22); }
+.card-head, .meta { display: flex; justify-content: space-between; gap: 16px; }
+.card-head { color: #7e88a6; font-size: 11px; font-weight: 700; }
+.status { color: #65e6a5; }
+.card h2 { margin: 28px 0; font-size: 22px; }
+.meta { color: #8f98b3; padding: 9px 0; border-top: 1px solid #202640; font-size: 13px; }
+.meta strong { color: #e9edff; font-weight: 600; }
+.buy-button { width: 100%; margin-top: 20px; }
+.buy-button:disabled { cursor: not-allowed; opacity: .5; }
+.state, .error { margin: 24px 0; padding: 18px; border: 1px solid #252c48; border-radius: 14px; color: #aab2ca; }
+.error { border-color: #673d4d; color: #ffb4c5; }
+@media (max-width: 600px) { .topbar { align-items: flex-start; } .wallet-button { padding: 9px 12px; } }
