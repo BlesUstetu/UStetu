@@ -12,6 +12,9 @@ library UStetuErrors {
     error UnsupportedPaymentToken();
     error TokenNotApproved();
     error TokenAlreadyRegistered();
+    error TokenNotRegistered();
+    error InvalidChainId();
+    error NotAContract();
     error InvalidListingState();
     error InvalidOrderState();
     error InvalidVerificationState();
