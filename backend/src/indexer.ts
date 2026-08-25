@@ -42,11 +42,18 @@ function statusName(value: unknown): ListingProjection["status"] {
   return "UNKNOWN";
 }
 
+function jsonValue(value: unknown): unknown {
+  if (typeof value === "bigint") return value.toString();
+  if (Array.isArray(value)) return value.map(jsonValue);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, jsonValue(item)]));
+  }
+  return value;
+}
+
 async function refreshListing(listingId: bigint, log: Log, finalized: boolean) {
   const raw = await escrow.getListing(listingId);
-  const token = await registry.getToken(BigInt(raw.tokenId) as bigint);
-  const block = await provider.getBlock(log.blockNumber);
-  if (!block) throw new Error(`Missing block ${log.blockNumber}`);
+  const token = await registry.getToken(BigInt(raw.tokenId));
 
   const projection: ListingProjection = {
     chain_id: config.chainId,
@@ -78,8 +85,7 @@ async function processLog(log: Log, finalized: boolean) {
   if (!parsed || !LISTING_EVENTS.has(parsed.name)) return;
 
   const listingId = parsed.args[0] as bigint;
-  const duplicate = await eventExists(log.transactionHash, log.index);
-  if (duplicate) return;
+  if (await eventExists(log.transactionHash, log.index)) return;
 
   await insertEvent({
     chain_id: config.chainId,
@@ -89,7 +95,7 @@ async function processLog(log: Log, finalized: boolean) {
     transaction_hash: log.transactionHash,
     log_index: log.index,
     event_name: parsed.name,
-    payload: { args: parsed.args.toObject() },
+    payload: jsonValue(parsed.args.toObject()) as Record<string, unknown>,
     finalized_at: finalized ? new Date().toISOString() : null,
     removed: false
   });
