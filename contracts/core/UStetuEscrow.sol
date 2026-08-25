@@ -17,6 +17,7 @@ contract UStetuEscrow is ReentrancyGuard {
     uint64 public constant ORDER_EXPIRY = 1 days;
 
     IUStetuRegistry public immutable registry;
+    address public immutable feeRecipient;
     uint256 private _nextOrderId = 1;
 
     mapping(uint256 => UStetuTypes.Listing) private _listings;
@@ -38,17 +39,18 @@ contract UStetuEscrow is ReentrancyGuard {
         address paymentToken
     );
     event PaymentEscrowed(uint256 indexed orderId, address indexed buyer, uint256 amount);
+    event OrderCompleted(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
+    event OrderRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount);
+    event ClaimableWithdrawn(address indexed account, address indexed token, uint256 amount);
 
-    constructor(address registryAddress) {
-        if (registryAddress == address(0)) revert UStetuErrors.InvalidAddress();
+    constructor(address registryAddress, address feeRecipientAddress) {
+        if (registryAddress == address(0) || feeRecipientAddress == address(0)) {
+            revert UStetuErrors.InvalidAddress();
+        }
         registry = IUStetuRegistry(registryAddress);
+        feeRecipient = feeRecipientAddress;
     }
 
-    /**
-     * @dev Stage 1 inventory path. This will be restricted to the Marketplace
-     *      module when Marketplace is implemented; it is intentionally not an
-     *      open arbitrary-seller API for production deployment.
-     */
     function createListingAndDeposit(
         uint256 listingId,
         bytes32 tokenId,
@@ -72,7 +74,6 @@ contract UStetuEscrow is ReentrancyGuard {
         uint256 balanceBefore = token.balanceOf(address(this));
         token.safeTransferFrom(seller, address(this), inventoryAmount);
         uint256 received = token.balanceOf(address(this)) - balanceBefore;
-
         if (received != inventoryAmount) revert UStetuErrors.UnsupportedToken();
 
         _listings[listingId] = UStetuTypes.Listing({
@@ -99,8 +100,9 @@ contract UStetuEscrow is ReentrancyGuard {
         returns (uint256 orderId)
     {
         UStetuTypes.Listing storage listing = _listings[listingId];
-        if (listing.seller == address(0)) revert UStetuErrors.InvalidListingState();
-        if (listing.status != UStetuTypes.ListingStatus.ACTIVE) revert UStetuErrors.InvalidListingState();
+        if (listing.seller == address(0) || listing.status != UStetuTypes.ListingStatus.ACTIVE) {
+            revert UStetuErrors.InvalidListingState();
+        }
         if (tokenAmount < listing.minOrderAmount || tokenAmount > listing.maxOrderAmount) {
             revert UStetuErrors.InvalidAmount();
         }
@@ -140,7 +142,6 @@ contract UStetuEscrow is ReentrancyGuard {
 
         listing.inventoryLocked += tokenAmount;
         listingLockedInventory[listingId] += tokenAmount;
-
         emit OrderCreated(
             orderId,
             listingId,
@@ -161,12 +162,58 @@ contract UStetuEscrow is ReentrancyGuard {
         if (msg.sender != order.buyer) revert UStetuErrors.Unauthorized();
         if (block.timestamp >= order.expiresAt) revert UStetuErrors.DeadlineExpired();
 
-        IERC20 paymentToken = IERC20(order.paymentToken);
-        paymentToken.safeTransferFrom(msg.sender, address(this), order.grossPayment);
+        IERC20(order.paymentToken).safeTransferFrom(msg.sender, address(this), order.grossPayment);
         order.state = UStetuTypes.OrderState.PAID;
         order.paidAt = uint64(block.timestamp);
-
         emit PaymentEscrowed(orderId, msg.sender, order.grossPayment);
+    }
+
+    function completeOrder(uint256 orderId) external nonReentrant {
+        UStetuTypes.Order storage order = _orders[orderId];
+        if (order.state != UStetuTypes.OrderState.PAID) revert UStetuErrors.InvalidOrderState();
+        if (msg.sender != order.buyer) revert UStetuErrors.Unauthorized();
+
+        UStetuTypes.Listing storage listing = _listings[order.listingId];
+        if (listing.inventoryLocked < order.tokenAmount) revert UStetuErrors.InsufficientInventory();
+
+        listing.inventoryLocked -= order.tokenAmount;
+        listing.inventoryDeposited -= order.tokenAmount;
+        listingLockedInventory[order.listingId] -= order.tokenAmount;
+        sellerInventory[order.seller][order.token] -= order.tokenAmount;
+
+        IERC20(order.token).safeTransfer(order.recipient, order.tokenAmount);
+
+        claimable[order.seller][order.paymentToken] += order.sellerProceeds;
+        claimable[feeRecipient][order.paymentToken] += order.marketplaceFee;
+        order.state = UStetuTypes.OrderState.COMPLETED;
+        order.completedAt = uint64(block.timestamp);
+
+        emit OrderCompleted(orderId, order.buyer, order.seller, order.tokenAmount);
+    }
+
+    function refundExpiredOrder(uint256 orderId) external nonReentrant {
+        UStetuTypes.Order storage order = _orders[orderId];
+        if (order.state != UStetuTypes.OrderState.PAID) revert UStetuErrors.InvalidOrderState();
+        if (block.timestamp < order.expiresAt) revert UStetuErrors.DeadlineNotReached();
+        if (msg.sender != order.buyer && msg.sender != order.seller) revert UStetuErrors.Unauthorized();
+
+        UStetuTypes.Listing storage listing = _listings[order.listingId];
+        listing.inventoryLocked -= order.tokenAmount;
+        listingLockedInventory[order.listingId] -= order.tokenAmount;
+
+        IERC20(order.paymentToken).safeTransfer(order.buyer, order.grossPayment);
+        order.state = UStetuTypes.OrderState.REFUNDED;
+        order.refundedAt = uint64(block.timestamp);
+
+        emit OrderRefunded(orderId, order.buyer, order.grossPayment);
+    }
+
+    function withdrawClaimable(address token) external nonReentrant {
+        uint256 amount = claimable[msg.sender][token];
+        if (amount == 0) revert UStetuErrors.InvalidAmount();
+        claimable[msg.sender][token] = 0;
+        IERC20(token).safeTransfer(msg.sender, amount);
+        emit ClaimableWithdrawn(msg.sender, token, amount);
     }
 
     function getListing(uint256 listingId) external view returns (UStetuTypes.Listing memory) {
