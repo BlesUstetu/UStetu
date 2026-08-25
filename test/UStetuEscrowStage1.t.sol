@@ -17,6 +17,7 @@ contract UStetuEscrowStage1Test is Test {
     address internal seller = address(0xB0B);
     address internal buyer = address(0xCAFE);
     address internal attacker = address(0xBAD);
+    address internal secondSeller = address(0xD00D);
 
     bytes32 internal tokenId;
 
@@ -35,6 +36,7 @@ contract UStetuEscrowStage1Test is Test {
         vm.stopPrank();
 
         asset.mint(seller, 1_000 ether);
+        asset.mint(secondSeller, 1_000 ether);
         usdc.mint(buyer, 10_000e6);
     }
 
@@ -48,6 +50,98 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(listing.seller, seller);
         assertEq(listing.inventoryDeposited, 500 ether);
         assertEq(escrow.sellerInventory(seller, address(asset)), 500 ether);
+    }
+
+    function testAttackerCannotCreateListingForAnotherSeller() public {
+        asset.mint(seller, 100 ether);
+        vm.startPrank(attacker);
+        vm.expectRevert();
+        escrow.createListingAndDeposit(99, tokenId, seller, address(usdc), 2_700_000, 100 ether, 1 ether, 100 ether);
+        vm.stopPrank();
+    }
+
+    function testSellerCanUpdatePriceAndOrderLimits() public {
+        _createListing(500 ether, 2_700_000);
+
+        vm.prank(seller);
+        escrow.updateListingPrice(1, 3_000_000);
+        vm.prank(seller);
+        escrow.updateListingOrderLimits(1, 2 ether, 400 ether);
+
+        UStetuTypes.Listing memory listing = escrow.getListing(1);
+        assertEq(listing.price, 3_000_000);
+        assertEq(listing.minOrderAmount, 2 ether);
+        assertEq(listing.maxOrderAmount, 400 ether);
+    }
+
+    function testAttackerCannotManageListing() public {
+        _createListing(500 ether, 2_700_000);
+
+        vm.expectRevert();
+        vm.prank(attacker);
+        escrow.updateListingPrice(1, 3_000_000);
+
+        vm.expectRevert();
+        vm.prank(attacker);
+        escrow.pauseListing(1);
+    }
+
+    function testSellerCanPauseAndResumeListing() public {
+        _createListing(500 ether, 2_700_000);
+
+        vm.prank(seller);
+        escrow.pauseListing(1);
+        assertEq(uint8(escrow.getListing(1).status), uint8(UStetuTypes.ListingStatus.PAUSED));
+
+        vm.expectRevert();
+        vm.prank(buyer);
+        escrow.createOrder(1, 10 ether);
+
+        vm.prank(seller);
+        escrow.resumeListing(1);
+        assertEq(uint8(escrow.getListing(1).status), uint8(UStetuTypes.ListingStatus.ACTIVE));
+    }
+
+    function testSellerCanAddAndWithdrawAvailableInventory() public {
+        _createListing(500 ether, 2_700_000);
+
+        vm.startPrank(seller);
+        asset.approve(address(escrow), 200 ether);
+        escrow.addListingInventory(1, 200 ether);
+        uint256 before = asset.balanceOf(seller);
+        escrow.withdrawListingInventory(1, 150 ether);
+        vm.stopPrank();
+
+        assertEq(asset.balanceOf(seller) - before, 150 ether);
+        assertEq(escrow.sellerInventory(seller, address(asset)), 550 ether);
+        assertEq(escrow.getListing(1).inventoryDeposited, 550 ether);
+    }
+
+    function testCannotWithdrawLockedInventory() public {
+        _createListing(500 ether, 2_700_000);
+        vm.prank(buyer);
+        escrow.createOrder(1, 100 ether);
+
+        vm.expectRevert();
+        vm.prank(seller);
+        escrow.withdrawListingInventory(1, 401 ether);
+    }
+
+    function testSellerCanCloseListingButOpenOrdersRemainLocked() public {
+        _createListing(500 ether, 2_700_000);
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+
+        vm.prank(seller);
+        escrow.closeListing(1);
+
+        assertEq(uint8(escrow.getListing(1).status), uint8(UStetuTypes.ListingStatus.CLOSED));
+        assertEq(escrow.getListing(1).inventoryLocked, 100 ether);
+        assertEq(escrow.getOrder(orderId).tokenAmount, 100 ether);
+
+        vm.expectRevert();
+        vm.prank(buyer);
+        escrow.createOrder(1, 10 ether);
     }
 
     function testCreateOrderLocksInventoryAndSnapshotsPrice() public {
