@@ -29,10 +29,6 @@ const ERC20_ABI = [
   "function approve(address spender,uint256 amount) returns (bool)"
 ] as const;
 
-/**
- * Non-custodial buyer flow.
- * The caller supplies a browser wallet provider; no private key is accepted.
- */
 export async function purchaseListing(
   options: BuyerFlowOptions,
   listingId: bigint,
@@ -54,22 +50,11 @@ export async function purchaseListing(
   const available = BigInt(listing.inventoryDeposited) - BigInt(listing.inventoryLocked);
   if (available < amount) throw new Error("Insufficient listing inventory");
 
-  const state: BuyerFlowState = {
-    stage: "READY",
-    listingId,
-    tokenAmount: amount
-  };
+  const state: BuyerFlowState = { stage: "READY", listingId, tokenAmount: amount };
   onState?.(state);
 
-  const allowance = BigInt(await paymentToken.allowance(buyer, options.escrowAddress));
-  if (allowance < 1n) {
-    const approval = await paymentToken.approve(options.escrowAddress, (2n ** 256n) - 1n);
-    state.stage = "APPROVAL_PENDING";
-    state.transactionHash = approval.hash;
-    onState?.({ ...state });
-    await approval.wait();
-  }
-
+  // Create the order first. The escrow contract is the authority for the exact
+  // gross payment, fee, and seller proceeds; the frontend never guesses them.
   const orderTx = await escrow.createOrder(listingId, amount);
   state.stage = "ORDER_PENDING";
   state.transactionHash = orderTx.hash;
@@ -86,6 +71,26 @@ export async function purchaseListing(
 
   const orderId = BigInt(orderCreated.args[0]);
   state.orderId = orderId;
+
+  const order = await escrow.getOrder(orderId);
+  const grossPayment = BigInt(order.grossPayment);
+  const paymentTokenFromOrder = String(order.paymentToken).toLowerCase();
+  if (paymentTokenFromOrder !== options.paymentTokenAddress.toLowerCase()) {
+    throw new Error("Payment token changed or does not match listing");
+  }
+
+  // Exact approval only: never grant unlimited allowance.
+  const allowance = BigInt(await paymentToken.allowance(buyer, options.escrowAddress));
+  if (allowance < grossPayment) {
+    const approval = await paymentToken.approve(options.escrowAddress, grossPayment);
+    state.stage = "APPROVAL_PENDING";
+    state.transactionHash = approval.hash;
+    onState?.({ ...state });
+    await approval.wait();
+
+    const verifiedAllowance = BigInt(await paymentToken.allowance(buyer, options.escrowAddress));
+    if (verifiedAllowance < grossPayment) throw new Error("Exact payment allowance was not confirmed");
+  }
 
   const fundTx = await escrow.fundOrder(orderId);
   state.stage = "FUNDING_PENDING";
