@@ -1,6 +1,7 @@
 import { Contract, JsonRpcProvider, type Log } from "ethers";
 import { config } from "./config.js";
 import { ESCROW_ABI } from "./abi.js";
+import { REGISTRY_ABI } from "./registryAbi.js";
 import {
   eventExists,
   getIndexerState,
@@ -12,6 +13,17 @@ import type { ListingProjection } from "./types.js";
 
 const provider = new JsonRpcProvider(config.rpcUrl, config.chainId);
 const escrow = new Contract(config.escrowAddress, ESCROW_ABI, provider);
+const registry = new Contract(config.registryAddress, REGISTRY_ABI, provider);
+
+const LISTING_EVENTS = new Set([
+  "InventoryDeposited",
+  "InventoryWithdrawn",
+  "ListingPriceUpdated",
+  "ListingOrderLimitsUpdated",
+  "ListingPaused",
+  "ListingResumed",
+  "ListingClosed"
+]);
 
 function address(value: unknown): string {
   return String(value).toLowerCase();
@@ -23,15 +35,16 @@ function big(value: unknown): string {
 
 function statusName(value: unknown): ListingProjection["status"] {
   const n = Number(value);
-  if (n === 0) return "ACTIVE";
-  if (n === 1) return "PAUSED";
-  if (n === 2) return "CLOSED";
-  if (n === 3) return "SUSPENDED";
+  if (n === 1) return "ACTIVE";
+  if (n === 2) return "PAUSED";
+  if (n === 3) return "CLOSED";
+  if (n === 4) return "SUSPENDED";
   return "UNKNOWN";
 }
 
 async function refreshListing(listingId: bigint, log: Log, finalized: boolean) {
   const raw = await escrow.getListing(listingId);
+  const token = await registry.getToken(BigInt(raw.tokenId) as bigint);
   const block = await provider.getBlock(log.blockNumber);
   if (!block) throw new Error(`Missing block ${log.blockNumber}`);
 
@@ -41,7 +54,7 @@ async function refreshListing(listingId: bigint, log: Log, finalized: boolean) {
     listing_id: listingId.toString(),
     seller: address(raw.seller),
     token_id: big(raw.tokenId),
-    token_contract: null,
+    token_contract: address(token.contractAddress),
     payment_token: address(raw.paymentToken),
     price: big(raw.price),
     inventory_deposited: big(raw.inventoryDeposited),
@@ -62,13 +75,9 @@ async function refreshListing(listingId: bigint, log: Log, finalized: boolean) {
 
 async function processLog(log: Log, finalized: boolean) {
   const parsed = escrow.interface.parseLog(log);
-  if (!parsed) return;
+  if (!parsed || !LISTING_EVENTS.has(parsed.name)) return;
 
-  const eventName = parsed.name;
-  const args = parsed.args;
-  const listingId = args[0] as bigint | undefined;
-  if (listingId === undefined) return;
-
+  const listingId = parsed.args[0] as bigint;
   const duplicate = await eventExists(log.transactionHash, log.index);
   if (duplicate) return;
 
@@ -79,10 +88,8 @@ async function processLog(log: Log, finalized: boolean) {
     block_hash: log.blockHash,
     transaction_hash: log.transactionHash,
     log_index: log.index,
-    event_name: eventName,
-    payload: Object.fromEntries(
-      Object.entries(args).filter(([key]) => Number.isNaN(Number(key)))
-    ),
+    event_name: parsed.name,
+    payload: { args: parsed.args.toObject() },
     finalized_at: finalized ? new Date().toISOString() : null,
     removed: false
   });
@@ -92,15 +99,9 @@ async function processLog(log: Log, finalized: boolean) {
 
 async function scan(fromBlock: number, toBlock: number) {
   if (toBlock < fromBlock) return;
-  const logs = await provider.getLogs({
-    address: config.escrowAddress,
-    fromBlock,
-    toBlock
-  });
+  const logs = await provider.getLogs({ address: config.escrowAddress, fromBlock, toBlock });
   const finalizedBlock = Math.max(0, toBlock - config.confirmations);
-  for (const log of logs) {
-    await processLog(log, log.blockNumber <= finalizedBlock);
-  }
+  for (const log of logs) await processLog(log, log.blockNumber <= finalizedBlock);
   await saveIndexerState(toBlock, finalizedBlock);
 }
 
@@ -109,7 +110,6 @@ export async function runOnce() {
   if (Number(network.chainId) !== config.chainId) {
     throw new Error(`RPC chain ${network.chainId} does not match CHAIN_ID ${config.chainId}`);
   }
-
   const latest = await provider.getBlockNumber();
   const state = await getIndexerState();
   const from = state ? Number(state.last_scanned_block) + 1 : config.startBlock;
@@ -124,15 +124,10 @@ export async function runOnce() {
 async function main() {
   console.log(`UStetu indexer started on chain ${config.chainId}`);
   for (;;) {
-    try {
-      await runOnce();
-    } catch (error) {
-      console.error("Indexer cycle failed:", error);
-    }
+    try { await runOnce(); }
+    catch (error) { console.error("Indexer cycle failed:", error); }
     await new Promise((resolve) => setTimeout(resolve, config.pollIntervalMs));
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  await main();
-}
+if (import.meta.url === `file://${process.argv[1]}`) await main();
