@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/indexer.ts",
+    "api": "tsx src/api.ts",
     "start": "node dist/indexer.js",
+    "start:api": "node dist/api.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
