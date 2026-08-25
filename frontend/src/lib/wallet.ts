@@ -1,15 +1,25 @@
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, type Eip1193Provider } from "ethers";
 import { frontendConfig } from "../config";
+
+interface EthereumProvider extends Eip1193Provider {
+  request(args: { method: string; params?: unknown[] | object }): Promise<unknown>;
+}
 
 export interface WalletState {
   address: string | null;
   chainId: bigint | null;
 }
 
-export async function connectWallet(): Promise<WalletState> {
+function getEthereumProvider(): EthereumProvider {
   const ethereum = (window as Window & { ethereum?: unknown }).ethereum;
-  if (!ethereum) throw new Error("No browser wallet detected");
+  if (!ethereum || typeof ethereum !== "object" || !("request" in ethereum)) {
+    throw new Error("No compatible EIP-1193 browser wallet detected");
+  }
+  return ethereum as EthereumProvider;
+}
 
+export async function connectWallet(): Promise<WalletState> {
+  const ethereum = getEthereumProvider();
   const provider = new BrowserProvider(ethereum);
   await provider.send("eth_requestAccounts", []);
   const signer = await provider.getSigner();
