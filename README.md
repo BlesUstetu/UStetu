@@ -70,3 +70,5 @@ ustetu/
 ├── backend/
 └── tests/
 ```
+
+<!-- CI trigger: seller-registry timelock verification -->
