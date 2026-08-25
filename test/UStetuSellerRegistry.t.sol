@@ -56,7 +56,7 @@ contract UStetuSellerRegistryTest is Test {
         registry.setSellerVerification(seller, UStetuTypes.VerificationStatus.APPROVED);
     }
 
-    function testWithdrawalWalletChangeHasDelay() public {
+    function testWithdrawalWalletChangeHasDelayAndPreservesOldWallet() public {
         vm.prank(seller);
         registry.registerSeller(seller);
 
@@ -64,7 +64,9 @@ contract UStetuSellerRegistryTest is Test {
         registry.requestWithdrawalWalletChange(secondWallet);
 
         UStetuTypes.Seller memory pending = registry.getSeller(seller);
-        assertEq(pending.withdrawalWallet, secondWallet);
+        assertEq(pending.withdrawalWallet, seller);
+        assertEq(registry.getWithdrawalWallet(seller), seller);
+        assertEq(registry.getPendingWithdrawalWallet(seller), secondWallet);
         assertGt(pending.withdrawalWalletChangeEffectiveAt, block.timestamp);
 
         vm.expectRevert();
@@ -76,6 +78,27 @@ contract UStetuSellerRegistryTest is Test {
         registry.activateWithdrawalWalletChange();
 
         assertEq(registry.getWithdrawalWallet(seller), secondWallet);
+        assertEq(registry.getPendingWithdrawalWallet(seller), address(0));
+        assertEq(registry.getSeller(seller).withdrawalWalletChangeEffectiveAt, 0);
+    }
+
+    function testNewWalletCanBeReplacedBeforeActivation() public {
+        address thirdWallet = address(0xD00D);
+
+        vm.prank(seller);
+        registry.registerSeller(seller);
+
+        vm.prank(seller);
+        registry.requestWithdrawalWalletChange(secondWallet);
+        uint64 firstEffectiveAt = registry.getSeller(seller).withdrawalWalletChangeEffectiveAt;
+
+        vm.warp(block.timestamp + 1 hours);
+        vm.prank(seller);
+        registry.requestWithdrawalWalletChange(thirdWallet);
+
+        assertEq(registry.getWithdrawalWallet(seller), seller);
+        assertEq(registry.getPendingWithdrawalWallet(seller), thirdWallet);
+        assertGt(registry.getSeller(seller).withdrawalWalletChangeEffectiveAt, firstEffectiveAt);
     }
 
     function testListingAndOrderCounters() public {
