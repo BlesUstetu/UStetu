@@ -172,6 +172,7 @@ contract UStetuEscrow is ReentrancyGuard {
         UStetuTypes.Order storage order = _orders[orderId];
         if (order.state != UStetuTypes.OrderState.PAID) revert UStetuErrors.InvalidOrderState();
         if (msg.sender != order.buyer) revert UStetuErrors.Unauthorized();
+        if (block.timestamp >= order.expiresAt) revert UStetuErrors.DeadlineExpired();
 
         UStetuTypes.Listing storage listing = _listings[order.listingId];
         if (listing.inventoryLocked < order.tokenAmount) revert UStetuErrors.InsufficientInventory();
@@ -182,12 +183,11 @@ contract UStetuEscrow is ReentrancyGuard {
         sellerInventory[order.seller][order.token] -= order.tokenAmount;
 
         IERC20(order.token).safeTransfer(order.recipient, order.tokenAmount);
-
         claimable[order.seller][order.paymentToken] += order.sellerProceeds;
         claimable[feeRecipient][order.paymentToken] += order.marketplaceFee;
+
         order.state = UStetuTypes.OrderState.COMPLETED;
         order.completedAt = uint64(block.timestamp);
-
         emit OrderCompleted(orderId, order.buyer, order.seller, order.tokenAmount);
     }
 
@@ -204,7 +204,6 @@ contract UStetuEscrow is ReentrancyGuard {
         IERC20(order.paymentToken).safeTransfer(order.buyer, order.grossPayment);
         order.state = UStetuTypes.OrderState.REFUNDED;
         order.refundedAt = uint64(block.timestamp);
-
         emit OrderRefunded(orderId, order.buyer, order.grossPayment);
     }
 
