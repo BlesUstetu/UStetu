@@ -59,11 +59,6 @@ jobs:
           grep -q "UStetu Marketplace" "${SITE_DIR}/index.html"
           echo "Verified: Pages artifact is the Vite marketplace, not the repository README."
 
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          static_site_generator: vite
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
