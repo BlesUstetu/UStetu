@@ -6,6 +6,8 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-pages.yml'
+      - 'docs/**'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
@@ -52,6 +54,7 @@ jobs:
         working-directory: .
         shell: bash
         run: |
+          set -euo pipefail
           test -f "${SITE_DIR}/index.html"
           test -d "${SITE_DIR}/assets"
           ! grep -qi "Own What's Next" "${SITE_DIR}/index.html"
