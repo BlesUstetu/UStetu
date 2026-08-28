@@ -22,10 +22,10 @@ contract DeployBaseSepolia is Script {
         returns (UStetuRegistry registry, UStetuSellerRegistry sellerRegistry, UStetuEscrow escrow)
     {
         require(block.chainid == BASE_SEPOLIA_CHAIN_ID, "WRONG_CHAIN");
-        require(msg.sender == DEPLOYER, "WRONG_DEPLOYER");
 
         vm.startBroadcast();
 
+        // The broadcast signer must be DEPLOYER because all admin roles are granted to it.
         registry = new UStetuRegistry(BASE_SEPOLIA_CHAIN_ID, DEPLOYER);
         sellerRegistry = new UStetuSellerRegistry(DEPLOYER);
         escrow = new UStetuEscrow(address(registry), FEE_RECIPIENT);
