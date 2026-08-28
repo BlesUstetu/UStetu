@@ -17,8 +17,13 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: 22
+  SITE_DIR: frontend/dist
+
 jobs:
   build:
+    name: Build UStetu Marketplace
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: frontend/package.json
 
@@ -43,15 +48,30 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Verify Pages artifact
+        working-directory: .
+        shell: bash
+        run: |
+          test -f "${SITE_DIR}/index.html"
+          test -d "${SITE_DIR}/assets"
+          ! grep -qi "Own What's Next" "${SITE_DIR}/index.html"
+          ! grep -qi "Core Model" "${SITE_DIR}/index.html"
+          grep -q "UStetu Marketplace" "${SITE_DIR}/index.html"
+          echo "Verified: Pages artifact is the Vite marketplace, not the repository README."
+
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          static_site_generator: vite
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: frontend/dist
+          name: ustetu-marketplace-pages
+          path: ${{ env.SITE_DIR }}
 
   deploy:
+    name: Deploy UStetu Marketplace
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -61,3 +81,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ustetu-marketplace-pages
