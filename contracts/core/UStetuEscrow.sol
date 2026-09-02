@@ -14,7 +14,9 @@ contract UStetuEscrow is ReentrancyGuard {
 
     uint256 public constant BPS_DENOMINATOR = 10_000;
     uint256 public constant FEE_BPS = 100;
-    uint64 public constant ORDER_EXPIRY = 1 days;
+    uint64 public constant PAYMENT_WINDOW = 15 minutes;
+    uint64 public constant AUTO_RELEASE_WINDOW = 24 hours;
+    uint64 public constant ORDER_EXPIRY = PAYMENT_WINDOW;
 
     IUStetuRegistry public immutable registry;
     address public immutable feeRecipient;
@@ -29,51 +31,24 @@ contract UStetuEscrow is ReentrancyGuard {
     event InventoryDeposited(uint256 indexed listingId, address indexed seller, address indexed token, uint256 amount);
     event InventoryWithdrawn(uint256 indexed listingId, address indexed seller, address indexed token, uint256 amount);
     event ListingPriceUpdated(uint256 indexed listingId, address indexed seller, uint256 oldPrice, uint256 newPrice);
-    event ListingOrderLimitsUpdated(
-        uint256 indexed listingId,
-        address indexed seller,
-        uint256 oldMinOrderAmount,
-        uint256 oldMaxOrderAmount,
-        uint256 newMinOrderAmount,
-        uint256 newMaxOrderAmount
-    );
+    event ListingOrderLimitsUpdated(uint256 indexed listingId, address indexed seller, uint256 oldMinOrderAmount, uint256 oldMaxOrderAmount, uint256 newMinOrderAmount, uint256 newMaxOrderAmount);
     event ListingPaused(uint256 indexed listingId, address indexed seller);
     event ListingResumed(uint256 indexed listingId, address indexed seller);
     event ListingClosed(uint256 indexed listingId, address indexed seller);
-    event OrderCreated(
-        uint256 indexed orderId,
-        uint256 indexed listingId,
-        address indexed buyer,
-        address seller,
-        address recipient,
-        uint256 tokenAmount,
-        uint256 unitPrice,
-        uint256 grossPayment,
-        address paymentToken
-    );
+    event OrderCreated(uint256 indexed orderId, uint256 indexed listingId, address indexed buyer, address seller, address recipient, uint256 tokenAmount, uint256 unitPrice, uint256 grossPayment, address paymentToken);
     event PaymentEscrowed(uint256 indexed orderId, address indexed buyer, uint256 amount);
     event OrderCompleted(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
-    event OrderRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount);
+    event OrderExpired(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
+    event AutoReleased(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
     event ClaimableWithdrawn(address indexed account, address indexed token, uint256 amount);
 
     constructor(address registryAddress, address feeRecipientAddress) {
-        if (registryAddress == address(0) || feeRecipientAddress == address(0)) {
-            revert UStetuErrors.InvalidAddress();
-        }
+        if (registryAddress == address(0) || feeRecipientAddress == address(0)) revert UStetuErrors.InvalidAddress();
         registry = IUStetuRegistry(registryAddress);
         feeRecipient = feeRecipientAddress;
     }
 
-    function createListingAndDeposit(
-        uint256 listingId,
-        bytes32 tokenId,
-        address seller,
-        address paymentToken,
-        uint256 price,
-        uint256 inventoryAmount,
-        uint256 minOrderAmount,
-        uint256 maxOrderAmount
-    ) external nonReentrant {
+    function createListingAndDeposit(uint256 listingId, bytes32 tokenId, address seller, address paymentToken, uint256 price, uint256 inventoryAmount, uint256 minOrderAmount, uint256 maxOrderAmount) external nonReentrant {
         if (msg.sender != seller) revert UStetuErrors.Unauthorized();
         if (seller == address(0) || paymentToken == address(0)) revert UStetuErrors.InvalidAddress();
         if (listingId == 0 || inventoryAmount == 0) revert UStetuErrors.InvalidAmount();
@@ -91,19 +66,11 @@ contract UStetuEscrow is ReentrancyGuard {
         if (received != inventoryAmount) revert UStetuErrors.UnsupportedToken();
 
         _listings[listingId] = UStetuTypes.Listing({
-            tokenId: uint256(tokenId),
-            seller: seller,
-            paymentToken: paymentToken,
-            price: price,
-            inventoryDeposited: received,
-            inventoryLocked: 0,
-            minOrderAmount: minOrderAmount,
-            maxOrderAmount: maxOrderAmount,
-            status: UStetuTypes.ListingStatus.ACTIVE,
-            createdAt: uint64(block.timestamp),
-            updatedAt: uint64(block.timestamp)
+            tokenId: uint256(tokenId), seller: seller, paymentToken: paymentToken, price: price,
+            inventoryDeposited: received, inventoryLocked: 0, minOrderAmount: minOrderAmount,
+            maxOrderAmount: maxOrderAmount, status: UStetuTypes.ListingStatus.ACTIVE,
+            createdAt: uint64(block.timestamp), updatedAt: uint64(block.timestamp)
         });
-
         sellerInventory[seller][tokenInfo.contractAddress] += received;
         emit InventoryDeposited(listingId, seller, tokenInfo.contractAddress, received);
     }
@@ -112,17 +79,13 @@ contract UStetuEscrow is ReentrancyGuard {
         UStetuTypes.Listing storage listing = _listings[listingId];
         _requireSeller(listing);
         if (amount == 0) revert UStetuErrors.InvalidAmount();
-        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
-            revert UStetuErrors.InvalidListingState();
-        }
-
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) revert UStetuErrors.InvalidListingState();
         UStetuTypes.Token memory tokenInfo = registry.getToken(bytes32(listing.tokenId));
         IERC20 token = IERC20(tokenInfo.contractAddress);
         uint256 balanceBefore = token.balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), amount);
         uint256 received = token.balanceOf(address(this)) - balanceBefore;
         if (received != amount) revert UStetuErrors.UnsupportedToken();
-
         listing.inventoryDeposited += received;
         listing.updatedAt = uint64(block.timestamp);
         sellerInventory[msg.sender][tokenInfo.contractAddress] += received;
@@ -134,7 +97,6 @@ contract UStetuEscrow is ReentrancyGuard {
         _requireSeller(listing);
         if (amount == 0) revert UStetuErrors.InvalidAmount();
         if (listing.inventoryDeposited - listing.inventoryLocked < amount) revert UStetuErrors.InsufficientInventory();
-
         UStetuTypes.Token memory tokenInfo = registry.getToken(bytes32(listing.tokenId));
         listing.inventoryDeposited -= amount;
         listing.updatedAt = uint64(block.timestamp);
@@ -147,10 +109,7 @@ contract UStetuEscrow is ReentrancyGuard {
         UStetuTypes.Listing storage listing = _listings[listingId];
         _requireSeller(listing);
         if (newPrice == 0) revert UStetuErrors.InvalidPrice();
-        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
-            revert UStetuErrors.InvalidListingState();
-        }
-
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) revert UStetuErrors.InvalidListingState();
         uint256 oldPrice = listing.price;
         listing.price = newPrice;
         listing.updatedAt = uint64(block.timestamp);
@@ -160,13 +119,8 @@ contract UStetuEscrow is ReentrancyGuard {
     function updateListingOrderLimits(uint256 listingId, uint256 newMinOrderAmount, uint256 newMaxOrderAmount) external {
         UStetuTypes.Listing storage listing = _listings[listingId];
         _requireSeller(listing);
-        if (newMinOrderAmount == 0 || newMaxOrderAmount < newMinOrderAmount) {
-            revert UStetuErrors.InvalidOrderLimits();
-        }
-        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
-            revert UStetuErrors.InvalidListingState();
-        }
-
+        if (newMinOrderAmount == 0 || newMaxOrderAmount < newMinOrderAmount) revert UStetuErrors.InvalidOrderLimits();
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) revert UStetuErrors.InvalidListingState();
         uint256 oldMin = listing.minOrderAmount;
         uint256 oldMax = listing.maxOrderAmount;
         listing.minOrderAmount = newMinOrderAmount;
@@ -196,73 +150,33 @@ contract UStetuEscrow is ReentrancyGuard {
     function closeListing(uint256 listingId) external {
         UStetuTypes.Listing storage listing = _listings[listingId];
         _requireSeller(listing);
-        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) {
-            revert UStetuErrors.InvalidListingState();
-        }
+        if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) revert UStetuErrors.InvalidListingState();
         listing.status = UStetuTypes.ListingStatus.CLOSED;
         listing.updatedAt = uint64(block.timestamp);
         emit ListingClosed(listingId, msg.sender);
     }
 
-    function createOrder(uint256 listingId, uint256 tokenAmount)
-        external
-        nonReentrant
-        returns (uint256 orderId)
-    {
+    function createOrder(uint256 listingId, uint256 tokenAmount) external nonReentrant returns (uint256 orderId) {
         UStetuTypes.Listing storage listing = _listings[listingId];
-        if (listing.seller == address(0) || listing.status != UStetuTypes.ListingStatus.ACTIVE) {
-            revert UStetuErrors.InvalidListingState();
-        }
-        if (tokenAmount < listing.minOrderAmount || tokenAmount > listing.maxOrderAmount) {
-            revert UStetuErrors.InvalidAmount();
-        }
-
+        if (listing.seller == address(0) || listing.status != UStetuTypes.ListingStatus.ACTIVE) revert UStetuErrors.InvalidListingState();
+        if (tokenAmount < listing.minOrderAmount || tokenAmount > listing.maxOrderAmount) revert UStetuErrors.InvalidAmount();
         uint256 available = listing.inventoryDeposited - listing.inventoryLocked;
         if (available < tokenAmount) revert UStetuErrors.InsufficientInventory();
 
         UStetuTypes.Token memory tokenInfo = registry.getToken(bytes32(listing.tokenId));
-        uint256 grossPayment = UStetuMath.calculateGrossPayment(
-            tokenAmount,
-            listing.price,
-            tokenInfo.decimalsSnapshot
-        );
+        uint256 grossPayment = UStetuMath.calculateGrossPayment(tokenAmount, listing.price, tokenInfo.decimalsSnapshot);
         (uint256 fee, uint256 sellerProceeds) = UStetuMath.calculateFee(grossPayment, FEE_BPS);
-
         orderId = _nextOrderId++;
         _orders[orderId] = UStetuTypes.Order({
-            listingId: listingId,
-            buyer: msg.sender,
-            seller: listing.seller,
-            recipient: msg.sender,
-            token: tokenInfo.contractAddress,
-            paymentToken: listing.paymentToken,
-            tokenAmount: tokenAmount,
-            unitPrice: listing.price,
-            grossPayment: grossPayment,
-            marketplaceFee: fee,
-            sellerProceeds: sellerProceeds,
-            state: UStetuTypes.OrderState.PAYMENT_PENDING,
-            createdAt: uint64(block.timestamp),
-            paidAt: 0,
-            completedAt: 0,
-            refundedAt: 0,
-            expiresAt: uint64(block.timestamp + ORDER_EXPIRY),
-            disputeId: 0
+            listingId: listingId, buyer: msg.sender, seller: listing.seller, recipient: msg.sender,
+            token: tokenInfo.contractAddress, paymentToken: listing.paymentToken, tokenAmount: tokenAmount,
+            unitPrice: listing.price, grossPayment: grossPayment, marketplaceFee: fee, sellerProceeds: sellerProceeds,
+            state: UStetuTypes.OrderState.PAYMENT_PENDING, createdAt: uint64(block.timestamp), paidAt: 0,
+            completedAt: 0, refundedAt: 0, expiresAt: uint64(block.timestamp + PAYMENT_WINDOW), disputeId: 0
         });
-
         listing.inventoryLocked += tokenAmount;
         listingLockedInventory[listingId] += tokenAmount;
-        emit OrderCreated(
-            orderId,
-            listingId,
-            msg.sender,
-            listing.seller,
-            msg.sender,
-            tokenAmount,
-            listing.price,
-            grossPayment,
-            listing.paymentToken
-        );
+        emit OrderCreated(orderId, listingId, msg.sender, listing.seller, msg.sender, tokenAmount, listing.price, grossPayment, listing.paymentToken);
     }
 
     function fundOrder(uint256 orderId) external nonReentrant {
@@ -271,10 +185,10 @@ contract UStetuEscrow is ReentrancyGuard {
         if (order.state != UStetuTypes.OrderState.PAYMENT_PENDING) revert UStetuErrors.InvalidOrderState();
         if (msg.sender != order.buyer) revert UStetuErrors.Unauthorized();
         if (block.timestamp >= order.expiresAt) revert UStetuErrors.DeadlineExpired();
-
         IERC20(order.paymentToken).safeTransferFrom(msg.sender, address(this), order.grossPayment);
         order.state = UStetuTypes.OrderState.PAID;
         order.paidAt = uint64(block.timestamp);
+        order.expiresAt = uint64(block.timestamp + AUTO_RELEASE_WINDOW);
         emit PaymentEscrowed(orderId, msg.sender, order.grossPayment);
     }
 
@@ -283,38 +197,27 @@ contract UStetuEscrow is ReentrancyGuard {
         if (order.state != UStetuTypes.OrderState.PAID) revert UStetuErrors.InvalidOrderState();
         if (msg.sender != order.buyer) revert UStetuErrors.Unauthorized();
         if (block.timestamp >= order.expiresAt) revert UStetuErrors.DeadlineExpired();
-
-        UStetuTypes.Listing storage listing = _listings[order.listingId];
-        if (listing.inventoryLocked < order.tokenAmount) revert UStetuErrors.InsufficientInventory();
-
-        listing.inventoryLocked -= order.tokenAmount;
-        listing.inventoryDeposited -= order.tokenAmount;
-        listingLockedInventory[order.listingId] -= order.tokenAmount;
-        sellerInventory[order.seller][order.token] -= order.tokenAmount;
-
-        IERC20(order.token).safeTransfer(order.recipient, order.tokenAmount);
-        claimable[order.seller][order.paymentToken] += order.sellerProceeds;
-        claimable[feeRecipient][order.paymentToken] += order.marketplaceFee;
-
-        order.state = UStetuTypes.OrderState.COMPLETED;
-        order.completedAt = uint64(block.timestamp);
-        emit OrderCompleted(orderId, order.buyer, order.seller, order.tokenAmount);
+        _settleOrder(orderId, order, false);
     }
 
-    function refundExpiredOrder(uint256 orderId) external nonReentrant {
+    function autoReleaseOrder(uint256 orderId) external nonReentrant {
         UStetuTypes.Order storage order = _orders[orderId];
         if (order.state != UStetuTypes.OrderState.PAID) revert UStetuErrors.InvalidOrderState();
         if (block.timestamp < order.expiresAt) revert UStetuErrors.DeadlineNotReached();
-        if (msg.sender != order.buyer && msg.sender != order.seller) revert UStetuErrors.Unauthorized();
+        _settleOrder(orderId, order, true);
+    }
 
+    function expireOrder(uint256 orderId) external nonReentrant {
+        UStetuTypes.Order storage order = _orders[orderId];
+        if (order.state != UStetuTypes.OrderState.PAYMENT_PENDING) revert UStetuErrors.InvalidOrderState();
+        if (block.timestamp < order.expiresAt) revert UStetuErrors.DeadlineNotReached();
         UStetuTypes.Listing storage listing = _listings[order.listingId];
+        if (listing.inventoryLocked < order.tokenAmount) revert UStetuErrors.InsufficientInventory();
         listing.inventoryLocked -= order.tokenAmount;
         listingLockedInventory[order.listingId] -= order.tokenAmount;
-
-        IERC20(order.paymentToken).safeTransfer(order.buyer, order.grossPayment);
-        order.state = UStetuTypes.OrderState.REFUNDED;
+        order.state = UStetuTypes.OrderState.EXPIRED;
         order.refundedAt = uint64(block.timestamp);
-        emit OrderRefunded(orderId, order.buyer, order.grossPayment);
+        emit OrderExpired(orderId, order.buyer, order.seller, order.tokenAmount);
     }
 
     function withdrawClaimable(address token) external nonReentrant {
@@ -325,12 +228,23 @@ contract UStetuEscrow is ReentrancyGuard {
         emit ClaimableWithdrawn(msg.sender, token, amount);
     }
 
-    function getListing(uint256 listingId) external view returns (UStetuTypes.Listing memory) {
-        return _listings[listingId];
-    }
+    function getListing(uint256 listingId) external view returns (UStetuTypes.Listing memory) { return _listings[listingId]; }
+    function getOrder(uint256 orderId) external view returns (UStetuTypes.Order memory) { return _orders[orderId]; }
 
-    function getOrder(uint256 orderId) external view returns (UStetuTypes.Order memory) {
-        return _orders[orderId];
+    function _settleOrder(uint256 orderId, UStetuTypes.Order storage order, bool automatic) internal {
+        UStetuTypes.Listing storage listing = _listings[order.listingId];
+        if (listing.inventoryLocked < order.tokenAmount) revert UStetuErrors.InsufficientInventory();
+        listing.inventoryLocked -= order.tokenAmount;
+        listing.inventoryDeposited -= order.tokenAmount;
+        listingLockedInventory[order.listingId] -= order.tokenAmount;
+        sellerInventory[order.seller][order.token] -= order.tokenAmount;
+        IERC20(order.token).safeTransfer(order.recipient, order.tokenAmount);
+        claimable[order.seller][order.paymentToken] += order.sellerProceeds;
+        claimable[feeRecipient][order.paymentToken] += order.marketplaceFee;
+        order.state = UStetuTypes.OrderState.COMPLETED;
+        order.completedAt = uint64(block.timestamp);
+        emit OrderCompleted(orderId, order.buyer, order.seller, order.tokenAmount);
+        if (automatic) emit AutoReleased(orderId, order.buyer, order.seller, order.tokenAmount);
     }
 
     function _requireSeller(UStetuTypes.Listing storage listing) internal view {
