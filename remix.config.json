@@ -6,7 +6,9 @@
         "enabled": true,
         "runs": 200
       },
-      "remappings": []
+      "remappings": [
+        "@openzeppelin/contracts/=@openzeppelin/contracts@5.4.0/"
+      ]
     }
   }
 }
