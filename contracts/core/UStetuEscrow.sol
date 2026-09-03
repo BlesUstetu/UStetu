@@ -2,6 +2,8 @@
 pragma solidity 0.8.30;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUStetuRegistry} from "../interfaces/IUStetuRegistry.sol";
@@ -9,11 +11,14 @@ import {UStetuTypes} from "../libraries/UStetuTypes.sol";
 import {UStetuErrors} from "../libraries/UStetuErrors.sol";
 import {UStetuMath} from "../libraries/UStetuMath.sol";
 
-contract UStetuEscrow is ReentrancyGuard {
+contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
     using SafeERC20 for IERC20;
 
     uint256 public constant BPS_DENOMINATOR = 10_000;
-    uint256 public constant FEE_BPS = 100;
+    uint256 public constant DEFAULT_FEE_BPS = 100;
+    uint256 public constant MIN_FEE_BPS = 0;
+    uint256 public constant MAX_FEE_BPS = 500;
+    uint256 public feeBps = DEFAULT_FEE_BPS;
     uint64 public constant PAYMENT_WINDOW = 15 minutes;
     uint64 public constant AUTO_RELEASE_WINDOW = 24 hours;
     uint64 public constant ORDER_EXPIRY = PAYMENT_WINDOW;
@@ -35,6 +40,7 @@ contract UStetuEscrow is ReentrancyGuard {
     event ListingPaused(uint256 indexed listingId, address indexed seller);
     event ListingResumed(uint256 indexed listingId, address indexed seller);
     event ListingClosed(uint256 indexed listingId, address indexed seller);
+    event FeeBpsUpdated(address indexed admin, uint256 oldFeeBps, uint256 newFeeBps);
     event OrderCreated(uint256 indexed orderId, uint256 indexed listingId, address indexed buyer, address seller, address recipient, uint256 tokenAmount, uint256 unitPrice, uint256 grossPayment, address paymentToken);
     event PaymentEscrowed(uint256 indexed orderId, address indexed buyer, uint256 amount);
     event OrderCompleted(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
@@ -42,10 +48,17 @@ contract UStetuEscrow is ReentrancyGuard {
     event AutoReleased(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
     event ClaimableWithdrawn(address indexed account, address indexed token, uint256 amount);
 
-    constructor(address registryAddress, address feeRecipientAddress) {
+    constructor(address registryAddress, address feeRecipientAddress) Ownable(msg.sender) {
         if (registryAddress == address(0) || feeRecipientAddress == address(0)) revert UStetuErrors.InvalidAddress();
         registry = IUStetuRegistry(registryAddress);
         feeRecipient = feeRecipientAddress;
+    }
+
+    function setFeeBps(uint256 newFeeBps) external onlyOwner {
+        if (newFeeBps < MIN_FEE_BPS || newFeeBps > MAX_FEE_BPS) revert UStetuErrors.InvalidAmount();
+        uint256 oldFeeBps = feeBps;
+        feeBps = newFeeBps;
+        emit FeeBpsUpdated(msg.sender, oldFeeBps, newFeeBps);
     }
 
     function createListingAndDeposit(uint256 listingId, bytes32 tokenId, address seller, address paymentToken, uint256 price, uint256 inventoryAmount, uint256 minOrderAmount, uint256 maxOrderAmount) external nonReentrant {
@@ -165,7 +178,7 @@ contract UStetuEscrow is ReentrancyGuard {
 
         UStetuTypes.Token memory tokenInfo = registry.getToken(bytes32(listing.tokenId));
         uint256 grossPayment = UStetuMath.calculateGrossPayment(tokenAmount, listing.price, tokenInfo.decimalsSnapshot);
-        (uint256 fee, uint256 sellerProceeds) = UStetuMath.calculateFee(grossPayment, FEE_BPS);
+        (uint256 fee, uint256 sellerProceeds) = UStetuMath.calculateFee(grossPayment, feeBps);
         orderId = _nextOrderId++;
         _orders[orderId] = UStetuTypes.Order({
             listingId: listingId, buyer: msg.sender, seller: listing.seller, recipient: msg.sender,
