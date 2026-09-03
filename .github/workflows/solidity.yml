@@ -20,10 +20,8 @@ jobs:
         with:
           version: stable
 
-      - name: Install pinned dependencies
-        run: |
-          forge install OpenZeppelin/openzeppelin-contracts@v5.4.0
-          forge install foundry-rs/forge-std@v1.9.7
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
 
       - name: Normalize Solidity formatting
         run: forge fmt
