@@ -3,6 +3,7 @@ src = "contracts"
 test = "test"
 out = "out"
 libs = ["lib"]
+remappings = ["@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"]
 solc_version = "0.8.30"
 auto_detect_solc = false
 optimizer = true
