@@ -191,6 +191,7 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(uint8(order.state), uint8(UStetuTypes.OrderState.PAID));
         assertEq(usdc.balanceOf(address(escrow)), 270e6);
         assertEq(order.paidAt, uint64(block.timestamp));
+        assertEq(order.expiresAt, uint64(block.timestamp + escrow.AUTO_RELEASE_WINDOW()));
     }
 
     function testBuyerCanCompleteAndSellerFeeIsOnePercent() public {
@@ -234,7 +235,7 @@ contract UStetuEscrowStage1Test is Test {
         escrow.completeOrder(orderId);
     }
 
-    function testExpiredPaidOrderCanBeRefunded() public {
+    function testAutoReleaseAfter24HoursIsPermissionless() public {
         _createListing(500 ether, 2_700_000);
         vm.prank(buyer);
         uint256 orderId = escrow.createOrder(1, 100 ether);
@@ -242,31 +243,104 @@ contract UStetuEscrowStage1Test is Test {
         vm.startPrank(buyer);
         usdc.approve(address(escrow), 270e6);
         escrow.fundOrder(orderId);
-        uint256 balanceBefore = usdc.balanceOf(buyer);
-        vm.warp(block.timestamp + 1 days);
-        escrow.refundExpiredOrder(orderId);
         vm.stopPrank();
+
+        vm.warp(block.timestamp + 24 hours);
+        uint256 buyerTokenBefore = asset.balanceOf(buyer);
+
+        vm.prank(attacker);
+        escrow.autoReleaseOrder(orderId);
 
         UStetuTypes.Order memory order = escrow.getOrder(orderId);
         UStetuTypes.Listing memory listing = escrow.getListing(1);
-        assertEq(uint8(order.state), uint8(UStetuTypes.OrderState.REFUNDED));
-        assertEq(usdc.balanceOf(buyer) - balanceBefore, 270e6);
+        assertEq(uint8(order.state), uint8(UStetuTypes.OrderState.COMPLETED));
+        assertEq(asset.balanceOf(buyer) - buyerTokenBefore, 100 ether);
+        assertEq(escrow.claimable(seller, address(usdc)), 267.3e6);
+        assertEq(escrow.claimable(admin, address(usdc)), 2.7e6);
+        assertEq(listing.inventoryLocked, 0);
+        assertEq(listing.inventoryDeposited, 400 ether);
+    }
+
+    function testAutoReleaseBefore24HoursReverts() public {
+        _createListing(500 ether, 2_700_000);
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+
+        vm.startPrank(buyer);
+        usdc.approve(address(escrow), 270e6);
+        escrow.fundOrder(orderId);
+        vm.stopPrank();
+
+        vm.expectRevert();
+        vm.prank(attacker);
+        escrow.autoReleaseOrder(orderId);
+    }
+
+    function testPendingOrderExpiresAfter15MinutesAndUnlocksInventory() public {
+        _createListing(500 ether, 2_700_000);
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+
+        vm.warp(block.timestamp + 15 minutes);
+        vm.prank(attacker);
+        escrow.expireOrder(orderId);
+
+        UStetuTypes.Order memory order = escrow.getOrder(orderId);
+        UStetuTypes.Listing memory listing = escrow.getListing(1);
+        assertEq(uint8(order.state), uint8(UStetuTypes.OrderState.EXPIRED));
         assertEq(listing.inventoryLocked, 0);
         assertEq(listing.inventoryDeposited, 500 ether);
         assertEq(escrow.sellerInventory(seller, address(asset)), 500 ether);
     }
 
-    function testFundingAfterExpiryReverts() public {
+    function testFundingAfter15MinutePaymentWindowReverts() public {
         _createListing(500 ether, 2_700_000);
         vm.prank(buyer);
         uint256 orderId = escrow.createOrder(1, 100 ether);
 
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 15 minutes);
         vm.startPrank(buyer);
         usdc.approve(address(escrow), 270e6);
         vm.expectRevert();
         escrow.fundOrder(orderId);
         vm.stopPrank();
+    }
+
+    function testFeeCanBeSetBetweenZeroAndFivePercent() public {
+        vm.startPrank(admin);
+        escrow.setFeeBps(0);
+        assertEq(escrow.feeBps(), 0);
+        escrow.setFeeBps(500);
+        assertEq(escrow.feeBps(), 500);
+        vm.stopPrank();
+    }
+
+    function testFeeAboveFivePercentReverts() public {
+        vm.expectRevert();
+        vm.prank(admin);
+        escrow.setFeeBps(501);
+    }
+
+    function testNonOwnerCannotChangeFee() public {
+        vm.expectRevert();
+        vm.prank(attacker);
+        escrow.setFeeBps(0);
+    }
+
+    function testFeeChangeOnlyAppliesToNewOrders() public {
+        _createListing(500 ether, 2_700_000);
+
+        vm.prank(buyer);
+        uint256 order1 = escrow.createOrder(1, 100 ether);
+        assertEq(escrow.getOrder(order1).marketplaceFee, 2.7e6);
+
+        vm.prank(admin);
+        escrow.setFeeBps(0);
+
+        vm.prank(buyer);
+        uint256 order2 = escrow.createOrder(1, 100 ether);
+        assertEq(escrow.getOrder(order2).marketplaceFee, 0);
+        assertEq(escrow.getOrder(order1).marketplaceFee, 2.7e6);
     }
 
     function testCannotCreateOrderAboveAvailableInventory() public {
