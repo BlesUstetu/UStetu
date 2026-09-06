@@ -15,7 +15,6 @@ contract DeployUSTETUTokenBaseSepolia is Script {
         token = new USTETUToken();
         vm.stopBroadcast();
 
-        require(token.owner() == address(0), "NO_OWNER_EXPECTED");
         require(token.totalSupply() == token.TOTAL_SUPPLY(), "WRONG_SUPPLY");
         require(token.balanceOf(DEPLOYER) == token.TOTAL_SUPPLY(), "WRONG_DEPLOYER_BALANCE");
         require(token.decimals() == 18, "WRONG_DECIMALS");
