@@ -1,0 +1,31 @@
+name: Generate UStetuEscrow Flattened Source
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  flatten-escrow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Generate flattened source
+        run: |
+          forge flatten contracts/core/UStetuEscrow.sol > UStetuEscrow.flattened.sol
+          test -s UStetuEscrow.flattened.sol
+
+      - name: Upload flattened source
+        uses: actions/upload-artifact@v4
+        with:
+          name: UStetuEscrow-flattened
+          path: UStetuEscrow.flattened.sol
+          if-no-files-found: error
