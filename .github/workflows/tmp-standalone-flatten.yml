@@ -14,6 +14,9 @@ jobs:
         with:
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
+      - name: Configure exact OpenZeppelin 5.4.0 remapping
+        run: |
+          printf '%s\n' '@openzeppelin/contracts@5.4.0/=lib/openzeppelin-contracts/contracts/' > remappings.txt
       - name: Flatten exact Remix source
         run: |
           forge flatten tmp/UStetuEscrowStandalone.sol > UStetuEscrowStandalone.flattened.sol
@@ -23,6 +26,7 @@ jobs:
           grep -n '^library UStetuErrors' UStetuEscrowStandalone.flattened.sol
           grep -n '^library UStetuTypes' UStetuEscrowStandalone.flattened.sol
           grep -n '^library UStetuMath' UStetuEscrowStandalone.flattened.sol
+          grep -n '^library Math' UStetuEscrowStandalone.flattened.sol
       - name: Upload flattened source
         uses: actions/upload-artifact@v4
         with:
