@@ -1,0 +1,30 @@
+name: tmp-standalone-flatten
+
+on:
+  push:
+    paths:
+      - 'tmp/UStetuEscrowStandalone.sol'
+      - '.github/workflows/tmp-standalone-flatten.yml'
+
+jobs:
+  flatten:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Flatten exact Remix source
+        run: |
+          forge flatten tmp/UStetuEscrowStandalone.sol > UStetuEscrowStandalone.flattened.sol
+          test -s UStetuEscrowStandalone.flattened.sol
+          ! grep -n '^import ' UStetuEscrowStandalone.flattened.sol
+          grep -n 'contract UStetuEscrowStandalone' UStetuEscrowStandalone.flattened.sol
+          grep -n '^library UStetuErrors' UStetuEscrowStandalone.flattened.sol
+          grep -n '^library UStetuTypes' UStetuEscrowStandalone.flattened.sol
+          grep -n '^library UStetuMath' UStetuEscrowStandalone.flattened.sol
+      - name: Upload flattened source
+        uses: actions/upload-artifact@v4
+        with:
+          name: UStetuEscrowStandalone-exact-flattened
+          path: UStetuEscrowStandalone.flattened.sol
