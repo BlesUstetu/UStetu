@@ -54,11 +54,15 @@ const trustWalletDirect = (params: { projectId: string }) => {
           provider: (browserWindow) => {
             if (!browserWindow) return undefined;
 
-            return (
-              findInjectedProvider(browserWindow, (provider) =>
-                Boolean(provider?.isTrust),
-              ) ?? browserWindow?.trustwallet
+            const trustProvider = findInjectedProvider(
+              browserWindow,
+              (provider) => Boolean(provider?.isTrust),
             );
+
+            // Trust Wallet documents both window.ethereum-based discovery and
+            // the legacy window.trustwallet provider. Keep the latter behind
+            // an any boundary so it does not conflict with DOM Window types.
+            return trustProvider ?? (browserWindow as any)?.["trustwallet"];
           },
         },
       });
