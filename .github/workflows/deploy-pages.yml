@@ -57,7 +57,7 @@ jobs:
           set -euo pipefail
           test -f "${SITE_DIR}/index.html"
           test -d "${SITE_DIR}/_next"
-          grep -q "UStetu Marketplace" "${SITE_DIR}/index.html"
+          grep -qi "USTETU Marketplace" "${SITE_DIR}/index.html"
           echo "Verified: Pages artifact is the Next.js UStetu Marketplace static export."
 
       - name: Upload Pages artifact
