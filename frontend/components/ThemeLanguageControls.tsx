@@ -31,7 +31,15 @@ export default function ThemeLanguageControls() {
         {dark ? "☀" : "☾"}
       </button>
       <div className="language-wrap">
-        <button type="button" className="language-button" aria-label={t("language")} aria-expanded={open} title={t("language")} onClick={() => setOpen((value) => !value)}>
+        <button
+          type="button"
+          className="icon-button"
+          style={{ width: "auto", minWidth: 58, padding: "0 10px", fontSize: 11, fontWeight: 750, letterSpacing: ".05em" }}
+          aria-label={t("language")}
+          aria-expanded={open}
+          title={t("language")}
+          onClick={() => setOpen((value) => !value)}
+        >
           {language.toUpperCase()} <span aria-hidden="true">▾</span>
         </button>
         {open && (
