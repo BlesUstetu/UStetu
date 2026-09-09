@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useReadContract } from "wagmi";
 import Header from "@/components/Header";
+import BuyModal from "@/components/BuyModal";
 import {
   erc20MetadataAbi,
   escrowAbi,
@@ -17,6 +18,7 @@ const LISTING_ID = 1n;
 
 export default function HomePage() {
   const [selected, setSelected] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const listingQuery = useReadContract({
@@ -66,8 +68,12 @@ export default function HomePage() {
       address: token.contractAddress,
       seller: listing.seller,
       available: formatUnits(available, tokenDecimals),
+      availableRaw: available,
       price: formatUnits(listing.price, paymentDecimals),
+      priceRaw: listing.price,
       paymentToken: listing.paymentToken,
+      minOrderAmount: listing.minOrderAmount,
+      maxOrderAmount: listing.maxOrderAmount,
       decimals: tokenDecimals,
       chainId: Number(token.chainId),
       status: Number(token.status),
@@ -85,6 +91,11 @@ export default function HomePage() {
       value.toLowerCase().includes(q)
     );
   }, [liveData, search]);
+
+  const refreshListing = async () => {
+    await listingQuery.refetch();
+    await tokenQuery.refetch();
+  };
 
   return (
     <main className="app-shell">
@@ -215,9 +226,24 @@ export default function HomePage() {
                 Copy Address
               </button>
               <a className="secondary-glass" href={`https://sepolia.basescan.org/token/${liveData.address}`} target="_blank" rel="noreferrer">BaseScan ↗</a>
-              <button className="primary-glass" type="button">Buy {liveData.symbol}</button>
+              <button className="primary-glass" type="button" onClick={() => setBuyOpen(true)}>
+                Buy {liveData.symbol}
+              </button>
             </div>
           </aside>
+
+          <BuyModal
+            open={buyOpen}
+            onClose={() => setBuyOpen(false)}
+            onCompleted={refreshListing}
+            listingId={liveData.listingId}
+            symbol={liveData.symbol}
+            price={liveData.priceRaw}
+            available={liveData.availableRaw}
+            minOrderAmount={liveData.minOrderAmount}
+            maxOrderAmount={liveData.maxOrderAmount}
+            paymentToken={liveData.paymentToken}
+          />
         </>
       )}
     </main>
