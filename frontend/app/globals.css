@@ -119,6 +119,7 @@ a {
   display: flex;
   align-items: center;
   gap: 13px;
+  min-width: 0;
 }
 
 .brand-block {
@@ -661,12 +662,94 @@ html[data-theme="light"] .token-drawer {
 }
 
 @media (max-width: 520px) {
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    padding: 9px 8px;
+    min-height: 58px;
+  }
+
+  .topbar-left,
+  .topbar-right {
+    gap: 6px;
+  }
+
+  .topbar-left {
+    justify-self: start;
+    min-width: 0;
+  }
+
+  .topbar-right {
+    justify-self: end;
+    min-width: 0;
+  }
+
+  .brand-block {
+    margin: 0;
+  }
+
+  .brand-center {
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    grid-column: 2;
+    grid-row: 1;
+    pointer-events: auto !important;
+    text-align: center !important;
+    min-width: 66px;
+  }
+
   .brand {
-    font-size: 16px;
+    font-size: 15px;
+    letter-spacing: 0.15em;
   }
 
   .tagline {
     display: none;
+  }
+
+  .system-info-trigger {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0 !important;
+    justify-content: center;
+    gap: 0;
+    border-radius: 11px;
+  }
+
+  .system-info-trigger > span:last-child {
+    display: none;
+  }
+
+  .system-info-icon {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .topbar-right [data-rk] {
+    max-width: 122px;
+    min-width: 0;
+  }
+
+  .topbar-right [data-rk] button {
+    max-width: 122px;
+    min-width: 0;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .topbar-right [data-rk] button > div {
+    min-width: 0;
+  }
+
+  .topbar-right [data-rk] button span {
+    max-width: 66px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .marketplace-heading h1 {
@@ -678,5 +761,24 @@ html[data-theme="light"] .token-drawer {
     right: 8px;
     bottom: 8px;
     width: calc(100vw - 16px);
+  }
+}
+
+@media (max-width: 370px) {
+  .brand-center {
+    min-width: 58px;
+  }
+
+  .brand {
+    font-size: 13px;
+  }
+
+  .topbar-right [data-rk],
+  .topbar-right [data-rk] button {
+    max-width: 108px;
+  }
+
+  .topbar-right [data-rk] button span {
+    max-width: 54px;
   }
 }
