@@ -1,98 +1,135 @@
 /* ==========================================================
    USTETU — Living Minimal
-   Visible but calm animated ambient background.
-   No decorative motifs.
+   Deep black + deep navy + soft blue ambient motion.
+   Minimal, premium, calm. No decorative motifs.
    ========================================================== */
 
 .app-shell {
   background:
-    radial-gradient(circle at 50% 45%, rgba(70, 145, 235, 0.09), transparent 38%),
-    linear-gradient(135deg, #06101d 0%, #081522 48%, #06101c 100%);
+    radial-gradient(ellipse at 50% 48%, #020711 0%, #020711 34%, transparent 66%),
+    radial-gradient(circle at 4% 48%, rgba(11, 49, 99, 0.42), transparent 34%),
+    radial-gradient(circle at 96% 48%, rgba(10, 45, 92, 0.38), transparent 34%),
+    linear-gradient(135deg, #01050b 0%, #020914 45%, #01060d 100%);
 }
 
 .app-shell::before {
   background:
-    radial-gradient(circle at 78% 22%, rgba(70, 150, 255, 0.16), transparent 27%),
-    radial-gradient(circle at 18% 82%, rgba(72, 125, 205, 0.11), transparent 30%),
-    linear-gradient(120deg, rgba(255,255,255,0.025), transparent 40%, rgba(70,150,255,0.018));
-  animation: living-breathe 18s ease-in-out infinite alternate;
-  will-change: opacity, transform;
+    radial-gradient(ellipse at 8% 24%, rgba(20, 76, 145, 0.22), transparent 30%),
+    radial-gradient(ellipse at 92% 76%, rgba(18, 69, 137, 0.20), transparent 32%),
+    radial-gradient(ellipse at 50% 100%, rgba(8, 35, 75, 0.16), transparent 38%);
+  animation: living-drift 42s ease-in-out infinite alternate;
+  will-change: transform, opacity;
 }
 
 .app-shell::after {
   content: "";
   position: fixed;
-  inset: -22%;
+  inset: -16%;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(35, 91, 160, 0.055) 100%);
-  opacity: 0.8;
-  animation: living-vignette 26s ease-in-out infinite alternate;
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 48%, rgba(0, 8, 20, 0.28) 100%);
+  opacity: 0.82;
+  animation: living-breathe 36s ease-in-out infinite alternate;
   will-change: opacity, transform;
 }
 
 .ambient-glow {
   z-index: 1;
-  width: 620px;
-  height: 620px;
-  filter: blur(115px);
-  opacity: 0.14;
+  width: 560px;
+  height: 560px;
+  filter: blur(125px);
+  opacity: 0.075;
   will-change: transform, opacity;
 }
 
 .ambient-glow-one {
-  right: -145px;
-  top: 2%;
-  background: #4d9cff;
-  animation: living-orbit-one 28s ease-in-out infinite alternate;
+  right: -180px;
+  top: 4%;
+  background: #1768c9;
+  animation: living-orbit-one 44s ease-in-out infinite alternate;
 }
 
 .ambient-glow-two {
-  left: -145px;
-  bottom: -190px;
-  background: #587fc2;
-  animation: living-orbit-two 34s ease-in-out infinite alternate;
+  left: -180px;
+  bottom: -210px;
+  background: #123f82;
+  animation: living-orbit-two 50s ease-in-out infinite alternate;
+}
+
+@keyframes living-drift {
+  from { opacity: 0.62; transform: translate3d(-1.5%, 0, 0) scale(1); }
+  to { opacity: 0.92; transform: translate3d(1.5%, 1%, 0) scale(1.025); }
 }
 
 @keyframes living-breathe {
-  from { opacity: 0.72; transform: scale(0.99); }
-  to { opacity: 1; transform: scale(1.035); }
-}
-
-@keyframes living-vignette {
-  from { transform: translate3d(-1%, 0, 0) scale(1); opacity: 0.58; }
-  to { transform: translate3d(1%, 1%, 0) scale(1.025); opacity: 0.82; }
+  from { opacity: 0.66; transform: scale(1); }
+  to { opacity: 0.86; transform: scale(1.018); }
 }
 
 @keyframes living-orbit-one {
-  from { transform: translate3d(45px, -20px, 0) scale(0.94); opacity: 0.72; }
-  to { transform: translate3d(-135px, 90px, 0) scale(1.08); opacity: 1; }
+  from { transform: translate3d(35px, -15px, 0) scale(0.94); opacity: 0.62; }
+  to { transform: translate3d(-105px, 75px, 0) scale(1.06); opacity: 0.92; }
 }
 
 @keyframes living-orbit-two {
-  from { transform: translate3d(-40px, 30px, 0) scale(0.96); opacity: 0.7; }
-  to { transform: translate3d(145px, -85px, 0) scale(1.08); opacity: 1; }
+  from { transform: translate3d(-35px, 25px, 0) scale(0.95); opacity: 0.58; }
+  to { transform: translate3d(110px, -70px, 0) scale(1.05); opacity: 0.88; }
+}
+
+/* Keep glass surfaces dark so the ambient background remains the focus. */
+.topbar,
+.listing-glass,
+.search-glass {
+  background: rgba(5, 14, 27, 0.58);
+  border-color: rgba(104, 157, 219, 0.16);
+}
+
+.topbar {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+}
+
+.listing-glass {
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.30);
+}
+
+.eyebrow {
+  color: #70b7ff;
+}
+
+.token-mark {
+  background: linear-gradient(145deg, rgba(42, 103, 172, 0.30), rgba(255, 255, 255, 0.025));
+  color: #d8eaff;
 }
 
 html[data-theme="light"] .app-shell {
   background:
-    radial-gradient(circle at 50% 45%, rgba(72, 135, 196, 0.09), transparent 38%),
-    linear-gradient(135deg, #e8eff6 0%, #f4f7fa 50%, #e6edf5 100%);
+    radial-gradient(ellipse at 50% 48%, #f2f6fa 0%, #eef3f8 38%, transparent 68%),
+    radial-gradient(circle at 5% 42%, rgba(72, 128, 188, 0.18), transparent 34%),
+    radial-gradient(circle at 95% 58%, rgba(64, 119, 184, 0.16), transparent 34%),
+    linear-gradient(135deg, #e8eef5 0%, #f5f8fb 48%, #e7eef5 100%);
 }
 
 html[data-theme="light"] .app-shell::before {
   background:
-    radial-gradient(circle at 78% 22%, rgba(71, 139, 202, 0.13), transparent 27%),
-    radial-gradient(circle at 18% 82%, rgba(89, 128, 171, 0.09), transparent 30%),
-    linear-gradient(120deg, rgba(255,255,255,0.28), transparent 40%, rgba(80,145,205,0.08));
+    radial-gradient(ellipse at 8% 24%, rgba(56, 120, 190, 0.12), transparent 30%),
+    radial-gradient(ellipse at 92% 76%, rgba(53, 112, 183, 0.10), transparent 32%),
+    radial-gradient(ellipse at 50% 100%, rgba(55, 103, 155, 0.08), transparent 38%);
 }
 
 html[data-theme="light"] .app-shell::after {
-  background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(74, 113, 150, 0.045) 100%);
+  background: radial-gradient(ellipse at 50% 50%, transparent 48%, rgba(55, 82, 110, 0.08) 100%);
 }
 
-html[data-theme="light"] .ambient-glow-one { background: #5b9ed8; }
-html[data-theme="light"] .ambient-glow-two { background: #86a9cf; }
+html[data-theme="light"] .topbar,
+html[data-theme="light"] .listing-glass,
+html[data-theme="light"] .search-glass {
+  background: rgba(246, 249, 252, 0.68);
+  border-color: rgba(51, 91, 130, 0.14);
+}
+
+html[data-theme="light"] .ambient-glow-one { background: #4c91d1; }
+html[data-theme="light"] .ambient-glow-two { background: #6f9fc9; }
 
 @media (prefers-reduced-motion: reduce) {
   .app-shell::before,
