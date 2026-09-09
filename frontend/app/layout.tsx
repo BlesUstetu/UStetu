@@ -3,6 +3,7 @@ import Providers from "./providers";
 import "./globals.css";
 import "../components/BuyModalStyles.css";
 import "../components/SystemInfoStyles.css";
+import "../components/LivingMinimalStyles.css";
 
 export const metadata: Metadata = {
   title: "USTETU — Own What’s Next.",
