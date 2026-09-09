@@ -29,7 +29,10 @@ contract DeployBaseSepolia is Script {
         // The broadcast signer must be DEPLOYER because all admin roles are granted to it.
         registry = new UStetuRegistry(BASE_SEPOLIA_CHAIN_ID, DEPLOYER);
         sellerRegistry = new UStetuSellerRegistry(DEPLOYER);
-        escrow = new UStetuEscrow(address(registry), FEE_RECIPIENT);
+        escrow = new UStetuEscrow(address(registry), address(sellerRegistry), FEE_RECIPIENT);
+
+        // Escrow is the canonical protocol writer for seller listing/order counters.
+        sellerRegistry.grantRole(sellerRegistry.CONFIG_ROLE(), address(escrow));
 
         // Enable the canonical Base Sepolia test USDC as a payment asset.
         registry.setPaymentTokenSupported(BASE_SEPOLIA_USDC, true);
@@ -44,5 +47,6 @@ contract DeployBaseSepolia is Script {
         console2.log("registry:", address(registry));
         console2.log("sellerRegistry:", address(sellerRegistry));
         console2.log("escrow:", address(escrow));
+        console2.log("escrow CONFIG_ROLE granted: true");
     }
 }
