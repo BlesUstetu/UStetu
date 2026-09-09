@@ -23,19 +23,19 @@ export default function SystemInfo() {
     <>
       <button className="system-info-trigger" type="button" onClick={() => setOpen(true)}>
         <span className="system-info-icon">ⓘ</span>
-        <span>{t("systemInfo")}</span>
+        <span>USTETU CENTER</span>
       </button>
 
       {open && (
         <>
           <button className="system-info-backdrop" aria-label={t("systemClose")} onClick={() => setOpen(false)} />
-          <aside className="system-info-panel" role="dialog" aria-modal="true" aria-label={t("systemInfo")}>
+          <aside className="system-info-panel" role="dialog" aria-modal="true" aria-label="USTETU CENTER">
             <div className="system-info-glow" aria-hidden="true" />
 
             <div className="system-info-head">
               <div>
                 <span className="eyebrow">USTETU · TRUST CENTER</span>
-                <h2>{t("systemInfo")}</h2>
+                <h2>USTETU CENTER</h2>
                 <p>{t("systemInfoSubtitle")}</p>
               </div>
               <button className="drawer-close" type="button" onClick={() => setOpen(false)}>×</button>
