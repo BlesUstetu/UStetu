@@ -22,9 +22,9 @@ const USDC_DECIMALS = 6;
 const TOKEN_DECIMALS = 18;
 const BASESCAN_TX = "https://sepolia.basescan.org/tx/";
 
-const ORDER_STATE_PAYMENT_PENDING = 1n;
-const ORDER_STATE_PAID = 2n;
-const ORDER_STATE_COMPLETED = 5n;
+const ORDER_STATE_PAYMENT_PENDING = 1;
+const ORDER_STATE_PAID = 2;
+const ORDER_STATE_COMPLETED = 5;
 
 type Step =
   | "idle"
