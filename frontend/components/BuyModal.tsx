@@ -75,43 +75,57 @@ function formatError(error: unknown) {
   return message.length > 220 ? `${message.slice(0, 220)}…` : message;
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(message)), timeoutMs);
+    }),
+  ]);
+}
+
 /**
- * Wait for a receipt without trusting a single RPC response forever.
+ * Poll the chain for a receipt with a hard timeout per RPC request.
+ * This intentionally avoids a potentially hanging getTransactionReceipt call.
  * Recovery only reads the chain; it never resubmits the transaction.
  */
 async function waitForReceiptRobust(
   publicClient: PublicClient,
   hash: `0x${string}`,
 ) {
-  try {
-    const receipt = await publicClient.waitForTransactionReceipt({
-      hash,
-      confirmations: 1,
-      timeout: 15_000,
-      pollingInterval: 1_000,
-    });
+  const maxAttempts = 20;
+  const requestTimeout = 2_500;
 
-    if (receipt.status !== "success") {
-      throw new Error("Transaksi on-chain gagal atau di-revert.");
-    }
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const receipt = await withTimeout(
+        publicClient.getTransactionReceipt({ hash }),
+        requestTimeout,
+        "RPC receipt request timeout",
+      );
 
-    return receipt;
-  } catch (firstError) {
-    // Give the fallback RPC transport a chance to see the same transaction.
-    for (let attempt = 0; attempt < 15; attempt += 1) {
-      try {
-        const receipt = await publicClient.getTransactionReceipt({ hash });
-        if (receipt.status !== "success") {
-          throw new Error("Transaksi on-chain gagal atau di-revert.");
-        }
-        return receipt;
-      } catch {
+      if (receipt.status !== "success") {
+        throw new Error("Transaksi on-chain gagal atau di-revert.");
+      }
+
+      return receipt;
+    } catch (error) {
+      const message = error instanceof Error ? error.message.toLowerCase() : "";
+      const isRevert = message.includes("revert") || message.includes("on-chain gagal");
+
+      if (isRevert) {
+        throw error;
+      }
+
+      if (attempt < maxAttempts - 1) {
         await sleep(1_000);
       }
     }
-
-    throw firstError;
   }
+
+  throw new Error(
+    `Receipt transaksi belum terbaca setelah ${maxAttempts} percobaan. Transaksi tidak dikirim ulang. Tx: ${hash}`,
+  );
 }
 
 function shortHash(hash: `0x${string}`) {
@@ -269,7 +283,7 @@ export default function BuyModal({
       // 1. CREATE ORDER
       // ------------------------------------------------------------
       setStep("creating");
-      setStatusText("1/3 Menunggu konfirmasi createOrder…");
+      setStatusText("1/3 Mengirim createOrder…");
 
       const createHash = await writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
@@ -279,7 +293,7 @@ export default function BuyModal({
       });
 
       setTxHashes((current) => ({ ...current, create: createHash }));
-      setStatusText("1/3 Order dikirim. Menunggu konfirmasi…");
+      setStatusText("1/3 createOrder terkirim. Membaca konfirmasi on-chain…");
 
       const createReceipt = await waitForReceiptRobust(publicClient, createHash);
 
@@ -330,7 +344,7 @@ export default function BuyModal({
         });
 
         setTxHashes((current) => ({ ...current, approve: approveHash }));
-        setStatusText("2/3 Approval USDC dikirim. Menunggu konfirmasi…");
+        setStatusText("2/3 Approval USDC dikirim. Membaca konfirmasi on-chain…");
 
         await waitForReceiptRobust(publicClient, approveHash);
         currentAllowance = grossPayment;
@@ -345,7 +359,7 @@ export default function BuyModal({
       // 3. FUND ORDER
       // ------------------------------------------------------------
       setStep("funding");
-      setStatusText(`2/3 Menunggu pembayaran ${formatUnits(grossPayment, USDC_DECIMALS)} USDC…`);
+      setStatusText(`2/3 Mengirim pembayaran ${formatUnits(grossPayment, USDC_DECIMALS)} USDC…`);
 
       const fundHash = await writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
@@ -355,7 +369,7 @@ export default function BuyModal({
       });
 
       setTxHashes((current) => ({ ...current, fund: fundHash }));
-      setStatusText("2/3 Pembayaran dikirim. Menunggu konfirmasi network…");
+      setStatusText("2/3 Pembayaran terkirim. Membaca konfirmasi on-chain…");
 
       try {
         await waitForReceiptRobust(publicClient, fundHash);
@@ -401,7 +415,7 @@ export default function BuyModal({
       });
 
       setTxHashes((current) => ({ ...current, complete: completeHash }));
-      setStatusText("3/3 Penyelesaian order dikirim. Menunggu konfirmasi…");
+      setStatusText("3/3 Penyelesaian order terkirim. Membaca konfirmasi on-chain…");
 
       try {
         await waitForReceiptRobust(publicClient, completeHash);
