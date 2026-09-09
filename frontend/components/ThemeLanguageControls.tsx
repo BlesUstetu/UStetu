@@ -31,12 +31,14 @@ export default function ThemeLanguageControls() {
         {dark ? "☀" : "☾"}
       </button>
       <div className="language-wrap">
-        <button type="button" className="icon-button" aria-label={t("language")} aria-expanded={open} title={t("language")} onClick={() => setOpen((value) => !value)}>◉</button>
+        <button type="button" className="language-button" aria-label={t("language")} aria-expanded={open} title={t("language")} onClick={() => setOpen((value) => !value)}>
+          {language.toUpperCase()} <span aria-hidden="true">▾</span>
+        </button>
         {open && (
           <div className="language-menu">
             {Object.entries(languages).map(([code, label]) => (
               <button type="button" className={`language-option ${language === code ? "active" : ""}`} key={code} onClick={() => { setLanguage(code as Language); setOpen(false); }}>
-                {label}
+                {code.toUpperCase()} — {label}
               </button>
             ))}
           </div>
