@@ -12,8 +12,7 @@ const BASESCAN_TX = "https://sepolia.basescan.org/tx/";
 const ORDER_STATE_PAYMENT_PENDING = 1;
 const ORDER_STATE_PAID = 2;
 const ORDER_STATE_COMPLETED = 5;
-const WALLET_REQUEST_TIMEOUT = 20_000;
-const CREATE_RECOVERY_TIMEOUT = 60_000;
+const CREATE_RECOVERY_TIMEOUT = 10 * 60_000;
 const RPC_REQUEST_TIMEOUT = 3_000;
 
 type Step = "idle" | "creating" | "approving" | "funding" | "completing" | "success";
@@ -34,8 +33,10 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string)
   return Promise.race([promise, timeout]).finally(() => { if (timer) clearTimeout(timer); });
 }
 
-async function requestWalletTx<T>(promise: Promise<T>, action: string) {
-  return withTimeout(promise, WALLET_REQUEST_TIMEOUT, `${action} belum mendapat respons dari wallet setelah 20 detik. Periksa popup wallet.`);
+async function requestWalletTx<T>(promise: Promise<T>) {
+  // Jangan timeout proses wallet. User bisa membutuhkan waktu berapa pun
+  // untuk membuka extension/mobile wallet dan menekan Confirm.
+  return promise;
 }
 
 async function waitForReceiptRobust(publicClient: PublicClient, hash: `0x${string}`) {
@@ -139,17 +140,16 @@ export default function BuyModal(props: BuyModalProps) {
 
     try {
       setStep("creating");
-      setStatusText("1/3 Konfirmasi createOrder di wallet…");
+      setStatusText("1/3 Menunggu konfirmasi createOrder di wallet…");
       const startBlock = await publicClient.getBlockNumber();
       const walletCreatePromise = writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "createOrder", args: [listingId, parsedAmount] }).catch((error) => { throw error; });
       const recoveryPromise = recoverCreatedOrder(publicClient, startBlock, listingId, address, parsedAmount);
       const result = await Promise.race([
-        requestWalletTx(walletCreatePromise, "createOrder").then((hash) => ({ kind: "wallet" as const, hash })),
+        requestWalletTx(walletCreatePromise).then((hash) => ({ kind: "wallet" as const, hash })),
         recoveryPromise.then((recovered) => recovered ? ({ kind: "recovered" as const, recovered }) : null),
       ]);
 
       let createHash: `0x${string}`;
-      let createReceipt;
       let createdOrderId: bigint;
       let grossPayment = grossPaymentPreview;
 
@@ -157,7 +157,7 @@ export default function BuyModal(props: BuyModalProps) {
         createHash = result.hash;
         setTxHashes((current) => ({ ...current, create: createHash }));
         setStatusText("1/3 createOrder terkirim. Menunggu konfirmasi network…");
-        createReceipt = await waitForReceiptRobust(publicClient, createHash);
+        const createReceipt = await waitForReceiptRobust(publicClient, createHash);
         createdOrderId = 0n;
         for (const log of createReceipt.logs) {
           if (log.address.toLowerCase() !== USTETU_ESCROW_ADDRESS.toLowerCase()) continue;
@@ -174,7 +174,7 @@ export default function BuyModal(props: BuyModalProps) {
         setTxHashes((current) => ({ ...current, create: createHash }));
         setOrderId(createdOrderId);
         setStatusText("1/3 createOrder sudah masuk blockchain. Memulihkan transaksi…");
-        createReceipt = await waitForReceiptRobust(publicClient, createHash);
+        await waitForReceiptRobust(publicClient, createHash);
       } else {
         throw new Error("createOrder belum ditemukan di wallet maupun blockchain. Pastikan popup wallet sudah dikonfirmasi.");
       }
@@ -183,7 +183,7 @@ export default function BuyModal(props: BuyModalProps) {
       let currentAllowance = allowance ?? 0n;
       if (currentAllowance < grossPayment) {
         setStep("approving"); setStatusText("2/3 Konfirmasi approval USDC di wallet…");
-        const approveHash = await requestWalletTx(writeContractAsync({ address: paymentToken, abi: erc20PaymentAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, grossPayment] }), "Approval USDC");
+        const approveHash = await requestWalletTx(writeContractAsync({ address: paymentToken, abi: erc20PaymentAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, grossPayment] }));
         setTxHashes((current) => ({ ...current, approve: approveHash }));
         setStatusText("2/3 Approval terkirim. Menunggu konfirmasi network…");
         await waitForReceiptRobust(publicClient, approveHash);
@@ -193,7 +193,7 @@ export default function BuyModal(props: BuyModalProps) {
       if (currentAllowance < grossPayment) throw new Error("Allowance USDC belum mencukupi setelah approve.");
 
       setStep("funding"); setStatusText(`2/3 Konfirmasi pembayaran ${formatUnits(grossPayment, USDC_DECIMALS)} USDC di wallet…`);
-      const fundHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "fundOrder", args: [createdOrderId] }), "Pembayaran");
+      const fundHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "fundOrder", args: [createdOrderId] }));
       setTxHashes((current) => ({ ...current, fund: fundHash }));
       setStatusText("2/3 Pembayaran terkirim. Menunggu konfirmasi network…");
       try { await waitForReceiptRobust(publicClient, fundHash); }
@@ -207,7 +207,7 @@ export default function BuyModal(props: BuyModalProps) {
       if (stateAfterFunding !== ORDER_STATE_PAID) throw new Error(`Order #${createdOrderId.toString()} belum PAID. Status on-chain: ${stateAfterFunding ?? "unknown"}.`);
 
       setStep("completing"); setStatusText("3/3 Konfirmasi penyelesaian order di wallet…");
-      const completeHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "completeOrder", args: [createdOrderId] }), "completeOrder");
+      const completeHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "completeOrder", args: [createdOrderId] }));
       setTxHashes((current) => ({ ...current, complete: completeHash }));
       setStatusText("3/3 Complete terkirim. Menunggu konfirmasi network…");
       try { await waitForReceiptRobust(publicClient, completeHash); }
