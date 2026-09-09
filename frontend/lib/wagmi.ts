@@ -1,4 +1,5 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { injectedWallet, walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
 import { baseSepolia } from "wagmi/chains";
 import { http } from "wagmi";
 
@@ -13,6 +14,12 @@ export const wagmiConfig = getDefaultConfig({
   appName: "USTETU",
   projectId,
   chains: [baseSepolia],
+  wallets: [
+    {
+      groupName: "Recommended",
+      wallets: [injectedWallet, walletConnectWallet],
+    },
+  ],
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),
   },
