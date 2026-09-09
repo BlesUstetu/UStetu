@@ -302,6 +302,162 @@ export default function BuyModal({
 
         <p className="buy-footnote">Transaksi diproses langsung melalui smart contract USTETU Escrow di Base Sepolia.</p>
       </section>
+
+      <style jsx>{`
+        .buy-modal {
+          position: fixed;
+          z-index: 60;
+          top: 50%;
+          left: 50%;
+          width: min(470px, calc(100vw - 32px));
+          max-height: calc(100vh - 32px);
+          overflow-y: auto;
+          transform: translate(-50%, -50%);
+          padding: 25px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 24px;
+          background: rgba(13, 22, 35, 0.88);
+          box-shadow: 0 35px 110px rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(36px) saturate(135%);
+          -webkit-backdrop-filter: blur(36px) saturate(135%);
+          color: var(--text);
+        }
+        .buy-modal-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+        }
+        .buy-modal h2 {
+          margin: 7px 0 0;
+          font-size: 27px;
+          letter-spacing: -0.035em;
+        }
+        .buy-summary {
+          display: grid;
+          gap: 1px;
+          margin: 24px 0;
+          overflow: hidden;
+          border: 1px solid var(--line);
+          border-radius: 15px;
+          background: var(--line);
+        }
+        .buy-summary div {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+          padding: 12px 14px;
+          background: rgba(255, 255, 255, 0.035);
+        }
+        .buy-summary span,
+        .buy-total span,
+        .buy-input-label {
+          color: var(--muted);
+          font-size: 11px;
+        }
+        .buy-summary strong {
+          color: var(--muted-strong);
+          font-size: 11px;
+          text-align: right;
+        }
+        .buy-input-label {
+          display: block;
+          margin-bottom: 8px;
+        }
+        .buy-input-wrap {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 4px 14px 4px 15px;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.045);
+        }
+        .buy-input-wrap:focus-within {
+          border-color: rgba(110, 173, 245, 0.55);
+          box-shadow: 0 0 0 3px rgba(101, 169, 255, 0.08);
+        }
+        .buy-input-wrap input {
+          width: 100%;
+          min-width: 0;
+          padding: 11px 0;
+          border: 0;
+          outline: 0;
+          background: transparent;
+          color: var(--text);
+          font-size: 18px;
+          font-weight: 650;
+        }
+        .buy-input-wrap span {
+          color: var(--accent);
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .buy-total {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin: 15px 0;
+          padding: 14px;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.035);
+        }
+        .buy-total strong {
+          color: var(--text);
+          font-size: 18px;
+        }
+        .buy-notice,
+        .buy-error,
+        .buy-status {
+          margin-top: 10px;
+          padding: 11px 13px;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          color: var(--muted-strong);
+          font-size: 11px;
+          line-height: 1.45;
+        }
+        .buy-error {
+          border-color: rgba(255, 125, 125, 0.25);
+          background: rgba(255, 80, 80, 0.07);
+        }
+        .buy-status.success {
+          border-color: rgba(130, 205, 157, 0.28);
+          background: rgba(100, 190, 125, 0.08);
+        }
+        .buy-confirm {
+          width: 100%;
+          margin-top: 14px;
+          padding: 13px 16px;
+          background: linear-gradient(135deg, rgba(101, 169, 255, 0.24), rgba(125, 185, 255, 0.12));
+          color: var(--text);
+          font-weight: 700;
+        }
+        .buy-confirm:hover:not(:disabled) {
+          border-color: rgba(140, 195, 255, 0.48);
+          transform: translateY(-1px);
+        }
+        .buy-confirm:disabled {
+          cursor: not-allowed;
+          opacity: 0.52;
+        }
+        .buy-footnote {
+          margin: 14px 2px 0;
+          color: var(--muted);
+          font-size: 10px;
+          line-height: 1.5;
+          text-align: center;
+        }
+        html[data-theme="light"] .buy-modal {
+          background: rgba(247, 250, 253, 0.92);
+        }
+        @media (max-width: 560px) {
+          .buy-modal {
+            padding: 20px;
+          }
+        }
+      `}</style>
     </>
   );
 }
