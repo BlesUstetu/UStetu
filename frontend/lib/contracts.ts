@@ -32,6 +32,38 @@ export const escrowAbi = [
   },
   {
     type: "function",
+    name: "getOrder",
+    stateMutability: "view",
+    inputs: [{ name: "orderId", type: "uint256" }],
+    outputs: [
+      {
+        name: "order",
+        type: "tuple",
+        components: [
+          { name: "listingId", type: "uint256" },
+          { name: "buyer", type: "address" },
+          { name: "seller", type: "address" },
+          { name: "recipient", type: "address" },
+          { name: "token", type: "address" },
+          { name: "paymentToken", type: "address" },
+          { name: "tokenAmount", type: "uint256" },
+          { name: "unitPrice", type: "uint256" },
+          { name: "grossPayment", type: "uint256" },
+          { name: "marketplaceFee", type: "uint256" },
+          { name: "sellerProceeds", type: "uint256" },
+          { name: "state", type: "uint8" },
+          { name: "createdAt", type: "uint64" },
+          { name: "paidAt", type: "uint64" },
+          { name: "completedAt", type: "uint64" },
+          { name: "refundedAt", type: "uint64" },
+          { name: "expiresAt", type: "uint64" },
+          { name: "disputeId", type: "uint256" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
     name: "createOrder",
     stateMutability: "nonpayable",
     inputs: [
