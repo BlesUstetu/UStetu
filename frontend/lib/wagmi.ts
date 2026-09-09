@@ -20,7 +20,7 @@ const projectId =
  * This is important when several browser extensions inject window.ethereum.
  */
 function findInjectedProvider(
-  browserWindow: Window & typeof globalThis,
+  browserWindow: Window,
   predicate: (provider: any) => boolean,
 ) {
   const ethereum = (browserWindow as any).ethereum;
@@ -70,12 +70,15 @@ const trustWalletDirect = (params: { projectId: string }) => {
 // MetaMask: direct provider connector. This prevents Trust Wallet from
 // capturing window.ethereum when both extensions are installed.
 const metaMaskDirect = (params: { projectId: string }) => {
+  void params;
+
   return {
     id: "metaMask",
     name: "MetaMask",
-    iconUrl: "https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg",
+    iconUrl:
+      "https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg",
     iconBackground: "#f6851b",
-    installed: () =>
+    installed:
       typeof window !== "undefined" &&
       Boolean(
         findInjectedProvider(window, (provider) => Boolean(provider?.isMetaMask)),
@@ -117,9 +120,8 @@ export const wagmiConfig = getDefaultConfig({
       wallets: [injectedWallet, walletConnectWallet],
     },
   ],
-  // We intentionally use explicit direct connectors for Trust and MetaMask.
-  // This avoids provider collisions when multiple browser extensions are
-  // installed while keeping WalletConnect as the universal fallback.
+  // Explicit direct connectors avoid provider collisions when multiple browser
+  // extensions are installed while WalletConnect remains the universal fallback.
   multiInjectedProviderDiscovery: false,
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),
