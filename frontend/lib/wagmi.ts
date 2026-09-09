@@ -10,16 +10,15 @@ import { baseSepolia } from "wagmi/chains";
 import { http } from "wagmi";
 
 // WalletConnect Project ID is a public dApp identifier and is safe to bundle
-// into the client application. The environment variable remains supported for
-// local development/overrides, while GitHub Pages uses the configured ID.
+// into the client application. The environment variable remains supported
+// for local development/overrides, while GitHub Pages uses this configured ID.
 const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
   "482adba19d5eaa8abbc716350e90eed3";
 
-// Keep Trust Wallet's official RainbowKit presentation/metadata, but replace
-// only its connection implementation with a direct EIP-1193 injected provider.
-// This avoids the Trust-specific handoff flow that can remain pending after the
-// browser extension has already approved the connection.
+// Trust Wallet is kept on a direct EIP-1193 connector because the browser
+// extension can expose its provider through window.ethereum / providers.
+// This preserves the Trust Wallet connection fix that is already working.
 const trustWalletDirect = (params: { projectId: string }) => {
   const baseWallet = trustWallet(params);
 
@@ -35,8 +34,10 @@ const trustWalletDirect = (params: { projectId: string }) => {
 
             const ethereum = browserWindow.ethereum as any;
 
+            // Trust Wallet extension may expose itself directly.
             if (ethereum?.isTrust) return ethereum;
 
+            // Multiple injected wallets can coexist in the browser.
             if (Array.isArray(ethereum?.providers)) {
               const trustProvider = ethereum.providers.find(
                 (provider: any) => provider?.isTrust,
@@ -64,14 +65,22 @@ export const wagmiConfig = getDefaultConfig({
   wallets: [
     {
       groupName: "Installed",
-      wallets: [trustWalletDirect, metaMaskWallet],
+      wallets: [
+        trustWalletDirect,
+        metaMaskWallet,
+      ],
     },
     {
       groupName: "Other",
-      wallets: [injectedWallet, walletConnectWallet],
+      wallets: [
+        injectedWallet,
+        walletConnectWallet,
+      ],
     },
   ],
-  // Prevent automatic EIP-6963 discovery from adding a second Trust connector.
+  // Keep explicit wallet connectors above so MetaMask and Trust remain
+  // independently selectable even when several browser wallets are installed.
+  // The generic injected fallback is still available through injectedWallet.
   multiInjectedProviderDiscovery: false,
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),
