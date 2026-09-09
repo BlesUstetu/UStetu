@@ -7,6 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUStetuRegistry} from "../interfaces/IUStetuRegistry.sol";
+import {UStetuSellerRegistry} from "./UStetuSellerRegistry.sol";
 import {UStetuTypes} from "../libraries/UStetuTypes.sol";
 import {UStetuErrors} from "../libraries/UStetuErrors.sol";
 import {UStetuMath} from "../libraries/UStetuMath.sol";
@@ -24,6 +25,7 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
     uint64 public constant ORDER_EXPIRY = PAYMENT_WINDOW;
 
     IUStetuRegistry public immutable registry;
+    UStetuSellerRegistry public immutable sellerRegistry;
     address public immutable feeRecipient;
     uint256 private _nextOrderId = 1;
 
@@ -47,10 +49,14 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
     event OrderExpired(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
     event AutoReleased(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
     event ClaimableWithdrawn(address indexed account, address indexed token, uint256 amount);
+    event SellerWithdrawal(address indexed seller, address indexed token, address indexed withdrawalWallet, uint256 amount);
 
-    constructor(address registryAddress, address feeRecipientAddress) Ownable(msg.sender) {
-        if (registryAddress == address(0) || feeRecipientAddress == address(0)) revert UStetuErrors.InvalidAddress();
+    constructor(address registryAddress, address sellerRegistryAddress, address feeRecipientAddress) Ownable(msg.sender) {
+        if (registryAddress == address(0) || sellerRegistryAddress == address(0) || feeRecipientAddress == address(0)) {
+            revert UStetuErrors.InvalidAddress();
+        }
         registry = IUStetuRegistry(registryAddress);
+        sellerRegistry = UStetuSellerRegistry(sellerRegistryAddress);
         feeRecipient = feeRecipientAddress;
     }
 
@@ -61,12 +67,22 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
         emit FeeBpsUpdated(msg.sender, oldFeeBps, newFeeBps);
     }
 
-    function createListingAndDeposit(uint256 listingId, bytes32 tokenId, address seller, address paymentToken, uint256 price, uint256 inventoryAmount, uint256 minOrderAmount, uint256 maxOrderAmount) external nonReentrant {
+    function createListingAndDeposit(
+        uint256 listingId,
+        bytes32 tokenId,
+        address seller,
+        address paymentToken,
+        uint256 price,
+        uint256 inventoryAmount,
+        uint256 minOrderAmount,
+        uint256 maxOrderAmount
+    ) external nonReentrant {
         if (msg.sender != seller) revert UStetuErrors.Unauthorized();
         if (seller == address(0) || paymentToken == address(0)) revert UStetuErrors.InvalidAddress();
         if (listingId == 0 || inventoryAmount == 0) revert UStetuErrors.InvalidAmount();
         if (price == 0) revert UStetuErrors.InvalidPrice();
         if (minOrderAmount == 0 || maxOrderAmount < minOrderAmount) revert UStetuErrors.InvalidOrderLimits();
+        if (!sellerRegistry.isRegisteredSeller(seller)) revert UStetuErrors.NotRegisteredSeller();
         if (!registry.isApprovedToken(tokenId)) revert UStetuErrors.TokenNotApproved();
         if (!registry.isSupportedPaymentToken(paymentToken)) revert UStetuErrors.UnsupportedPaymentToken();
         if (_listings[listingId].seller != address(0)) revert UStetuErrors.AlreadyRegistered();
@@ -85,6 +101,7 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
             createdAt: uint64(block.timestamp), updatedAt: uint64(block.timestamp)
         });
         sellerInventory[seller][tokenInfo.contractAddress] += received;
+        _setActiveListingCount(seller, true);
         emit InventoryDeposited(listingId, seller, tokenInfo.contractAddress, received);
     }
 
@@ -148,6 +165,7 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
         if (listing.status != UStetuTypes.ListingStatus.ACTIVE) revert UStetuErrors.InvalidListingState();
         listing.status = UStetuTypes.ListingStatus.PAUSED;
         listing.updatedAt = uint64(block.timestamp);
+        _setActiveListingCount(listing.seller, false);
         emit ListingPaused(listingId, msg.sender);
     }
 
@@ -157,6 +175,7 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
         if (listing.status != UStetuTypes.ListingStatus.PAUSED) revert UStetuErrors.InvalidListingState();
         listing.status = UStetuTypes.ListingStatus.ACTIVE;
         listing.updatedAt = uint64(block.timestamp);
+        _setActiveListingCount(listing.seller, true);
         emit ListingResumed(listingId, msg.sender);
     }
 
@@ -164,8 +183,10 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
         UStetuTypes.Listing storage listing = _listings[listingId];
         _requireSeller(listing);
         if (listing.status == UStetuTypes.ListingStatus.CLOSED || listing.status == UStetuTypes.ListingStatus.SUSPENDED) revert UStetuErrors.InvalidListingState();
+        bool wasActive = listing.status == UStetuTypes.ListingStatus.ACTIVE;
         listing.status = UStetuTypes.ListingStatus.CLOSED;
         listing.updatedAt = uint64(block.timestamp);
+        if (wasActive) _setActiveListingCount(listing.seller, false);
         emit ListingClosed(listingId, msg.sender);
     }
 
@@ -234,11 +255,19 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
     }
 
     function withdrawClaimable(address token) external nonReentrant {
+        if (!sellerRegistry.isRegisteredSeller(msg.sender)) revert UStetuErrors.NotRegisteredSeller();
+        if (!registry.isSupportedPaymentToken(token)) revert UStetuErrors.UnsupportedPaymentToken();
+
         uint256 amount = claimable[msg.sender][token];
-        if (amount == 0) revert UStetuErrors.InvalidAmount();
+        if (amount == 0) revert UStetuErrors.InsufficientClaimable();
+
+        address withdrawalWallet = sellerRegistry.getWithdrawalWallet(msg.sender);
+        if (withdrawalWallet == address(0)) revert UStetuErrors.InvalidAddress();
+
         claimable[msg.sender][token] = 0;
-        IERC20(token).safeTransfer(msg.sender, amount);
+        IERC20(token).safeTransfer(withdrawalWallet, amount);
         emit ClaimableWithdrawn(msg.sender, token, amount);
+        emit SellerWithdrawal(msg.sender, token, withdrawalWallet, amount);
     }
 
     function getListing(uint256 listingId) external view returns (UStetuTypes.Listing memory) { return _listings[listingId]; }
@@ -256,8 +285,21 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
         claimable[feeRecipient][order.paymentToken] += order.marketplaceFee;
         order.state = UStetuTypes.OrderState.COMPLETED;
         order.completedAt = uint64(block.timestamp);
+        sellerRegistry.recordCompletedOrder(order.seller, false);
         emit OrderCompleted(orderId, order.buyer, order.seller, order.tokenAmount);
         if (automatic) emit AutoReleased(orderId, order.buyer, order.seller, order.tokenAmount);
+    }
+
+    function _setActiveListingCount(address seller, bool increase) internal {
+        UStetuTypes.Seller memory sellerInfo = sellerRegistry.getSeller(seller);
+        uint32 current = sellerInfo.activeListingCount;
+        if (increase) {
+            if (current == type(uint32).max) revert UStetuErrors.InvalidAmount();
+            sellerRegistry.setActiveListingCount(seller, current + 1);
+        } else {
+            if (current == 0) revert UStetuErrors.AccountingInvariantViolation();
+            sellerRegistry.setActiveListingCount(seller, current - 1);
+        }
     }
 
     function _requireSeller(UStetuTypes.Listing storage listing) internal view {
