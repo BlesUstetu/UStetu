@@ -1,10 +1,4 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import {
-  injectedWallet,
-  metaMaskWallet,
-  trustWallet,
-  walletConnectWallet,
-} from "@rainbow-me/rainbowkit/wallets";
 import { baseSepolia } from "wagmi/chains";
 import { http } from "wagmi";
 
@@ -18,25 +12,14 @@ const projectId =
 /**
  * USTETU wallet configuration
  *
- * Use RainbowKit's official wallet connectors directly. RainbowKit 2.x
- * supports EIP-6963 provider discovery, which prevents conflicts when
- * multiple browser wallets are installed. WalletConnect and Injected Wallet
- * are kept as generic fallbacks so mobile and browser wallets remain covered.
+ * Use RainbowKit's default wallet connectors directly. This lets RainbowKit
+ * manage EIP-6963 discovery and its built-in WalletConnect integration without
+ * a custom wallet list or custom injected-provider connectors.
  */
 export const wagmiConfig = getDefaultConfig({
   appName: "USTETU",
   projectId,
   chains: [baseSepolia],
-  wallets: [
-    {
-      groupName: "Installed",
-      wallets: [metaMaskWallet, trustWallet],
-    },
-    {
-      groupName: "Other",
-      wallets: [injectedWallet, walletConnectWallet],
-    },
-  ],
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),
   },
