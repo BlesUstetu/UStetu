@@ -18,12 +18,16 @@ const projectId =
 /**
  * Find a specific injected EIP-1193 provider without relying on EIP-6963.
  * This is important when several browser extensions inject window.ethereum.
+ *
+ * The provider callback types supplied by wagmi/RainbowKit can resolve to
+ * different Window declarations across package versions, so we deliberately
+ * keep this boundary untyped and only use the EIP-1193 provider shape below.
  */
 function findInjectedProvider(
-  browserWindow: Window,
+  browserWindow: any,
   predicate: (provider: any) => boolean,
 ) {
-  const ethereum = (browserWindow as any).ethereum;
+  const ethereum = browserWindow?.ethereum;
 
   if (predicate(ethereum)) return ethereum;
 
@@ -53,7 +57,7 @@ const trustWalletDirect = (params: { projectId: string }) => {
             return (
               findInjectedProvider(browserWindow, (provider) =>
                 Boolean(provider?.isTrust),
-              ) ?? (browserWindow as any).trustwallet
+              ) ?? browserWindow?.trustwallet
             );
           },
         },
