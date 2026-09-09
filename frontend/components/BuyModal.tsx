@@ -14,6 +14,21 @@ const ORDER_STATE_PAID = 2;
 const ORDER_STATE_COMPLETED = 5;
 const CREATE_RECOVERY_TIMEOUT = 10 * 60_000;
 const RPC_REQUEST_TIMEOUT = 3_000;
+const ORDER_STATE_POLL_ATTEMPTS = 20;
+const ORDER_STATE_POLL_INTERVAL = 1_000;
+
+const paymentEscrowedEventAbi = [
+  {
+    type: "event",
+    name: "PaymentEscrowed",
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "orderId", type: "uint256" },
+      { indexed: true, name: "buyer", type: "address" },
+      { indexed: false, name: "amount", type: "uint256" },
+    ],
+  },
+] as const;
 
 type Step = "idle" | "creating" | "approving" | "funding" | "completing" | "success";
 type TxHashes = { create?: `0x${string}`; approve?: `0x${string}`; fund?: `0x${string}`; complete?: `0x${string}` };
@@ -22,7 +37,6 @@ type BuyModalProps = {
   listingId: bigint; symbol: string; price: bigint; available: bigint;
   minOrderAmount: bigint; maxOrderAmount: bigint; paymentToken: `0x${string}`;
 };
-
 type RecoveredOrder = { orderId: bigint; grossPayment: bigint; txHash: `0x${string}` };
 
 function sleep(ms: number) { return new Promise((resolve) => setTimeout(resolve, ms)); }
@@ -75,6 +89,17 @@ async function recoverCreatedOrder(publicClient: PublicClient, fromBlock: bigint
   return null;
 }
 
+function receiptHasPaymentEscrowed(receipt: Awaited<ReturnType<PublicClient["getTransactionReceipt"]>>, expectedOrderId: bigint) {
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== USTETU_ESCROW_ADDRESS.toLowerCase()) continue;
+    try {
+      const decoded = decodeEventLog({ abi: paymentEscrowedEventAbi, data: log.data, topics: log.topics });
+      if (decoded.eventName === "PaymentEscrowed" && decoded.args.orderId === expectedOrderId) return true;
+    } catch {}
+  }
+  return false;
+}
+
 function formatError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? "Transaksi gagal.");
   const lower = message.toLowerCase();
@@ -116,6 +141,19 @@ export default function BuyModal(props: BuyModalProps) {
     if (!publicClient) return null;
     const order = await withTimeout(publicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getOrder", args: [id] }), RPC_REQUEST_TIMEOUT, "RPC order state timeout");
     return order.state;
+  };
+
+  const waitForOrderState = async (id: bigint, targetStates: number[]) => {
+    let lastState: number | null = null;
+    for (let attempt = 0; attempt < ORDER_STATE_POLL_ATTEMPTS; attempt += 1) {
+      try {
+        const state = await readOrderState(id);
+        lastState = state;
+        if (state !== null && targetStates.includes(Number(state))) return state;
+      } catch {}
+      if (attempt < ORDER_STATE_POLL_ATTEMPTS - 1) await sleep(ORDER_STATE_POLL_INTERVAL);
+    }
+    return lastState;
   };
 
   const markCompleted = async (id: bigint) => {
@@ -196,13 +234,28 @@ export default function BuyModal(props: BuyModalProps) {
       const fundHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "fundOrder", args: [createdOrderId] }));
       setTxHashes((current) => ({ ...current, fund: fundHash }));
       setStatusText("2/3 Pembayaran terkirim. Menunggu konfirmasi network…");
-      try { await waitForReceiptRobust(publicClient, fundHash); }
-      catch (fundError) {
-        const state = await readOrderState(createdOrderId);
-        if (state !== ORDER_STATE_PAID && state !== ORDER_STATE_COMPLETED) throw state === ORDER_STATE_PAYMENT_PENDING ? new Error(`Pembayaran belum tercatat. Tx: ${fundHash}`) : fundError;
+
+      let fundReceipt: Awaited<ReturnType<PublicClient["getTransactionReceipt"]>> | null = null;
+      try {
+        fundReceipt = await waitForReceiptRobust(publicClient, fundHash);
+      } catch (fundError) {
+        const state = await waitForOrderState(createdOrderId, [ORDER_STATE_PAID, ORDER_STATE_COMPLETED]);
+        if (state !== ORDER_STATE_PAID && state !== ORDER_STATE_COMPLETED) {
+          throw state === ORDER_STATE_PAYMENT_PENDING ? new Error(`Pembayaran belum tercatat. Tx: ${fundHash}`) : fundError;
+        }
       }
 
-      const stateAfterFunding = await readOrderState(createdOrderId);
+      // fundOrder mengubah state menjadi PAID sebelum emit PaymentEscrowed.
+      // Jika receipt sukses dan event PaymentEscrowed ada, jangan melakukan
+      // readContract tambahan yang bisa mendapatkan hasil RPC stale.
+      let stateAfterFunding: number | null = fundReceipt && receiptHasPaymentEscrowed(fundReceipt, createdOrderId)
+        ? ORDER_STATE_PAID
+        : null;
+
+      if (stateAfterFunding === null) {
+        stateAfterFunding = await waitForOrderState(createdOrderId, [ORDER_STATE_PAID, ORDER_STATE_COMPLETED]);
+      }
+
       if (stateAfterFunding === ORDER_STATE_COMPLETED) return markCompleted(createdOrderId);
       if (stateAfterFunding !== ORDER_STATE_PAID) throw new Error(`Order #${createdOrderId.toString()} belum PAID. Status on-chain: ${stateAfterFunding ?? "unknown"}.`);
 
@@ -210,8 +263,13 @@ export default function BuyModal(props: BuyModalProps) {
       const completeHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "completeOrder", args: [createdOrderId] }));
       setTxHashes((current) => ({ ...current, complete: completeHash }));
       setStatusText("3/3 Complete terkirim. Menunggu konfirmasi network…");
-      try { await waitForReceiptRobust(publicClient, completeHash); }
-      catch (completeError) { const finalState = await readOrderState(createdOrderId); if (finalState === ORDER_STATE_COMPLETED) return markCompleted(createdOrderId); throw completeError; }
+      try {
+        await waitForReceiptRobust(publicClient, completeHash);
+      } catch (completeError) {
+        const finalState = await waitForOrderState(createdOrderId, [ORDER_STATE_COMPLETED]);
+        if (finalState === ORDER_STATE_COMPLETED) return markCompleted(createdOrderId);
+        throw completeError;
+      }
       await markCompleted(createdOrderId);
     } catch (error) {
       setStep("idle"); setStatusText(""); setErrorText(formatError(error));
@@ -224,22 +282,24 @@ export default function BuyModal(props: BuyModalProps) {
   return <>
     <button className="drawer-backdrop" aria-label="Close buy dialog" onClick={closeIfIdle} />
     <section className="buy-modal" role="dialog" aria-modal="true" aria-label={`Buy ${symbol}`}>
-      <div className="buy-modal-header"><div><span className="eyebrow">BUY TOKEN</span><h2>Buy {symbol}</h2></div><button className="drawer-close" type="button" onClick={closeIfIdle} disabled={isBusy}>×</button></div>
-      <div className="buy-summary"><div><span>Price</span><strong>{formatUnits(price, USDC_DECIMALS)} USDC / {symbol}</strong></div><div><span>Available</span><strong>{availableAmount} {symbol}</strong></div><div><span>Min / Max</span><strong>{minAmount} / {maxAmount} {symbol}</strong></div></div>
+      <div className="buy-modal-header">
+        <div><span className="eyebrow">BUY TOKEN</span><h2>Buy {symbol}</h2></div>
+        <button className="drawer-close" type="button" onClick={closeIfIdle} disabled={isBusy}>×</button>
+      </div>
+      <div className="buy-summary">
+        <div><span>Price</span><strong>{formatUnits(price, USDC_DECIMALS)} USDC / {symbol}</strong></div>
+        <div><span>Available</span><strong>{availableAmount} {symbol}</strong></div>
+        <div><span>Min / Max</span><strong>{minAmount} / {maxAmount} {symbol}</strong></div>
+      </div>
       <label className="buy-input-label" htmlFor="buy-amount">Amount ({symbol})</label>
       <div className="buy-input-wrap"><input id="buy-amount" type="number" min={minAmount} max={maxAmount} step="0.000000000000000001" value={amount} onChange={(event) => setAmount(event.target.value)} disabled={isBusy || step === "success"}/><span>{symbol}</span></div>
       <div className="buy-total"><span>Total payment</span><strong>{formatUnits(grossPaymentPreview, USDC_DECIMALS)} USDC</strong></div>
-      {!isConnected && <div className="buy-notice">Hubungkan wallet untuk melanjutkan pembelian.</div>}
+      {statusText && <div className="buy-status">{statusText}</div>}
       {errorText && <div className="buy-error">{errorText}</div>}
-      {statusText && <div className={`buy-status ${step === "success" ? "success" : ""}`}><span className="status-dot"/><span>{statusText}</span></div>}
-      {visibleHashes.length > 0 && <div className="buy-txs">{visibleHashes.map(([name, hash]) => { const typedHash = hash as `0x${string}`; const label = name === "create" ? "Order" : name === "approve" ? "Approve" : name === "fund" ? "Payment" : "Complete"; return <a key={name} href={`${BASESCAN_TX}${typedHash}`} target="_blank" rel="noreferrer"><span>{label}</span><strong>{shortHash(typedHash)} ↗</strong></a>; })}</div>}
-      {orderId !== null && step !== "idle" && <div className="buy-order">Order #{orderId.toString()}</div>}
-      {step === "success" ? <button className="primary-glass buy-confirm" type="button" onClick={onClose}>Selesai</button> : <button className="primary-glass buy-confirm" type="button" onClick={handleBuy} disabled={isBusy || !isConnected}>{isBusy ? "Memproses…" : `Buy ${symbol}`}</button>}
-      <p className="buy-footnote">Transaksi diproses langsung melalui smart contract USTETU Escrow di Base Sepolia.</p>
+      {orderId !== null && <div className="buy-order">Order #{orderId.toString()}</div>}
+      {visibleHashes.length > 0 && <div className="buy-tx-list">{visibleHashes.map(([label, hash]) => <a key={label} href={`${BASESCAN_TX}${hash}`} target="_blank" rel="noreferrer"><span>{label === "create" ? "Order" : label === "approve" ? "Approve" : label === "fund" ? "Payment" : "Complete"}</span><strong>{shortHash(hash as `0x${string}`)} ↗</strong></a>)}</div>}
+      <button className="buy-submit" type="button" onClick={handleBuy} disabled={isBusy || step === "success"}>{step === "success" ? "Purchased" : `Buy ${symbol}`}</button>
+      <p className="buy-note">Transaksi diproses langsung melalui smart contract USTETU Escrow di Base Sepolia.</p>
     </section>
-    <style jsx>{`
-      .buy-modal{position:fixed;z-index:60;top:50%;left:50%;width:min(470px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow-y:auto;transform:translate(-50%,-50%);padding:25px;border:1px solid rgba(255,255,255,.15);border-radius:24px;background:rgba(13,22,35,.9);box-shadow:0 35px 110px rgba(0,0,0,.45);backdrop-filter:blur(36px) saturate(135%);color:var(--text)}
-      .buy-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.buy-modal h2{margin:7px 0 0;font-size:27px;letter-spacing:-.035em}.buy-summary{display:grid;gap:1px;margin:24px 0;overflow:hidden;border:1px solid var(--line);border-radius:15px;background:var(--line)}.buy-summary div{display:flex;justify-content:space-between;gap:15px;padding:12px 14px;background:rgba(255,255,255,.035)}.buy-summary span,.buy-total span,.buy-input-label{color:var(--muted);font-size:11px}.buy-summary strong{color:var(--muted-strong);font-size:11px;text-align:right}.buy-input-label{display:block;margin-bottom:8px}.buy-input-wrap{display:flex;align-items:center;gap:10px;padding:4px 14px 4px 15px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.045)}.buy-input-wrap:focus-within{border-color:rgba(110,173,245,.55);box-shadow:0 0 0 3px rgba(101,169,255,.08)}.buy-input-wrap input{width:100%;min-width:0;padding:11px 0;border:0;outline:0;background:transparent;color:var(--text);font-size:18px;font-weight:650}.buy-input-wrap span{color:var(--accent);font-size:12px;font-weight:700}.buy-total{display:flex;align-items:center;justify-content:space-between;margin:15px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.035)}.buy-total strong{color:var(--text);font-size:18px}.buy-notice,.buy-error,.buy-status{display:flex;align-items:flex-start;gap:9px;margin-top:10px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;color:var(--muted-strong);font-size:11px;line-height:1.45}.buy-error{border-color:rgba(255,125,125,.25);background:rgba(255,80,80,.06)}.buy-status.success{border-color:rgba(100,220,160,.28);background:rgba(70,210,145,.07)}.status-dot{width:7px;height:7px;flex:0 0 7px;margin-top:4px;border-radius:999px;background:currentColor;box-shadow:0 0 12px currentColor;animation:pulse 1.5s ease-in-out infinite}.buy-txs{display:grid;gap:7px;margin-top:10px}.buy-txs a{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);background:rgba(255,255,255,.025);font-size:10px;text-decoration:none}.buy-txs a:hover{border-color:rgba(110,173,245,.35);color:var(--text)}.buy-txs strong{color:var(--accent);font-weight:650}.buy-order{margin-top:9px;color:var(--muted);font-size:10px;text-align:right}.buy-confirm{width:100%;margin-top:18px;padding:13px 16px;border-radius:14px;cursor:pointer}.buy-confirm:disabled{cursor:not-allowed;opacity:.58}.buy-footnote{margin:13px 2px 0;color:var(--muted);font-size:10px;line-height:1.5;text-align:center}@keyframes pulse{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
-    `}</style>
   </>;
 }
