@@ -4,11 +4,13 @@ pragma solidity 0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {UStetuEscrow} from "../contracts/core/UStetuEscrow.sol";
 import {UStetuRegistry} from "../contracts/core/UStetuRegistry.sol";
+import {UStetuSellerRegistry} from "../contracts/core/UStetuSellerRegistry.sol";
 import {UStetuTypes} from "../contracts/libraries/UStetuTypes.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract UStetuEscrowStage1Test is Test {
     UStetuRegistry internal registry;
+    UStetuSellerRegistry internal sellerRegistry;
     UStetuEscrow internal escrow;
     MockERC20 internal asset;
     MockERC20 internal usdc;
@@ -18,6 +20,7 @@ contract UStetuEscrowStage1Test is Test {
     address internal buyer = address(0xCAFE);
     address internal attacker = address(0xBAD);
     address internal secondSeller = address(0xD00D);
+    address internal withdrawalWallet = address(0xC0DE);
 
     bytes32 internal tokenId;
 
@@ -25,7 +28,9 @@ contract UStetuEscrowStage1Test is Test {
         vm.chainId(8453);
         vm.startPrank(admin);
         registry = new UStetuRegistry(8453, admin);
-        escrow = new UStetuEscrow(address(registry), admin);
+        sellerRegistry = new UStetuSellerRegistry(admin);
+        escrow = new UStetuEscrow(address(registry), address(sellerRegistry), admin);
+        sellerRegistry.grantRole(sellerRegistry.CONFIG_ROLE(), address(escrow));
 
         asset = new MockERC20("Test Asset", "TAST", 18);
         usdc = new MockERC20("USD Coin", "USDC", 6);
@@ -34,6 +39,12 @@ contract UStetuEscrowStage1Test is Test {
         registry.setTokenVerification(tokenId, UStetuTypes.VerificationStatus.APPROVED);
         registry.setPaymentTokenSupported(address(usdc), true);
         vm.stopPrank();
+
+        vm.prank(seller);
+        sellerRegistry.registerSeller(withdrawalWallet);
+
+        vm.prank(secondSeller);
+        sellerRegistry.registerSeller(secondSeller);
 
         asset.mint(seller, 1_000 ether);
         asset.mint(secondSeller, 1_000 ether);
@@ -50,10 +61,20 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(listing.seller, seller);
         assertEq(listing.inventoryDeposited, 500 ether);
         assertEq(escrow.sellerInventory(seller, address(asset)), 500 ether);
+        assertEq(sellerRegistry.getSeller(seller).activeListingCount, 1);
+    }
+
+    function testUnregisteredSellerCannotCreateListing() public {
+        address unregistered = address(0x1234);
+        asset.mint(unregistered, 100 ether);
+        vm.startPrank(unregistered);
+        asset.approve(address(escrow), 100 ether);
+        vm.expectRevert();
+        escrow.createListingAndDeposit(99, tokenId, unregistered, address(usdc), 2_700_000, 100 ether, 1 ether, 100 ether);
+        vm.stopPrank();
     }
 
     function testAttackerCannotCreateListingForAnotherSeller() public {
-        asset.mint(seller, 100 ether);
         vm.startPrank(attacker);
         vm.expectRevert();
         escrow.createListingAndDeposit(99, tokenId, seller, address(usdc), 2_700_000, 100 ether, 1 ether, 100 ether);
@@ -86,12 +107,14 @@ contract UStetuEscrowStage1Test is Test {
         escrow.pauseListing(1);
     }
 
-    function testSellerCanPauseAndResumeListing() public {
+    function testSellerCanPauseAndResumeListingAndCounterTracksState() public {
         _createListing(500 ether, 2_700_000);
+        assertEq(sellerRegistry.getSeller(seller).activeListingCount, 1);
 
         vm.prank(seller);
         escrow.pauseListing(1);
         assertEq(uint8(escrow.getListing(1).status), uint8(UStetuTypes.ListingStatus.PAUSED));
+        assertEq(sellerRegistry.getSeller(seller).activeListingCount, 0);
 
         vm.expectRevert();
         vm.prank(buyer);
@@ -100,6 +123,7 @@ contract UStetuEscrowStage1Test is Test {
         vm.prank(seller);
         escrow.resumeListing(1);
         assertEq(uint8(escrow.getListing(1).status), uint8(UStetuTypes.ListingStatus.ACTIVE));
+        assertEq(sellerRegistry.getSeller(seller).activeListingCount, 1);
     }
 
     function testSellerCanAddAndWithdrawAvailableInventory() public {
@@ -138,6 +162,7 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(uint8(escrow.getListing(1).status), uint8(UStetuTypes.ListingStatus.CLOSED));
         assertEq(escrow.getListing(1).inventoryLocked, 100 ether);
         assertEq(escrow.getOrder(orderId).tokenAmount, 100 ether);
+        assertEq(sellerRegistry.getSeller(seller).activeListingCount, 0);
 
         vm.expectRevert();
         vm.prank(buyer);
@@ -218,21 +243,53 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(listing.inventoryDeposited, 400 ether);
         assertEq(escrow.sellerInventory(seller, address(asset)), 400 ether);
         assertEq(usdc.balanceOf(address(escrow)), 270e6);
+        assertEq(sellerRegistry.getSeller(seller).totalCompletedOrders, 1);
     }
 
-    function testCannotCompleteOrderByAttacker() public {
+    function testSellerProceedsWithdrawToRegisteredWallet() public {
         _createListing(500 ether, 2_700_000);
+
         vm.prank(buyer);
         uint256 orderId = escrow.createOrder(1, 100 ether);
-
         vm.startPrank(buyer);
         usdc.approve(address(escrow), 270e6);
         escrow.fundOrder(orderId);
+        escrow.completeOrder(orderId);
         vm.stopPrank();
 
+        uint256 proceeds = escrow.claimable(seller, address(usdc));
+        assertEq(usdc.balanceOf(withdrawalWallet), 0);
+
+        vm.prank(seller);
+        escrow.withdrawClaimable(address(usdc));
+
+        assertEq(escrow.claimable(seller, address(usdc)), 0);
+        assertEq(usdc.balanceOf(withdrawalWallet), proceeds);
+        assertEq(usdc.balanceOf(seller), 0);
+    }
+
+    function testCannotWithdrawClaimableAsUnregisteredSeller() public {
         vm.expectRevert();
         vm.prank(attacker);
+        escrow.withdrawClaimable(address(usdc));
+    }
+
+    function testCannotWithdrawSellerClaimableToArbitraryCallerWallet() public {
+        _createListing(500 ether, 2_700_000);
+
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+        vm.startPrank(buyer);
+        usdc.approve(address(escrow), 270e6);
+        escrow.fundOrder(orderId);
         escrow.completeOrder(orderId);
+        vm.stopPrank();
+
+        uint256 proceeds = escrow.claimable(seller, address(usdc));
+        assertGt(proceeds, 0);
+        vm.expectRevert();
+        vm.prank(attacker);
+        escrow.withdrawClaimable(address(usdc));
     }
 
     function testAutoReleaseAfter24HoursIsPermissionless() public {
@@ -259,6 +316,7 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(escrow.claimable(admin, address(usdc)), 2.7e6);
         assertEq(listing.inventoryLocked, 0);
         assertEq(listing.inventoryDeposited, 400 ether);
+        assertEq(sellerRegistry.getSeller(seller).totalCompletedOrders, 1);
     }
 
     function testAutoReleaseBefore24HoursReverts() public {
