@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Providers from "./providers";
 import "./globals.css";
 import "../components/BuyModalStyles.css";
+import "../components/SystemInfoStyles.css";
 
 export const metadata: Metadata = {
   title: "USTETU — Own What’s Next.",
