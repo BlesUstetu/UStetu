@@ -1,10 +1,10 @@
-import { getDefaultConfig, type WalletDetailsParams } from "@rainbow-me/rainbowkit";
+import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import {
   injectedWallet,
+  metaMaskWallet,
   trustWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { createConnector, injected } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { http } from "wagmi";
 
@@ -16,104 +16,13 @@ const projectId =
   "482adba19d5eaa8abbc716350e90eed3";
 
 /**
- * Find a specific injected EIP-1193 provider without relying on EIP-6963.
- * This is important when several browser extensions inject window.ethereum.
+ * USTETU wallet configuration
  *
- * The provider callback types supplied by wagmi/RainbowKit can resolve to
- * different Window declarations across package versions, so we deliberately
- * keep this boundary untyped and only use the EIP-1193 provider shape below.
+ * Use RainbowKit's official wallet connectors directly. RainbowKit 2.x
+ * supports EIP-6963 provider discovery, which prevents conflicts when
+ * multiple browser wallets are installed. WalletConnect and Injected Wallet
+ * are kept as generic fallbacks so mobile and browser wallets remain covered.
  */
-function findInjectedProvider(
-  browserWindow: any,
-  predicate: (provider: any) => boolean,
-) {
-  const ethereum = browserWindow?.ethereum;
-
-  if (predicate(ethereum)) return ethereum;
-
-  if (Array.isArray(ethereum?.providers)) {
-    const provider = ethereum.providers.find(predicate);
-    if (provider) return provider;
-  }
-
-  return undefined;
-}
-
-// Trust Wallet: direct provider connector. This preserves the Trust Wallet
-// connection behavior that is already working in the deployed application.
-const trustWalletDirect = (params: { projectId: string }) => {
-  const baseWallet = trustWallet(params);
-
-  return {
-    ...baseWallet,
-    createConnector: (walletDetails: WalletDetailsParams) => {
-      const connector = injected({
-        target: {
-          id: "trustWalletDirect",
-          name: "Trust Wallet",
-          provider: (browserWindow) => {
-            if (!browserWindow) return undefined;
-
-            const trustProvider = findInjectedProvider(
-              browserWindow,
-              (provider) => Boolean(provider?.isTrust),
-            );
-
-            // Trust Wallet documents both window.ethereum-based discovery and
-            // the legacy window.trustwallet provider. Keep the latter behind
-            // an any boundary so it does not conflict with DOM Window types.
-            return trustProvider ?? (browserWindow as any)?.["trustwallet"];
-          },
-        },
-      });
-
-      return createConnector((config) => ({
-        ...connector(config),
-        ...walletDetails,
-      }));
-    },
-  };
-};
-
-// MetaMask: direct provider connector. This prevents Trust Wallet from
-// capturing window.ethereum when both extensions are installed.
-const metaMaskDirect = (params: { projectId: string }) => {
-  void params;
-
-  return {
-    id: "metaMask",
-    name: "MetaMask",
-    iconUrl:
-      "https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg",
-    iconBackground: "#f6851b",
-    installed:
-      typeof window !== "undefined" &&
-      Boolean(
-        findInjectedProvider(window, (provider) => Boolean(provider?.isMetaMask)),
-      ),
-    createConnector: (walletDetails: WalletDetailsParams) => {
-      const connector = injected({
-        target: {
-          id: "metaMaskDirect",
-          name: "MetaMask",
-          provider: (browserWindow) => {
-            if (!browserWindow) return undefined;
-
-            return findInjectedProvider(browserWindow, (provider) =>
-              Boolean(provider?.isMetaMask),
-            );
-          },
-        },
-      });
-
-      return createConnector((config) => ({
-        ...connector(config),
-        ...walletDetails,
-      }));
-    },
-  };
-};
-
 export const wagmiConfig = getDefaultConfig({
   appName: "USTETU",
   projectId,
@@ -121,16 +30,13 @@ export const wagmiConfig = getDefaultConfig({
   wallets: [
     {
       groupName: "Installed",
-      wallets: [trustWalletDirect, metaMaskDirect],
+      wallets: [metaMaskWallet, trustWallet],
     },
     {
       groupName: "Other",
       wallets: [injectedWallet, walletConnectWallet],
     },
   ],
-  // Explicit direct connectors avoid provider collisions when multiple browser
-  // extensions are installed while WalletConnect remains the universal fallback.
-  multiInjectedProviderDiscovery: false,
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),
   },
