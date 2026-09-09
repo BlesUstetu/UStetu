@@ -12,7 +12,10 @@ export default function Header() {
         <SystemInfo />
       </div>
 
-      <div className="brand-block brand-center">
+      <div
+        className="brand-block brand-center"
+        style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", textAlign: "center", pointerEvents: "none" }}
+      >
         <div className="brand">USTETU</div>
         <div className="tagline">Own What’s Next.</div>
       </div>
