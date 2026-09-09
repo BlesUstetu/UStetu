@@ -5,7 +5,6 @@ import { formatUnits } from "viem";
 import { useReadContract } from "wagmi";
 import Header from "@/components/Header";
 import BuyModal from "@/components/BuyModal";
-import SystemInfo from "@/components/SystemInfo";
 import { useLanguage } from "@/lib/LanguageContext";
 import { erc20MetadataAbi, escrowAbi, registryAbi, USTETU_ESCROW_ADDRESS, USTETU_REGISTRY_ADDRESS, USTETU_TOKEN_ID } from "@/lib/contracts";
 
@@ -58,8 +57,6 @@ export default function HomePage() {
             <input value={search} onChange={(event) => setSearch(event.target.value)} aria-label={t("searchPlaceholder")} placeholder={t("searchPlaceholder")} />
           </div>
         </div>
-
-        <div className="marketplace-system-row"><SystemInfo /></div>
 
         <div className="listing-glass">
           <div className="listing-toolbar">
