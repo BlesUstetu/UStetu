@@ -1,11 +1,11 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { getDefaultConfig, type WalletDetailsParams } from "@rainbow-me/rainbowkit";
 import {
   injectedWallet,
   metaMaskWallet,
   trustWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { injected } from "wagmi/connectors";
+import { createConnector, injected } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { http } from "wagmi";
 
@@ -16,33 +16,45 @@ const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
   "482adba19d5eaa8abbc716350e90eed3";
 
-// Trust Wallet's browser extension exposes an EIP-1193 provider through
-// window.ethereum / window.ethereum.providers / window.trustwallet.
-// Use the direct injected provider instead of the RainbowKit Trust connector
-// flow that can remain pending after the extension approval on some browsers.
-const trustWalletDirect = {
-  ...trustWallet(),
-  createConnector: () =>
-    injected({
-      target: {
-        id: "trustWalletDirect",
-        name: "Trust Wallet",
-        provider: (window) => {
-          const ethereum = window.ethereum as any;
+// Keep Trust Wallet's official RainbowKit presentation/metadata, but replace
+// only its connection implementation with a direct EIP-1193 injected provider.
+// This avoids the Trust-specific handoff flow that can remain pending after the
+// browser extension has already approved the connection.
+const trustWalletDirect = (params: { projectId: string }) => {
+  const baseWallet = trustWallet(params);
 
-          if (ethereum?.isTrust) return ethereum;
+  return {
+    ...baseWallet,
+    createConnector: (walletDetails: WalletDetailsParams) => {
+      const connector = injected({
+        target: {
+          id: "trustWalletDirect",
+          name: "Trust Wallet",
+          provider: (browserWindow) => {
+            if (!browserWindow) return undefined;
 
-          if (Array.isArray(ethereum?.providers)) {
-            const trustProvider = ethereum.providers.find(
-              (provider: any) => provider?.isTrust,
-            );
-            if (trustProvider) return trustProvider;
-          }
+            const ethereum = browserWindow.ethereum as any;
 
-          return (window as any).trustwallet ?? undefined;
+            if (ethereum?.isTrust) return ethereum;
+
+            if (Array.isArray(ethereum?.providers)) {
+              const trustProvider = ethereum.providers.find(
+                (provider: any) => provider?.isTrust,
+              );
+              if (trustProvider) return trustProvider;
+            }
+
+            return (browserWindow as any).trustwallet ?? undefined;
+          },
         },
-      },
-    }),
+      });
+
+      return createConnector((config) => ({
+        ...connector(config),
+        ...walletDetails,
+      }));
+    },
+  };
 };
 
 export const wagmiConfig = getDefaultConfig({
@@ -59,8 +71,7 @@ export const wagmiConfig = getDefaultConfig({
       wallets: [injectedWallet, walletConnectWallet],
     },
   ],
-  // Prevent automatic EIP-6963 connector injection from re-adding the
-  // original Trust Wallet connector alongside our direct provider connector.
+  // Prevent automatic EIP-6963 discovery from adding a second Trust connector.
   multiInjectedProviderDiscovery: false,
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),
