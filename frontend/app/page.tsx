@@ -8,7 +8,7 @@ import BuyModal from "@/components/BuyModal";
 import { useLanguage } from "@/lib/LanguageContext";
 import { erc20MetadataAbi, escrowAbi, registryAbi, USTETU_ESCROW_ADDRESS, USTETU_REGISTRY_ADDRESS, USTETU_TOKEN_ID } from "@/lib/contracts";
 
-const LISTING_ID = 1n;
+const LISTING_ID = 2n;
 
 export default function HomePage() {
   const { t } = useLanguage();
