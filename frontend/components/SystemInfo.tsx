@@ -1,124 +1,67 @@
 "use client";
-
 import { useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
-import { USTETU_ESCROW_ADDRESS, USTETU_REGISTRY_ADDRESS, USTETU_TOKEN_ADDRESS, USDC_BASE_SEPOLIA_ADDRESS } from "@/lib/contracts";
+import { USTETU_ESCROW_ADDRESS, USTETU_REGISTRY_ADDRESS, USTETU_SELLER_REGISTRY_ADDRESS, USTETU_TOKEN_ADDRESS, USDC_BASE_SEPOLIA_ADDRESS } from "@/lib/contracts";
 
-function shorten(address: string) {
-  return `${address.slice(0, 8)}…${address.slice(-6)}`;
-}
+const short=(a:string)=>`${a.slice(0,8)}…${a.slice(-6)}`;
+type Step={title:string;body:string;tx?:string};
 
-export default function SystemInfo() {
-  const { t } = useLanguage();
-  const [open, setOpen] = useState(false);
-
-  const contractRows = [
-    { label: t("registryContract"), address: USTETU_REGISTRY_ADDRESS },
-    { label: t("escrowContract"), address: USTETU_ESCROW_ADDRESS },
-    { label: t("ustetuTokenContract"), address: USTETU_TOKEN_ADDRESS },
-    { label: t("usdcContract"), address: USDC_BASE_SEPOLIA_ADDRESS },
-  ];
-
-  return (
-    <>
-      <button className="system-info-trigger" type="button" onClick={() => setOpen(true)}>
-        <span className="system-info-icon">ⓘ</span>
-        <span>USTETU CENTER</span>
-      </button>
-
-      {open && (
-        <>
-          <button className="system-info-backdrop" aria-label={t("systemClose")} onClick={() => setOpen(false)} />
-          <aside className="system-info-panel" role="dialog" aria-modal="true" aria-label="USTETU CENTER">
-            <div className="system-info-glow" aria-hidden="true" />
-
-            <div className="system-info-head">
-              <div>
-                <span className="eyebrow">USTETU · TRUST CENTER</span>
-                <h2>USTETU CENTER</h2>
-                <p>{t("systemInfoSubtitle")}</p>
-              </div>
-              <button className="drawer-close" type="button" onClick={() => setOpen(false)}>×</button>
-            </div>
-
-            <section className="system-info-hero">
-              <div className="system-hero-icon">◎</div>
-              <div>
-                <h3>{t("trustHeadline")}</h3>
-                <p>{t("trustDescription")}</p>
-              </div>
-            </section>
-
-            <section className="system-feature-grid">
-              <div className="system-feature"><span>✓</span><div><strong>{t("transparentTitle")}</strong><p>{t("transparentDesc")}</p></div></div>
-              <div className="system-feature"><span>◆</span><div><strong>{t("nonCustodialTitle")}</strong><p>{t("nonCustodialDesc")}</p></div></div>
-              <div className="system-feature"><span>⌁</span><div><strong>{t("smartContractTitle")}</strong><p>{t("smartContractDesc")}</p></div></div>
-              <div className="system-feature"><span>⇄</span><div><strong>{t("escrowTitle")}</strong><p>{t("escrowDesc")}</p></div></div>
-            </section>
-
-            <section className="system-info-card">
-              <h3>01 · {t("howUstetuWorks")}</h3>
-              <div className="system-architecture-flow">
-                {[t("walletNode"), t("blockchainNode"), t("smartContractNode"), t("registryNode"), t("escrowNode")].map((item, index) => (
-                  <div className="system-architecture-item" key={item}>
-                    <span>{index + 1}</span><strong>{item}</strong>{index < 4 && <b>→</b>}
-                  </div>
-                ))}
-              </div>
-              <p className="system-note">{t("architectureDesc")}</p>
-            </section>
-
-            <section className="system-info-card">
-              <h3>02 · {t("whyTrustUstetu")}</h3>
-              <div className="system-rule"><strong>{t("ownershipTitle")}</strong><span>{t("ownershipDesc")}</span></div>
-              <div className="system-rule"><strong>{t("verificationTitle")}</strong><span>{t("verificationDesc")}</span></div>
-              <div className="system-rule"><strong>{t("securityTitle")}</strong><span>{t("securityDesc")}</span></div>
-            </section>
-
-            <section className="system-info-card">
-              <h3>03 · {t("simpleFlow")}</h3>
-              <div className="system-steps">
-                {[t("connectWalletStep"), t("chooseAssetStep"), t("createTradeStep"), t("confirmStep"), t("verifyStep"), t("ownershipStep")].map((step, index) => (
-                  <div className="system-step" key={`${step}-${index}`}>
-                    <span>{index + 1}</span><strong>{step}</strong>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="system-info-card">
-              <h3>04 · {t("onChainInfo")}</h3>
-              <div className="system-chain-meta">
-                <div><span>{t("networkLabel")}</span><strong>Base Sepolia</strong></div>
-                <div><span>{t("chainIdLabel")}</span><strong>84532</strong></div>
-                <div><span>{t("status")}</span><strong className="approved">● {t("active")}</strong></div>
-              </div>
-              <div className="system-contract-list">
-                {contractRows.map((row) => (
-                  <div className="system-contract-row" key={row.label}>
-                    <div><span>{row.label}</span><strong>{shorten(row.address)}</strong></div>
-                    <a href={`https://sepolia.basescan.org/address/${row.address}`} target="_blank" rel="noreferrer">BaseScan ↗</a>
-                  </div>
-                ))}
-              </div>
-              <p className="system-note">{t("onChainNote")}</p>
-            </section>
-
-            <section className="system-info-card system-vision-card">
-              <h3>05 · {t("visionTitle")}</h3>
-              <p className="system-vision-lead">{t("visionLead")}</p>
-              <p className="system-note">{t("visionDesc")}</p>
-            </section>
-
-            <section className="system-info-warning">
-              <strong>{t("beforeTrade")}</strong>
-              <p>{t("beforeTradeDesc")}</p>
-            </section>
-
-            <div className="system-trust-footer">{t("trustFooter")}</div>
-          </aside>
-        </>
-      )}
-    </>
-  );
+export default function SystemInfo(){
+ const {language,t}=useLanguage(); const id=language==="id"; const [open,setOpen]=useState(false);
+ const contracts=[['UStetu Registry',USTETU_REGISTRY_ADDRESS],['UStetu Seller Registry',USTETU_SELLER_REGISTRY_ADDRESS],['UStetu Escrow',USTETU_ESCROW_ADDRESS],['UStetu Token',USTETU_TOKEN_ADDRESS],['USDC Base Sepolia',USDC_BASE_SEPOLIA_ADDRESS]] as const;
+ const buyer:Step[]=id?[
+  {title:'1. Hubungkan wallet',body:'Connect wallet dan gunakan Base Sepolia. Pergantian network adalah aksi wallet, bukan transaksi blockchain.'},
+  {title:'2. Pilih listing',body:'Periksa token, seller, stok tersedia, harga, minimum, maksimum, dan payment token.'},
+  {title:'3. Masukkan jumlah',body:'Jumlah harus berada dalam batas listing dan tidak melebihi stok tersedia.'},
+  {title:'4. Create Order',body:'Konfirmasi createOrder. Blockchain membuat Order PAYMENT_PENDING dan mengunci inventory sesuai jumlah order.',tx:'Wallet #1'},
+  {title:'5. Approve USDC bila diperlukan',body:'Jika allowance USDC ke Escrow belum cukup, konfirmasi approval. Jika allowance sudah cukup, langkah ini dilewati.',tx:'Wallet #2 — conditional'},
+  {title:'6. Fund Order',body:'Konfirmasi fundOrder. USDC masuk ke Escrow dan Order menjadi PAID. Batas pembayaran 15 menit sejak createOrder.',tx:'Wallet #2 atau #3'},
+  {title:'7. Complete Order',body:'Setelah PAID, buyer konfirmasi completeOrder. Escrow mengirim token ke buyer/recipient dan Order menjadi COMPLETED.',tx:'Wallet #3 atau #4'},
+  {title:'8. Berhasil',body:'Pembelian dianggap berhasil setelah completeOrder terkonfirmasi dan status Order on-chain = COMPLETED.'}
+ ]:[
+  {title:'1. Connect wallet',body:'Connect your wallet on Base Sepolia. Network switching is a wallet action, not a blockchain transaction.'},
+  {title:'2. Choose a listing',body:'Review token, seller, available inventory, price, order limits, and payment token.'},
+  {title:'3. Enter amount',body:'The amount must be within the listing limits and available inventory.'},
+  {title:'4. Create Order',body:'Confirm createOrder. The blockchain creates a PAYMENT_PENDING Order and locks the requested inventory.',tx:'Wallet #1'},
+  {title:'5. Approve USDC if required',body:'If USDC allowance to Escrow is insufficient, confirm approval. If allowance is sufficient, this step is skipped.',tx:'Wallet #2 — conditional'},
+  {title:'6. Fund Order',body:'Confirm fundOrder. USDC enters Escrow and the Order becomes PAID. Payment must be funded within 15 minutes.',tx:'Wallet #2 or #3'},
+  {title:'7. Complete Order',body:'After PAID, confirm completeOrder. Escrow sends the token to the buyer/recipient and the Order becomes COMPLETED.',tx:'Wallet #3 or #4'},
+  {title:'8. Success',body:'The purchase is successful after completeOrder is confirmed and the on-chain Order state is COMPLETED.'}
+ ];
+ const seller:Step[]=id?[
+  {title:'1. Hubungkan wallet seller',body:'Gunakan wallet seller di Base Sepolia. Wallet ini menjadi identitas seller pada Seller Registry.'},
+  {title:'2. Register Seller',body:'Jalankan registerSeller dengan withdrawal wallet. Setelah transaksi berhasil, seller tercatat dengan status verifikasi awal PENDING.',tx:'Wallet #1'},
+  {title:'3. Verifikasi seller',body:'SELLER_VERIFIER_ROLE dapat mengubah status menjadi APPROVED. Namun createListingAndDeposit saat ini hanya mensyaratkan REGISTERED, bukan APPROVED.'},
+  {title:'4. Siapkan token',body:'Token harus APPROVED di UStetu Registry, payment token harus supported, dan seller harus memiliki inventory.'},
+  {title:'5. Buat listing + deposit',body:'createListingAndDeposit menetapkan listingId, token, payment token, harga, inventory, min order, dan max order; inventory awal ditransfer ke Escrow.',tx:'2 transaksi jika allowance belum cukup: approve + createListingAndDeposit'},
+  {title:'6. Listing ACTIVE',body:'Listing menjadi ACTIVE. Seller dapat menambah/menarik inventory yang tidak terkunci, mengubah harga/limit, pause, resume, atau close.'},
+  {title:'7. Tambah inventory',body:'Approve token bila allowance belum cukup, lalu addListingInventory. Inventory masuk Escrow dan tersedia untuk buyer.',tx:'1–2 transaksi, tergantung allowance'},
+  {title:'8. Buyer membeli',body:'Buyer membuat order, membayar ke Escrow, lalu menyelesaikan order. Token yang dibeli dikirim saat settlement.'},
+  {title:'9. Claimable',body:'Setelah settlement, sellerProceeds menjadi USDC claimable pada Escrow setelah fee marketplace.'},
+  {title:'10. Withdraw earnings',body:'Jalankan withdrawClaimable. Dana hanya dikirim ke withdrawal wallet yang tercatat di Seller Registry.',tx:'Wallet #1'},
+  {title:'11. Ganti withdrawal wallet',body:'Request wallet baru, tunggu 24 jam, lalu activateWithdrawalWalletChange. Withdrawal berikutnya memakai wallet baru.',tx:'2 transaksi + delay 24 jam'},
+  {title:'12. Kelola / tutup listing',body:'Pause, resume, dan close adalah transaksi on-chain. Inventory yang masih locked oleh order tidak dapat ditarik.'}
+ ]:[
+  {title:'1. Connect seller wallet',body:'Use the seller wallet on Base Sepolia. This wallet becomes the seller identity in Seller Registry.'},
+  {title:'2. Register Seller',body:'Call registerSeller with a withdrawal wallet. After confirmation, the seller is registered with initial verification status PENDING.',tx:'Wallet #1'},
+  {title:'3. Seller verification',body:'SELLER_VERIFIER_ROLE can change the status to APPROVED. However, createListingAndDeposit currently requires REGISTERED, not APPROVED.'},
+  {title:'4. Prepare token',body:'The token must be APPROVED in UStetu Registry, the payment token must be supported, and the seller must own the inventory.'},
+  {title:'5. Create listing + deposit',body:'createListingAndDeposit sets listingId, token, payment token, price, inventory, min order, and max order; initial inventory is transferred into Escrow.',tx:'2 transactions if allowance is insufficient: approve + createListingAndDeposit'},
+  {title:'6. Listing ACTIVE',body:'The listing becomes ACTIVE. The seller can add/withdraw unlocked inventory, update price/limits, pause, resume, or close.'},
+  {title:'7. Add inventory',body:'Approve the token if allowance is insufficient, then call addListingInventory. Inventory enters Escrow and becomes available to buyers.',tx:'1–2 transactions, depending on allowance'},
+  {title:'8. Buyer purchases',body:'The buyer creates an order, funds it into Escrow, and completes the order. Purchased tokens are transferred at settlement.'},
+  {title:'9. Claimable',body:'After settlement, sellerProceeds becomes claimable USDC in Escrow after the marketplace fee.'},
+  {title:'10. Withdraw earnings',body:'Call withdrawClaimable. Funds are sent only to the withdrawal wallet recorded in Seller Registry.',tx:'Wallet #1'},
+  {title:'11. Change withdrawal wallet',body:'Request a new wallet, wait 24 hours, then activateWithdrawalWalletChange. Future withdrawals use the new wallet.',tx:'2 transactions + 24-hour delay'},
+  {title:'12. Manage / close listing',body:'Pause, resume, and close are on-chain transactions. Inventory locked by an order cannot be withdrawn.'}
+ ];
+ const facts=[['Frontend','Next.js 16 · React 19 · TypeScript 5.9'],['Web3','RainbowKit 2.2 · Wagmi 2.19 · Viem 2.38'],['Data','TanStack React Query 5 · on-chain reads'],['Smart contract','Solidity 0.8.30 · OpenZeppelin'],['Security','ReentrancyGuard · Ownable2Step · AccessControl · SafeERC20'],['Network','Base Sepolia · Chain ID 84532'],['Assets','ERC-20 · USDC payment token'],['Core','Registry · Seller Registry · Escrow']];
+ const steps=(arr:Step[])=> <div className="system-guide-steps">{arr.map((s,i)=><article className="system-guide-step" key={i}><span className="system-guide-number">{i+1}</span><div><strong>{s.title}</strong>{s.tx&&<em>{s.tx}</em>}<p>{s.body}</p></div></article>)}</div>;
+ return <><button className="system-info-trigger" type="button" onClick={()=>setOpen(true)}><span className="system-info-icon">ⓘ</span><span>USTETU CENTER</span></button>{open&&<><button className="system-info-backdrop" aria-label={t('systemClose')} onClick={()=>setOpen(false)}/><aside className="system-info-panel" role="dialog" aria-modal="true" aria-label="USTETU CENTER">
+  <div className="system-info-head"><div><span className="eyebrow">USTETU · TRUST CENTER</span><h2>USTETU CENTER</h2><p>{id?'Informasi sistem, panduan buyer, dan panduan seller berdasarkan implementasi USTETU saat ini.':'System information, buyer guide, and seller guide based on the current USTETU implementation.'}</p></div><button className="drawer-close" type="button" onClick={()=>setOpen(false)}>×</button></div>
+  <section className="system-info-card system-center-section"><div className="system-section-title"><span>01</span><div><h3>{id?'INFORMASI SISTEM WEB':'WEB SYSTEM INFORMATION'}</h3><p>{id?'Teknologi yang benar-benar digunakan aplikasi dan smart contract.':'Technologies actually used by the application and smart contracts.'}</p></div></div><div className="system-tech-grid">{facts.map(([a,b])=><div className="system-tech-item" key={a}><span>{a}</span><strong>{b}</strong></div>)}</div><div className="system-inner-card"><h4>{id?'Arsitektur transaksi':'Transaction architecture'}</h4><div className="system-architecture-flow">{['Wallet','Frontend','Registry','Seller Registry','Escrow','Base Sepolia'].map((x,i)=><div className="system-architecture-item" key={x}><span>{i+1}</span><strong>{x}</strong>{i<5&&<b>→</b>}</div>)}</div><p className="system-note">{id?'Wallet mengotorisasi. Frontend menggunakan Wagmi/Viem. Registry mengatur token/payment token yang didukung, Seller Registry menyimpan registrasi dan withdrawal wallet, sedangkan Escrow mengatur listing, inventory, order, payment, settlement, dan claimable.':'The wallet authorizes actions. The frontend uses Wagmi/Viem. Registry handles supported token/payment-token records, Seller Registry stores seller registration and withdrawal-wallet data, while Escrow coordinates listings, inventory, orders, payments, settlement, and claimable proceeds.'}</p></div><div className="system-trust-points"><div><strong>ON-CHAIN</strong><span>{id?'Listing, order, inventory, payment, settlement, dan claimable diproses oleh smart contract.':'Listings, orders, inventory, payments, settlement, and claimable proceeds are handled by smart contracts.'}</span></div><div><strong>VERIFIABLE</strong><span>{id?'Alamat contract dan transaksi dapat diperiksa di BaseScan.':'Contract addresses and transactions can be inspected on BaseScan.'}</span></div><div><strong>ESCROW</strong><span>{id?'Escrow contract memegang aset selama proses transaksi sesuai aturan contract.':'The Escrow contract holds assets during the transaction according to contract rules.'}</span></div></div><div className="system-contract-list">{contracts.map(([label,address])=><div className="system-contract-row" key={label}><div><span>{label}</span><strong>{short(address)}</strong></div><a href={`https://sepolia.basescan.org/address/${address}`} target="_blank" rel="noreferrer">BaseScan ↗</a></div>)}</div></section>
+  <section className="system-info-card system-center-section"><div className="system-section-title"><span>02</span><div><h3>{id?'CARA MENJADI BUYER':'HOW TO BECOME A BUYER'}</h3><p>{id?'Alur pembelian dari connect wallet sampai Order benar-benar COMPLETED.':'Purchase flow from wallet connection until the Order is actually COMPLETED.'}</p></div></div><div className="system-confirm-banner"><strong>{id?'Konfirmasi wallet':'Wallet confirmations'}</strong><span>{id?'3 transaksi jika allowance USDC sudah cukup: createOrder → fundOrder → completeOrder. Jika allowance belum cukup: 4 transaksi karena ada approve USDC. Pergantian network bukan transaksi blockchain. Berhasil setelah completeOrder terkonfirmasi dan Order = COMPLETED.':'3 transactions when USDC allowance is sufficient: createOrder → fundOrder → completeOrder. If allowance is insufficient: 4 transactions because USDC approval is added. Network switching is not a blockchain transaction. Success requires confirmed completeOrder and Order = COMPLETED.'}</span></div>{steps(buyer)}<div className="system-time-grid"><div><strong>15 min</strong><span>{id?'Batas pembayaran dari createOrder ke fundOrder.':'Payment window from createOrder to fundOrder.'}</span></div><div><strong>24 h</strong><span>{id?'Jendela auto-release setelah Order PAID.':'Auto-release window after the Order is PAID.'}</span></div></div></section>
+  <section className="system-info-card system-center-section"><div className="system-section-title"><span>03</span><div><h3>{id?'CARA MENJADI SELLER':'HOW TO BECOME A SELLER'}</h3><p>{id?'Dari registrasi, listing, penjualan, claimable, withdrawal, sampai perubahan wallet.':'From registration and listing to sales, claimable proceeds, withdrawal, and wallet changes.'}</p></div></div><div className="system-seller-note">{id?'Penting: createListingAndDeposit saat ini mensyaratkan seller REGISTERED. APPROVED adalah status verifikasi seller, bukan syarat createListingAndDeposit.':'Important: createListingAndDeposit currently requires the seller to be REGISTERED. APPROVED is a seller verification status, not a createListingAndDeposit requirement.'}</div>{steps(seller)}</section>
+  <section className="system-info-warning"><strong>{id?'VERIFIKASI SEBELUM TRANSAKSI':'VERIFY BEFORE YOU TRADE'}</strong><p>{id?'Periksa Base Sepolia, alamat contract, token, jumlah, harga, dan detail transaksi di wallet sebelum Confirm. Jangan membuat order kedua ketika order sebelumnya masih PAYMENT_PENDING atau PAID; gunakan Resume Order.':'Check Base Sepolia, contract addresses, token, amount, price, and wallet transaction details before confirming. Do not create a second order while an earlier order is PAYMENT_PENDING or PAID; use Resume Order.'}</p></section><div className="system-trust-footer">{id?'Informasi mengikuti implementasi frontend dan smart contract USTETU saat ini.':'Information follows the current USTETU frontend and smart-contract implementation.'}</div>
+ </aside></>}</>;
 }
