@@ -1,10 +1,14 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { usePathname } from "next/navigation";
 import ThemeLanguageControls from "@/components/ThemeLanguageControls";
 import SystemInfo from "@/components/SystemInfo";
 
 export default function Header() {
+  const pathname = usePathname();
+  const isSellerArea = pathname?.startsWith("/UStetu/seller");
+
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -29,6 +33,7 @@ export default function Header() {
           </svg>
         </a>
         <a href="/UStetu/seller/" className="seller-nav-link">Seller Center</a>
+        {isSellerArea && <a href="/UStetu/seller/orders/" className="seller-orders-link">Orders</a>}
         <span className="network-pill">Base Sepolia</span>
         <ConnectButton showBalance={false} chainStatus="icon" />
       </div>
@@ -36,8 +41,9 @@ export default function Header() {
         .home-nav-link{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
         .home-nav-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
-        .seller-nav-link{font-size:12px;text-decoration:none;color:inherit;opacity:.78;border:1px solid rgba(255,255,255,.1);padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
-        .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
+        .seller-nav-link,.seller-orders-link{font-size:12px;text-decoration:none;color:inherit;opacity:.78;border:1px solid rgba(255,255,255,.1);padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
+        .seller-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08)}
+        .seller-orders-link{opacity:.92}
       `}</style>
     </header>
   );
