@@ -45,7 +45,6 @@ export default function Header() {
             </svg>
           </a>
         )}
-        <span className="network-pill">Base Sepolia</span>
         <ConnectButton showBalance={false} chainStatus="icon" />
       </div>
       <style jsx global>{`
@@ -54,6 +53,11 @@ export default function Header() {
         .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
         .seller-nav-link{font-size:12px;text-decoration:none;color:inherit;opacity:.78;border:1px solid rgba(255,255,255,.1);padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
         .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
+        @media(max-width:760px){
+          .seller-nav-link{font-size:11px;padding:7px 9px}
+          .home-nav-link,.seller-orders-link{width:32px;height:32px}
+          .home-nav-link svg,.seller-orders-link svg{width:16px;height:16px}
+        }
       `}</style>
     </header>
   );
