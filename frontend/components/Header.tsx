@@ -1,14 +1,10 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { usePathname } from "next/navigation";
 import ThemeLanguageControls from "@/components/ThemeLanguageControls";
 import SystemInfo from "@/components/SystemInfo";
 
-export default function Header() {
-  const pathname = usePathname();
-  const isSellerArea = pathname?.startsWith("/UStetu/seller");
-
+export default function Header({ showSellerOrders = false }: { showSellerOrders?: boolean }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -33,7 +29,7 @@ export default function Header() {
           </svg>
         </a>
         <a href="/UStetu/seller/" className="seller-nav-link">Seller Center</a>
-        {isSellerArea && (
+        {showSellerOrders && (
           <a href="/UStetu/seller/orders/" className="seller-orders-link" aria-label="Orders" title="Orders">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="5" y="3" width="14" height="18" rx="2" />
