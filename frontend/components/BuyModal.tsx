@@ -185,6 +185,7 @@ function formatError(error: unknown) {
   if (lower.includes("insufficient funds")) return "Saldo ETH Base Sepolia tidak cukup untuk gas.";
   if (lower.includes("deadlineexpired")) return "Order sudah melewati batas waktu pembayaran.";
   if (lower.includes("invalidorderstate")) return "Order tidak berada pada status yang dapat dilanjutkan.";
+  if (lower.includes("insufficient allowance")) return "Allowance USDC ke Escrow belum mencukupi untuk order ini.";
   return message.length > 260 ? `${message.slice(0, 260)}…` : message;
 }
 
@@ -207,7 +208,7 @@ export default function BuyModal(props: BuyModalProps) {
   const [resumeChecking, setResumeChecking] = useState(false);
 
   const { data: paymentBalance, refetch: refetchBalance } = useReadContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "balanceOf", args: address ? [address] : undefined, query: { enabled: Boolean(address) } });
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "allowance", args: address ? [address, USTETU_ESCROW_ADDRESS] : undefined, query: { enabled: Boolean(address) } });
+  const { refetch: refetchAllowance } = useReadContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "allowance", args: address ? [address, USTETU_ESCROW_ADDRESS] : undefined, query: { enabled: Boolean(address) } });
 
   const minAmount = formatUnits(minOrderAmount, tokenDecimals);
   const maxAmount = formatUnits(maxOrderAmount, tokenDecimals);
@@ -219,6 +220,7 @@ export default function BuyModal(props: BuyModalProps) {
     } catch { return null; }
   }, [amount, tokenDecimals]);
   const grossPaymentPreview = useMemo(() => !parsedAmount ? 0n : (parsedAmount * price) / 10n ** BigInt(tokenDecimals), [parsedAmount, price, tokenDecimals]);
+  const displayGrossPayment = resumeOrder?.grossPayment ?? grossPaymentPreview;
   const isBusy = step === "creating" || step === "approving" || step === "funding" || step === "completing";
   const pendingStorageKey = storageKey(chainId, address, listingId);
 
@@ -286,27 +288,42 @@ export default function BuyModal(props: BuyModalProps) {
     onCompleted();
   };
 
+  const readPaymentAllowance = async () => {
+    if (!publicClient || !address) return 0n;
+    return withTimeout(publicClient.readContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] }), RPC_REQUEST_TIMEOUT, "RPC allowance timeout");
+  };
+
+  const readPaymentBalance = async () => {
+    if (!publicClient || !address) return 0n;
+    return withTimeout(publicClient.readContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "balanceOf", args: [address] }), RPC_REQUEST_TIMEOUT, "RPC balance timeout");
+  };
+
   const runSettlement = async (createdOrderId: bigint, grossPayment: bigint, initialState: number, createHash?: `0x${string}`) => {
     setOrderId(createdOrderId);
     if (createHash) setTxHashes((current) => ({ ...current, create: createHash }));
-    savePendingOrder(pendingStorageKey, { chainId, escrow: USTETU_ESCROW_ADDRESS, listingId: listingId.toString(), buyer: address!, orderId: createdOrderId.toString(), tokenAmount: parsedAmount?.toString() ?? resumeOrder?.tokenAmount.toString() ?? "0", grossPayment: grossPayment.toString(), createHash });
+    const orderTokenAmount = resumeOrder?.orderId === createdOrderId ? resumeOrder.tokenAmount : parsedAmount;
+    savePendingOrder(pendingStorageKey, { chainId, escrow: USTETU_ESCROW_ADDRESS, listingId: listingId.toString(), buyer: address!, orderId: createdOrderId.toString(), tokenAmount: orderTokenAmount?.toString() ?? "0", grossPayment: grossPayment.toString(), createHash });
 
     let state = initialState;
     if (state === ORDER_STATE_COMPLETED) return markCompleted(createdOrderId);
 
-    let currentAllowance = allowance ?? 0n;
     if (state === ORDER_STATE_PAYMENT_PENDING) {
+      const currentBalance = await readPaymentBalance();
+      if (currentBalance < grossPayment) {
+        throw new Error(`Saldo ${paymentSymbol} tidak cukup. Order #${createdOrderId.toString()} membutuhkan ${formatUnits(grossPayment, paymentDecimals)} ${paymentSymbol}.`);
+      }
+
+      let currentAllowance = await readPaymentAllowance();
       if (currentAllowance < grossPayment) {
         setStep("approving");
-        setStatusText(`Konfirmasi approval ${paymentSymbol} di wallet…`);
+        setStatusText(`Konfirmasi approval ${formatUnits(grossPayment, paymentDecimals)} ${paymentSymbol} di wallet…`);
         const approveHash = await requestWalletTx(writeContractAsync({ address: paymentToken, abi: erc20PaymentAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, grossPayment] }));
         setTxHashes((current) => ({ ...current, approve: approveHash }));
         setStatusText(`Approval ${paymentSymbol} terkirim. Menunggu konfirmasi network…`);
         await waitForReceiptRobust(publicClient!, approveHash);
-        currentAllowance = grossPayment;
-        await refetchAllowance();
+        currentAllowance = await readPaymentAllowance();
       }
-      if (currentAllowance < grossPayment) throw new Error(`Allowance ${paymentSymbol} belum mencukupi setelah approve.`);
+      if (currentAllowance < grossPayment) throw new Error(`Allowance ${paymentSymbol} belum mencukupi untuk Order #${createdOrderId.toString()}.`);
 
       setStep("funding");
       setStatusText(`Konfirmasi pembayaran ${formatUnits(grossPayment, paymentDecimals)} ${paymentSymbol} di wallet…`);
@@ -349,8 +366,8 @@ export default function BuyModal(props: BuyModalProps) {
     if (!resumeOrder || !publicClient || !address) return;
     setErrorText(""); setStatusText(""); setTxHashes({});
     try {
-      setStep(resumeOrder.state === ORDER_STATE_PAYMENT_PENDING ? "approving" : "completing");
-      setStatusText(resumeOrder.state === ORDER_STATE_PAYMENT_PENDING ? "Melanjutkan Order dari blockchain…" : "Order sudah dibayar. Melanjutkan settlement…");
+      setStep("idle");
+      setStatusText(resumeOrder.state === ORDER_STATE_PAYMENT_PENDING ? `Order #${resumeOrder.orderId.toString()} ditemukan. Nilai pembayaran on-chain: ${formatUnits(resumeOrder.grossPayment, paymentDecimals)} ${paymentSymbol}.` : "Order sudah dibayar. Melanjutkan settlement…");
       await runSettlement(resumeOrder.orderId, resumeOrder.grossPayment, resumeOrder.state, resumeOrder.createHash);
     } catch (error) {
       setStep("idle"); setStatusText(""); setErrorText(formatError(error));
@@ -364,11 +381,13 @@ export default function BuyModal(props: BuyModalProps) {
       try { setStatusText("Mengganti jaringan ke Base Sepolia…"); await switchChainAsync({ chainId: baseSepolia.id }); }
       catch (error) { setStatusText(""); return setErrorText(formatError(error)); }
     }
+    if (!publicClient) return setErrorText("RPC client belum siap. Silakan coba lagi.");
+
+    if (resumeOrder) return resumeExistingOrder();
+
     if (!parsedAmount) return setErrorText(`Masukkan jumlah ${symbol} yang valid.`);
     if (parsedAmount < minOrderAmount || parsedAmount > maxOrderAmount || parsedAmount > available) return setErrorText(`Jumlah harus ${minAmount}–${maxAmount} ${symbol} dan tidak melebihi stok ${availableAmount} ${symbol}.`);
     if ((paymentBalance ?? 0n) < grossPaymentPreview) return setErrorText(`Saldo ${paymentSymbol} tidak cukup. Dibutuhkan ${formatUnits(grossPaymentPreview, paymentDecimals)} ${paymentSymbol}.`);
-    if (!publicClient) return setErrorText("RPC client belum siap. Silakan coba lagi.");
-    if (resumeOrder) return resumeExistingOrder();
 
     try {
       setStep("creating");
@@ -427,15 +446,15 @@ export default function BuyModal(props: BuyModalProps) {
         <button className="drawer-close" type="button" onClick={closeIfIdle} disabled={isBusy}>×</button>
       </div>
       <div className="buy-summary">
-        <div><span>Price</span><strong>{formatUnits(price, paymentDecimals)} {paymentSymbol} / {symbol}</strong></div>
+        <div><span>Price</span><strong>{resumeOrder ? `${formatUnits(resumeOrder.grossPayment, paymentDecimals)} ${paymentSymbol} total` : `${formatUnits(price, paymentDecimals)} ${paymentSymbol} / ${symbol}`}</strong></div>
         <div><span>Available</span><strong>{availableAmount} {symbol}</strong></div>
         <div><span>Min / Max</span><strong>{minAmount} / {maxAmount} {symbol}</strong></div>
       </div>
       <label className="buy-input-label" htmlFor="buy-amount">Amount ({symbol})</label>
       <div className="buy-input-wrap"><input id="buy-amount" type="number" min={minAmount} max={maxAmount} step="any" value={amount} onChange={(event) => setAmount(event.target.value)} disabled={isBusy || step === "success" || Boolean(resumeOrder)}/><span>{symbol}</span></div>
-      <div className="buy-total"><span>Total payment</span><strong>{formatUnits(grossPaymentPreview, paymentDecimals)} {paymentSymbol}</strong></div>
+      <div className="buy-total"><span>Total payment</span><strong>{formatUnits(displayGrossPayment, paymentDecimals)} {paymentSymbol}</strong></div>
       {resumeChecking && <div className="buy-status">Memeriksa order yang belum selesai…</div>}
-      {resumeOrder && !isBusy && step !== "success" && <div className="buy-status">Order #{resumeOrder.orderId.toString()} masih {resumeOrder.state === ORDER_STATE_PAYMENT_PENDING ? "menunggu pembayaran" : "sudah dibayar"}. Tidak membuat order baru.</div>}
+      {resumeOrder && !isBusy && step !== "success" && <div className="buy-status">Order #{resumeOrder.orderId.toString()} masih {resumeOrder.state === ORDER_STATE_PAYMENT_PENDING ? "menunggu pembayaran" : "sudah dibayar"}. Nilai on-chain: {formatUnits(resumeOrder.grossPayment, paymentDecimals)} {paymentSymbol}. Tidak membuat order baru.</div>}
       {statusText && <div className="buy-status">{statusText}</div>}
       {errorText && <div className="buy-error">{errorText}</div>}
       {orderId !== null && <div className="buy-order">Order #{orderId.toString()}</div>}
