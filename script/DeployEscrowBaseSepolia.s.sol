@@ -7,16 +7,15 @@ import {UStetuEscrow} from "../contracts/core/UStetuEscrow.sol";
 import {UStetuSellerRegistry} from "../contracts/core/UStetuSellerRegistry.sol";
 
 /// @notice Deploy only the upgraded UStetuEscrow against the existing Base Sepolia registries.
-/// @dev Existing registry state is preserved. The escrow is wired to the existing seller registry.
+/// @dev Existing registry state is preserved. The escrow is wired to the canonical seller registry.
 contract DeployEscrowBaseSepolia is Script {
     uint256 internal constant BASE_SEPOLIA_CHAIN_ID = 84532;
 
     // Existing UStetuRegistry on Base Sepolia.
     address internal constant REGISTRY = 0x72ca75932e5Bd1364A889DD6329D6016f78e17A7;
 
-    // Existing UStetuSellerRegistry on Base Sepolia.
-    // Update this only if the canonical seller registry deployment changes.
-    address internal constant SELLER_REGISTRY = address(0);
+    // Canonical UStetuSellerRegistry deployed on Base Sepolia.
+    address internal constant SELLER_REGISTRY = 0x8982d7109aF7917c33f0D0D09C67f0461242AC88;
 
     // Deployment signer / fee recipient.
     address internal constant DEPLOYER = 0x568A2C9A2fC86909d9410E31f9A9287258B9928b;
