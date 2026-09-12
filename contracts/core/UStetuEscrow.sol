@@ -50,6 +50,7 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
     event AutoReleased(uint256 indexed orderId, address indexed buyer, address indexed seller, uint256 tokenAmount);
     event ClaimableWithdrawn(address indexed account, address indexed token, uint256 amount);
     event SellerWithdrawal(address indexed seller, address indexed token, address indexed withdrawalWallet, uint256 amount);
+    event MarketplaceFeeWithdrawn(address indexed feeRecipient, address indexed token, uint256 amount);
 
     constructor(address registryAddress, address sellerRegistryAddress, address feeRecipientAddress) Ownable(msg.sender) {
         if (registryAddress == address(0) || sellerRegistryAddress == address(0) || feeRecipientAddress == address(0)) {
@@ -268,6 +269,19 @@ contract UStetuEscrow is ReentrancyGuard, Ownable2Step {
         IERC20(token).safeTransfer(withdrawalWallet, amount);
         emit ClaimableWithdrawn(msg.sender, token, amount);
         emit SellerWithdrawal(msg.sender, token, withdrawalWallet, amount);
+    }
+
+    function withdrawMarketplaceFee(address token) external nonReentrant {
+        if (msg.sender != feeRecipient) revert UStetuErrors.Unauthorized();
+        if (!registry.isSupportedPaymentToken(token)) revert UStetuErrors.UnsupportedPaymentToken();
+
+        uint256 amount = claimable[feeRecipient][token];
+        if (amount == 0) revert UStetuErrors.InsufficientClaimable();
+
+        claimable[feeRecipient][token] = 0;
+        IERC20(token).safeTransfer(feeRecipient, amount);
+        emit ClaimableWithdrawn(feeRecipient, token, amount);
+        emit MarketplaceFeeWithdrawn(feeRecipient, token, amount);
     }
 
     function getListing(uint256 listingId) external view returns (UStetuTypes.Listing memory) { return _listings[listingId]; }
