@@ -151,6 +151,41 @@ export default function SellerOrders() {
   const gross = completed.reduce((sum, o) => sum + o.grossPayment, 0n);
   const proceeds = completed.reduce((sum, o) => sum + o.sellerProceeds, 0n);
 
+  const downloadOrders = () => {
+    if (!orders.length) return;
+
+    const headers = [
+      "Order ID", "Listing ID", "Buyer", "Token Amount", "Gross Payment",
+      "Seller Proceeds", "Marketplace Fee", "Status", "Created At", "Paid At", "Completed At", "Expires At",
+    ];
+    const csvCell = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const rows = orders.map((o) => [
+      o.id.toString(),
+      o.listingId.toString(),
+      o.buyer,
+      `${formatUnits(o.tokenAmount, TOKEN_DECIMALS)} USTETU`,
+      `${formatUnits(o.grossPayment, USDC_DECIMALS)} USDC`,
+      `${formatUnits(o.sellerProceeds, USDC_DECIMALS)} USDC`,
+      `${formatUnits(o.marketplaceFee, USDC_DECIMALS)} USDC`,
+      stateLabel[o.state] ?? `STATE ${o.state}`,
+      o.createdAt.toString(),
+      o.paidAt.toString(),
+      o.completedAt.toString(),
+      o.expiresAt.toString(),
+    ]);
+
+    const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ustetu-seller-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   if (!isConnected) {
     return <section className="seller-orders"><div className="orders-empty"><strong>Connect wallet</strong><span>Hubungkan wallet seller untuk melihat order.</span></div></section>;
   }
@@ -161,8 +196,9 @@ export default function SellerOrders() {
         .seller-orders{max-width:1180px;margin:0 auto;padding:28px 22px 70px;color:var(--text,#f5f7ff)}
         .orders-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:18px}.orders-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.55}.orders-head h1{margin:7px 0 4px;font-size:30px}.orders-head p{margin:0;opacity:.58}.orders-wallet{font:11px ui-monospace,monospace;opacity:.65}
         .orders-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.orders-card{border:1px solid rgba(255,255,255,.1);background:rgba(10,14,25,.72);backdrop-filter:blur(14px);border-radius:16px;padding:16px}.orders-card label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.12em;opacity:.5}.orders-card strong{display:block;font-size:22px;margin-top:7px}.orders-card small{display:block;margin-top:4px;opacity:.5}
-        .orders-panel{border:1px solid rgba(255,255,255,.1);background:rgba(10,14,25,.72);border-radius:18px;overflow:hidden}.orders-toolbar{display:flex;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);font-size:12px}.orders-table{width:100%;border-collapse:collapse}.orders-table th,.orders-table td{padding:13px 15px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}.orders-table th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.5}.orders-table tr:last-child td{border-bottom:0}.mono{font-family:ui-monospace,monospace}.state{display:inline-flex;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.1);font-size:10px}.state.ok{color:#75f7ae;border-color:rgba(117,247,174,.25)}.state.pending{color:#ffd166;border-color:rgba(255,209,102,.25)}.state.bad{color:#ff7777;border-color:rgba(255,119,119,.25)}.state.neutral{opacity:.7}.orders-empty{border:1px dashed rgba(255,255,255,.14);border-radius:16px;padding:45px 20px;text-align:center;display:grid;gap:7px}.orders-empty span{opacity:.55;font-size:13px}.orders-error{margin:14px 0;padding:12px;border:1px solid rgba(255,119,119,.25);border-radius:12px;color:#ff9999;font-size:12px;word-break:break-word}
-        @media(max-width:800px){.orders-summary{grid-template-columns:1fr}.orders-head{display:block}.orders-wallet{margin-top:10px}.orders-panel{overflow:auto}.orders-table{min-width:760px}}
+        .orders-panel{border:1px solid rgba(255,255,255,.1);background:rgba(10,14,25,.72);border-radius:18px;overflow:hidden}.orders-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px 12px 18px;border-bottom:1px solid rgba(255,255,255,.08);font-size:12px}.orders-toolbar-info{display:flex;align-items:center;gap:12px;min-width:0}.orders-toolbar-scan{opacity:.55;text-align:right}.orders-download{display:inline-flex;align-items:center;justify-content:center;flex:0 0 34px;width:34px;height:34px;padding:0;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.035);color:inherit;cursor:pointer;opacity:.82;transition:.2s}.orders-download:hover:not(:disabled){opacity:1;background:rgba(255,255,255,.09);transform:translateY(-1px)}.orders-download:disabled{opacity:.28;cursor:not-allowed}.orders-download svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+        .orders-table{width:100%;border-collapse:collapse}.orders-table th,.orders-table td{padding:13px 15px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}.orders-table th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.5}.orders-table tr:last-child td{border-bottom:0}.mono{font-family:ui-monospace,monospace}.state{display:inline-flex;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.1);font-size:10px}.state.ok{color:#75f7ae;border-color:rgba(117,247,174,.25)}.state.pending{color:#ffd166;border-color:rgba(255,209,102,.25)}.state.bad{color:#ff7777;border-color:rgba(255,119,119,.25)}.state.neutral{opacity:.7}.orders-empty{border:1px dashed rgba(255,255,255,.14);border-radius:16px;padding:45px 20px;text-align:center;display:grid;gap:7px}.orders-empty span{opacity:.55;font-size:13px}.orders-error{margin:14px 0;padding:12px;border:1px solid rgba(255,119,119,.25);border-radius:12px;color:#ff9999;font-size:12px;word-break:break-word}
+        @media(max-width:800px){.orders-summary{grid-template-columns:1fr}.orders-head{display:block}.orders-wallet{margin-top:10px}.orders-toolbar{align-items:flex-start}.orders-toolbar-info{flex:1}.orders-toolbar-scan{max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.orders-panel{overflow:auto}.orders-table{min-width:760px}}
       `}</style>
 
       <div className="orders-head">
@@ -179,7 +215,18 @@ export default function SellerOrders() {
       {error && <div className="orders-error">{error}</div>}
 
       <div className="orders-panel">
-        <div className="orders-toolbar"><span>{loading ? "Memuat order dari blockchain…" : `${orders.length} order ditemukan`}</span><span>{lastScan || `Escrow: ${short(USTETU_ESCROW_ADDRESS)}`}</span></div>
+        <div className="orders-toolbar">
+          <div className="orders-toolbar-info"><span>{loading ? "Memuat order dari blockchain…" : `${orders.length} order ditemukan`}</span><span className="orders-toolbar-scan">{lastScan || `Escrow: ${short(USTETU_ESCROW_ADDRESS)}`}</span></div>
+          <button className="orders-download" type="button" onClick={downloadOrders} disabled={!orders.length || loading} aria-label="Download file orders" title="Download Orders CSV">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v11" />
+              <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+              <path d="M5 20h14" />
+              <path d="M5 17v3" />
+              <path d="M19 17v3" />
+            </svg>
+          </button>
+        </div>
         {orders.length === 0 && !loading ? (
           <div className="orders-empty"><strong>Belum ada order seller</strong><span>Order yang dibuat buyer pada Escrow aktif akan muncul di sini.</span></div>
         ) : (
