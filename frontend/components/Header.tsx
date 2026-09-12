@@ -12,12 +12,12 @@ export default function Header({ showSellerOrders = false }: { showSellerOrders?
         <SystemInfo />
       </div>
 
-      <div
-        className="brand-block brand-center"
-        style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", textAlign: "center", pointerEvents: "none" }}
-      >
-        <div className="brand">USTETU</div>
-        <div className="tagline">Own What’s Next.</div>
+      <div className="brand-block brand-center">
+        <img className="ustetu-logo" src="/UStetu/ustetu-logo.svg" alt="USTETU" />
+        <div className="brand-copy">
+          <div className="brand">USTETU</div>
+          <div className="tagline">Own What’s Next.</div>
+        </div>
       </div>
 
       <div className="topbar-right">
@@ -44,12 +44,19 @@ export default function Header({ showSellerOrders = false }: { showSellerOrders?
         <ConnectButton showBalance={false} chainStatus="icon" />
       </div>
       <style jsx global>{`
+        .brand-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
+        .ustetu-logo{width:27px;height:44px;object-fit:contain;display:block;filter:drop-shadow(0 0 8px rgba(255,100,30,.18))}
+        .brand-copy{text-align:center}
         .home-nav-link,.seller-orders-link{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
         .home-nav-link svg,.seller-orders-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
         .seller-nav-link{font-size:12px;text-decoration:none;color:inherit;opacity:.78;border:1px solid rgba(255,255,255,.1);padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
         .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
         @media(max-width:760px){
+          .brand-center{gap:5px}
+          .ustetu-logo{width:19px;height:32px}
+          .brand{font-size:13px}
+          .tagline{font-size:8px}
           .seller-nav-link{font-size:11px;padding:7px 9px}
           .home-nav-link,.seller-orders-link{width:32px;height:32px}
           .home-nav-link svg,.seller-orders-link svg{width:16px;height:16px}
