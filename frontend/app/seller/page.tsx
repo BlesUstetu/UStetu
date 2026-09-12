@@ -6,7 +6,7 @@ import SellerDashboard from "@/components/SellerDashboard";
 export default function SellerPage() {
   return (
     <main className="app-shell">
-      <Header />
+      <Header showSellerOrders />
       <div className="ambient-glow ambient-glow-one" aria-hidden="true" />
       <div className="ambient-glow ambient-glow-two" aria-hidden="true" />
       <SellerDashboard />
