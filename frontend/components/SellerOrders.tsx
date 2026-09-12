@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { formatUnits, parseAbiItem } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
-import { USTETU_ESCROW_ADDRESS, USDC_BASE_SEPOLIA_ADDRESS } from "@/lib/contracts";
+import { USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 
 const TOKEN_DECIMALS = 18;
 const USDC_DECIMALS = 6;
 const ORDER_SCAN_BLOCKS = 100_000n;
+const RPC_LOG_CHUNK = 40_000n;
 
 const orderCreatedEvent = parseAbiItem(
   "event OrderCreated(uint256 indexed orderId,uint256 indexed listingId,address indexed buyer,address seller,address recipient,uint256 tokenAmount,uint256 unitPrice,uint256 grossPayment,address paymentToken)"
@@ -50,6 +51,21 @@ type SellerOrder = {
   expiresAt: bigint;
 };
 
+const orderAbi = [{
+  type: "function",
+  name: "getOrder",
+  stateMutability: "view",
+  inputs: [{ name: "orderId", type: "uint256" }],
+  outputs: [{ name: "order", type: "tuple", components: [
+    { name: "listingId", type: "uint256" }, { name: "buyer", type: "address" }, { name: "seller", type: "address" },
+    { name: "recipient", type: "address" }, { name: "token", type: "address" }, { name: "paymentToken", type: "address" },
+    { name: "tokenAmount", type: "uint256" }, { name: "unitPrice", type: "uint256" }, { name: "grossPayment", type: "uint256" },
+    { name: "marketplaceFee", type: "uint256" }, { name: "sellerProceeds", type: "uint256" }, { name: "state", type: "uint8" },
+    { name: "createdAt", type: "uint64" }, { name: "paidAt", type: "uint64" }, { name: "completedAt", type: "uint64" },
+    { name: "refundedAt", type: "uint64" }, { name: "expiresAt", type: "uint64" }, { name: "disputeId", type: "uint256" },
+  ] }],
+}] as const;
+
 export default function SellerOrders() {
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
@@ -72,32 +88,28 @@ export default function SellerOrders() {
       try {
         const latest = await publicClient.getBlockNumber();
         const fromBlock = latest > ORDER_SCAN_BLOCKS ? latest - ORDER_SCAN_BLOCKS : 0n;
-        const logs = await publicClient.getLogs({
-          address: USTETU_ESCROW_ADDRESS,
-          event: orderCreatedEvent,
-          fromBlock,
-          toBlock: latest,
-        });
+        const allLogs = [] as Awaited<ReturnType<typeof publicClient.getLogs<typeof orderCreatedEvent>>>;
+
+        // Base Sepolia RPC limits eth_getLogs to 50,000 blocks.
+        // Keep a lower safety margin and scan the same 100k window in chunks.
+        for (let start = fromBlock; start <= latest; start += RPC_LOG_CHUNK) {
+          if (cancelled) return;
+          const end = start + RPC_LOG_CHUNK - 1n > latest ? latest : start + RPC_LOG_CHUNK - 1n;
+          const chunkLogs = await publicClient.getLogs({
+            address: USTETU_ESCROW_ADDRESS,
+            event: orderCreatedEvent,
+            fromBlock: start,
+            toBlock: end,
+          });
+          allLogs.push(...chunkLogs);
+        }
 
         const sellerOrders: SellerOrder[] = [];
-        for (const log of logs) {
+        for (const log of allLogs) {
           if (!log.args.orderId) continue;
           const order = await publicClient.readContract({
             address: USTETU_ESCROW_ADDRESS,
-            abi: [{
-              type: "function",
-              name: "getOrder",
-              stateMutability: "view",
-              inputs: [{ name: "orderId", type: "uint256" }],
-              outputs: [{ name: "order", type: "tuple", components: [
-                { name: "listingId", type: "uint256" }, { name: "buyer", type: "address" }, { name: "seller", type: "address" },
-                { name: "recipient", type: "address" }, { name: "token", type: "address" }, { name: "paymentToken", type: "address" },
-                { name: "tokenAmount", type: "uint256" }, { name: "unitPrice", type: "uint256" }, { name: "grossPayment", type: "uint256" },
-                { name: "marketplaceFee", type: "uint256" }, { name: "sellerProceeds", type: "uint256" }, { name: "state", type: "uint8" },
-                { name: "createdAt", type: "uint64" }, { name: "paidAt", type: "uint64" }, { name: "completedAt", type: "uint64" },
-                { name: "refundedAt", type: "uint64" }, { name: "expiresAt", type: "uint64" }, { name: "disputeId", type: "uint256" },
-              ] }],
-            }] as const,
+            abi: orderAbi,
             functionName: "getOrder",
             args: [log.args.orderId],
           });
@@ -138,7 +150,6 @@ export default function SellerOrders() {
   const completed = orders.filter((o) => o.state === 5);
   const gross = completed.reduce((sum, o) => sum + o.grossPayment, 0n);
   const proceeds = completed.reduce((sum, o) => sum + o.sellerProceeds, 0n);
-  const fees = completed.reduce((sum, o) => sum + o.marketplaceFee, 0n);
 
   if (!isConnected) {
     return <section className="seller-orders"><div className="orders-empty"><strong>Connect wallet</strong><span>Hubungkan wallet seller untuk melihat order.</span></div></section>;
