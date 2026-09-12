@@ -3,11 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { decodeEventLog, formatUnits, parseUnits, type PublicClient } from "viem";
 import { useAccount, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
-import { erc20PaymentAbi, escrowAbi, USDC_BASE_SEPOLIA_ADDRESS, USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
+import { erc20PaymentAbi, escrowAbi, USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 import { baseSepolia } from "wagmi/chains";
 
-const USDC_DECIMALS = 6;
-const TOKEN_DECIMALS = 18;
 const BASESCAN_TX = "https://sepolia.basescan.org/tx/";
 const ORDER_STATE_PAYMENT_PENDING = 1;
 const ORDER_STATE_PAID = 2;
@@ -17,6 +15,7 @@ const RPC_REQUEST_TIMEOUT = 3_000;
 const ORDER_STATE_POLL_ATTEMPTS = 20;
 const ORDER_STATE_POLL_INTERVAL = 1_000;
 const ORDER_SCAN_BLOCKS = 100_000n;
+const MAX_RPC_LOG_RANGE = 40_000n;
 const PENDING_ORDER_STORAGE = "ustetu.pending-order.v1";
 
 const paymentEscrowedEventAbi = [
@@ -35,9 +34,19 @@ const paymentEscrowedEventAbi = [
 type Step = "idle" | "creating" | "approving" | "funding" | "completing" | "success";
 type TxHashes = { create?: `0x${string}`; approve?: `0x${string}`; fund?: `0x${string}`; complete?: `0x${string}` };
 type BuyModalProps = {
-  open: boolean; onClose: () => void; onCompleted: () => void;
-  listingId: bigint; symbol: string; price: bigint; available: bigint;
-  minOrderAmount: bigint; maxOrderAmount: bigint; paymentToken: `0x${string}`;
+  open: boolean;
+  onClose: () => void;
+  onCompleted: () => void;
+  listingId: bigint;
+  symbol: string;
+  price: bigint;
+  available: bigint;
+  minOrderAmount: bigint;
+  maxOrderAmount: bigint;
+  paymentToken: `0x${string}`;
+  tokenDecimals: number;
+  paymentDecimals: number;
+  paymentSymbol: string;
 };
 type RecoveredOrder = { orderId: bigint; grossPayment: bigint; txHash: `0x${string}` };
 type ResumeOrder = { orderId: bigint; tokenAmount: bigint; grossPayment: bigint; state: number; createHash?: `0x${string}` };
@@ -60,9 +69,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string)
   return Promise.race([promise, timeout]).finally(() => { if (timer) clearTimeout(timer); });
 }
 
-async function requestWalletTx<T>(promise: Promise<T>) {
-  return promise;
-}
+async function requestWalletTx<T>(promise: Promise<T>) { return promise; }
 
 async function waitForReceiptRobust(publicClient: PublicClient, hash: `0x${string}`) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -79,11 +86,25 @@ async function waitForReceiptRobust(publicClient: PublicClient, hash: `0x${strin
   throw new Error(`Receipt belum terbaca. Transaksi tidak dikirim ulang. Tx: ${hash}`);
 }
 
+async function getEscrowLogsChunked(publicClient: PublicClient, fromBlock: bigint, toBlock: bigint) {
+  if (fromBlock > toBlock) return [];
+  const logs: Awaited<ReturnType<PublicClient["getLogs"]>> = [];
+  let cursor = fromBlock;
+  while (cursor <= toBlock) {
+    const chunkEnd = cursor + MAX_RPC_LOG_RANGE - 1n < toBlock ? cursor + MAX_RPC_LOG_RANGE - 1n : toBlock;
+    const chunk = await withTimeout(publicClient.getLogs({ address: USTETU_ESCROW_ADDRESS, fromBlock: cursor, toBlock: chunkEnd }), RPC_REQUEST_TIMEOUT * 3, "RPC logs chunk timeout");
+    logs.push(...chunk);
+    cursor = chunkEnd + 1n;
+  }
+  return logs;
+}
+
 async function recoverCreatedOrder(publicClient: PublicClient, fromBlock: bigint, listingId: bigint, buyer: `0x${string}`, tokenAmount: bigint): Promise<RecoveredOrder | null> {
   const deadline = Date.now() + CREATE_RECOVERY_TIMEOUT;
   while (Date.now() < deadline) {
     try {
-      const logs = await withTimeout(publicClient.getLogs({ address: USTETU_ESCROW_ADDRESS, fromBlock, toBlock: "latest" }), RPC_REQUEST_TIMEOUT, "RPC logs timeout");
+      const latest = await withTimeout(publicClient.getBlockNumber(), RPC_REQUEST_TIMEOUT, "RPC block timeout");
+      const logs = await getEscrowLogsChunked(publicClient, fromBlock, latest);
       for (const log of logs) {
         try {
           const decoded = decodeEventLog({ abi: escrowAbi, data: log.data, topics: log.topics, eventName: "OrderCreated" });
@@ -102,9 +123,9 @@ async function recoverCreatedOrder(publicClient: PublicClient, fromBlock: bigint
 
 async function findPendingOrder(publicClient: PublicClient, listingId: bigint, buyer: `0x${string}`): Promise<ResumeOrder | null> {
   try {
-    const latest = await publicClient.getBlockNumber();
+    const latest = await withTimeout(publicClient.getBlockNumber(), RPC_REQUEST_TIMEOUT, "RPC block timeout");
     const fromBlock = latest > ORDER_SCAN_BLOCKS ? latest - ORDER_SCAN_BLOCKS : 0n;
-    const logs = await withTimeout(publicClient.getLogs({ address: USTETU_ESCROW_ADDRESS, fromBlock, toBlock: "latest" }), RPC_REQUEST_TIMEOUT * 3, "RPC pending-order scan timeout");
+    const logs = await getEscrowLogsChunked(publicClient, fromBlock, latest);
     let candidate: ResumeOrder | null = null;
     for (const log of logs) {
       try {
@@ -170,7 +191,7 @@ function formatError(error: unknown) {
 function shortHash(hash: `0x${string}`) { return `${hash.slice(0, 8)}…${hash.slice(-6)}`; }
 
 export default function BuyModal(props: BuyModalProps) {
-  const { open, onClose, onCompleted, listingId, symbol, price, available, minOrderAmount, maxOrderAmount, paymentToken } = props;
+  const { open, onClose, onCompleted, listingId, symbol, price, available, minOrderAmount, maxOrderAmount, paymentToken, tokenDecimals, paymentDecimals, paymentSymbol } = props;
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
@@ -185,14 +206,19 @@ export default function BuyModal(props: BuyModalProps) {
   const [resumeOrder, setResumeOrder] = useState<ResumeOrder | null>(null);
   const [resumeChecking, setResumeChecking] = useState(false);
 
-  const { data: usdcBalance, refetch: refetchBalance } = useReadContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "balanceOf", args: address ? [address] : undefined, query: { enabled: Boolean(address) } });
+  const { data: paymentBalance, refetch: refetchBalance } = useReadContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "balanceOf", args: address ? [address] : undefined, query: { enabled: Boolean(address) } });
   const { data: allowance, refetch: refetchAllowance } = useReadContract({ address: paymentToken, abi: erc20PaymentAbi, functionName: "allowance", args: address ? [address, USTETU_ESCROW_ADDRESS] : undefined, query: { enabled: Boolean(address) } });
 
-  const minAmount = formatUnits(minOrderAmount, TOKEN_DECIMALS);
-  const maxAmount = formatUnits(maxOrderAmount, TOKEN_DECIMALS);
-  const availableAmount = formatUnits(available, TOKEN_DECIMALS);
-  const parsedAmount = useMemo(() => { try { if (!amount || Number(amount) <= 0) return null; return parseUnits(amount, TOKEN_DECIMALS); } catch { return null; } }, [amount]);
-  const grossPaymentPreview = useMemo(() => !parsedAmount ? 0n : (parsedAmount * price) / 10n ** BigInt(TOKEN_DECIMALS), [parsedAmount, price]);
+  const minAmount = formatUnits(minOrderAmount, tokenDecimals);
+  const maxAmount = formatUnits(maxOrderAmount, tokenDecimals);
+  const availableAmount = formatUnits(available, tokenDecimals);
+  const parsedAmount = useMemo(() => {
+    try {
+      if (!amount || Number(amount) <= 0) return null;
+      return parseUnits(amount, tokenDecimals);
+    } catch { return null; }
+  }, [amount, tokenDecimals]);
+  const grossPaymentPreview = useMemo(() => !parsedAmount ? 0n : (parsedAmount * price) / 10n ** BigInt(tokenDecimals), [parsedAmount, price, tokenDecimals]);
   const isBusy = step === "creating" || step === "approving" || step === "funding" || step === "completing";
   const pendingStorageKey = storageKey(chainId, address, listingId);
 
@@ -229,7 +255,7 @@ export default function BuyModal(props: BuyModalProps) {
           if (!cancelled && (state === ORDER_STATE_PAYMENT_PENDING || state === ORDER_STATE_PAID)) {
             setResumeOrder({ orderId: storedId, tokenAmount: BigInt(stored.tokenAmount), grossPayment: BigInt(stored.grossPayment), state, createHash: stored.createHash as `0x${string}` | undefined });
             setOrderId(storedId);
-            setAmount(formatUnits(BigInt(stored.tokenAmount), TOKEN_DECIMALS));
+            setAmount(formatUnits(BigInt(stored.tokenAmount), tokenDecimals));
             return;
           }
           if (state === ORDER_STATE_COMPLETED) clearPendingOrder(pendingStorageKey);
@@ -238,7 +264,7 @@ export default function BuyModal(props: BuyModalProps) {
         if (!cancelled && detected) {
           setResumeOrder(detected);
           setOrderId(detected.orderId);
-          setAmount(formatUnits(detected.tokenAmount, TOKEN_DECIMALS));
+          setAmount(formatUnits(detected.tokenAmount, tokenDecimals));
           savePendingOrder(pendingStorageKey, { chainId, escrow: USTETU_ESCROW_ADDRESS, listingId: listingId.toString(), buyer: address, orderId: detected.orderId.toString(), tokenAmount: detected.tokenAmount.toString(), grossPayment: detected.grossPayment.toString(), createHash: detected.createHash });
         }
       } catch {} finally {
@@ -247,7 +273,7 @@ export default function BuyModal(props: BuyModalProps) {
     }
     void detectResumeOrder();
     return () => { cancelled = true; };
-  }, [open, publicClient, address, chainId, listingId, pendingStorageKey]);
+  }, [open, publicClient, address, chainId, listingId, pendingStorageKey, tokenDecimals]);
 
   if (!open) return null;
 
@@ -271,20 +297,22 @@ export default function BuyModal(props: BuyModalProps) {
     let currentAllowance = allowance ?? 0n;
     if (state === ORDER_STATE_PAYMENT_PENDING) {
       if (currentAllowance < grossPayment) {
-        setStep("approving"); setStatusText("1/3 Konfirmasi approval USDC di wallet…");
+        setStep("approving");
+        setStatusText(`Konfirmasi approval ${paymentSymbol} di wallet…`);
         const approveHash = await requestWalletTx(writeContractAsync({ address: paymentToken, abi: erc20PaymentAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, grossPayment] }));
         setTxHashes((current) => ({ ...current, approve: approveHash }));
-        setStatusText("1/3 Approval terkirim. Menunggu konfirmasi network…");
+        setStatusText(`Approval ${paymentSymbol} terkirim. Menunggu konfirmasi network…`);
         await waitForReceiptRobust(publicClient!, approveHash);
         currentAllowance = grossPayment;
         await refetchAllowance();
       }
-      if (currentAllowance < grossPayment) throw new Error("Allowance USDC belum mencukupi setelah approve.");
+      if (currentAllowance < grossPayment) throw new Error(`Allowance ${paymentSymbol} belum mencukupi setelah approve.`);
 
-      setStep("funding"); setStatusText(`2/3 Konfirmasi pembayaran ${formatUnits(grossPayment, USDC_DECIMALS)} USDC di wallet…`);
+      setStep("funding");
+      setStatusText(`Konfirmasi pembayaran ${formatUnits(grossPayment, paymentDecimals)} ${paymentSymbol} di wallet…`);
       const fundHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "fundOrder", args: [createdOrderId] }));
       setTxHashes((current) => ({ ...current, fund: fundHash }));
-      setStatusText("2/3 Pembayaran terkirim. Menunggu konfirmasi network…");
+      setStatusText(`Pembayaran ${paymentSymbol} terkirim. Menunggu konfirmasi network…`);
       let fundReceipt: Awaited<ReturnType<PublicClient["getTransactionReceipt"]>> | null = null;
       try {
         fundReceipt = await waitForReceiptRobust(publicClient!, fundHash);
@@ -300,10 +328,11 @@ export default function BuyModal(props: BuyModalProps) {
     if (state === ORDER_STATE_COMPLETED) return markCompleted(createdOrderId);
     if (state !== ORDER_STATE_PAID) throw new Error(`Order #${createdOrderId.toString()} belum PAID. Status on-chain: ${state}.`);
 
-    setStep("completing"); setStatusText("3/3 Konfirmasi penyelesaian order di wallet…");
+    setStep("completing");
+    setStatusText("Konfirmasi penyelesaian order di wallet…");
     const completeHash = await requestWalletTx(writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "completeOrder", args: [createdOrderId] }));
     setTxHashes((current) => ({ ...current, complete: completeHash }));
-    setStatusText("3/3 Complete terkirim. Menunggu konfirmasi network…");
+    setStatusText("Complete terkirim. Menunggu konfirmasi network…");
     try {
       await waitForReceiptRobust(publicClient!, completeHash);
     } catch (completeError) {
@@ -311,6 +340,8 @@ export default function BuyModal(props: BuyModalProps) {
       if (finalState === ORDER_STATE_COMPLETED) return markCompleted(createdOrderId);
       throw completeError;
     }
+    const finalState = await waitForOrderState(createdOrderId, [ORDER_STATE_COMPLETED]);
+    if (finalState !== ORDER_STATE_COMPLETED) throw new Error(`Receipt complete diterima, tetapi status Order #${createdOrderId.toString()} belum COMPLETED.`);
     await markCompleted(createdOrderId);
   };
 
@@ -333,18 +364,17 @@ export default function BuyModal(props: BuyModalProps) {
       try { setStatusText("Mengganti jaringan ke Base Sepolia…"); await switchChainAsync({ chainId: baseSepolia.id }); }
       catch (error) { setStatusText(""); return setErrorText(formatError(error)); }
     }
-    if (!parsedAmount) return setErrorText("Masukkan jumlah USTETU yang valid.");
-    if (parsedAmount < minOrderAmount || parsedAmount > maxOrderAmount || parsedAmount > available) return setErrorText(`Jumlah harus ${minAmount}–${maxAmount} USTETU dan tidak melebihi stok ${availableAmount} USTETU.`);
-    if (paymentToken.toLowerCase() !== USDC_BASE_SEPOLIA_ADDRESS.toLowerCase()) return setErrorText("Listing ini menggunakan payment token yang bukan USDC Base Sepolia.");
-    if ((usdcBalance ?? 0n) < grossPaymentPreview) return setErrorText(`Saldo USDC tidak cukup. Dibutuhkan ${formatUnits(grossPaymentPreview, USDC_DECIMALS)} USDC.`);
+    if (!parsedAmount) return setErrorText(`Masukkan jumlah ${symbol} yang valid.`);
+    if (parsedAmount < minOrderAmount || parsedAmount > maxOrderAmount || parsedAmount > available) return setErrorText(`Jumlah harus ${minAmount}–${maxAmount} ${symbol} dan tidak melebihi stok ${availableAmount} ${symbol}.`);
+    if ((paymentBalance ?? 0n) < grossPaymentPreview) return setErrorText(`Saldo ${paymentSymbol} tidak cukup. Dibutuhkan ${formatUnits(grossPaymentPreview, paymentDecimals)} ${paymentSymbol}.`);
     if (!publicClient) return setErrorText("RPC client belum siap. Silakan coba lagi.");
     if (resumeOrder) return resumeExistingOrder();
 
     try {
       setStep("creating");
-      setStatusText("1/3 Menunggu konfirmasi createOrder di wallet…");
+      setStatusText("Menunggu konfirmasi createOrder di wallet…");
       const startBlock = await publicClient.getBlockNumber();
-      const walletCreatePromise = writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "createOrder", args: [listingId, parsedAmount] }).catch((error) => { throw error; });
+      const walletCreatePromise = writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "createOrder", args: [listingId, parsedAmount] });
       const recoveryPromise = recoverCreatedOrder(publicClient, startBlock, listingId, address, parsedAmount);
       const result = await Promise.race([
         requestWalletTx(walletCreatePromise).then((hash) => ({ kind: "wallet" as const, hash })),
@@ -358,7 +388,7 @@ export default function BuyModal(props: BuyModalProps) {
       if (result?.kind === "wallet") {
         createHash = result.hash;
         setTxHashes((current) => ({ ...current, create: createHash }));
-        setStatusText("1/3 createOrder terkirim. Menunggu konfirmasi network…");
+        setStatusText("createOrder terkirim. Menunggu konfirmasi network…");
         const createReceipt = await waitForReceiptRobust(publicClient, createHash);
         createdOrderId = 0n;
         for (const log of createReceipt.logs) {
@@ -375,7 +405,7 @@ export default function BuyModal(props: BuyModalProps) {
         grossPayment = result.recovered.grossPayment;
         setTxHashes((current) => ({ ...current, create: createHash }));
         setOrderId(createdOrderId);
-        setStatusText("1/3 createOrder sudah masuk blockchain. Memulihkan transaksi…");
+        setStatusText("createOrder sudah masuk blockchain. Memulihkan transaksi…");
         await waitForReceiptRobust(publicClient, createHash);
       } else {
         throw new Error("createOrder belum ditemukan di wallet maupun blockchain. Pastikan popup wallet sudah dikonfirmasi.");
@@ -397,13 +427,13 @@ export default function BuyModal(props: BuyModalProps) {
         <button className="drawer-close" type="button" onClick={closeIfIdle} disabled={isBusy}>×</button>
       </div>
       <div className="buy-summary">
-        <div><span>Price</span><strong>{formatUnits(price, USDC_DECIMALS)} USDC / {symbol}</strong></div>
+        <div><span>Price</span><strong>{formatUnits(price, paymentDecimals)} {paymentSymbol} / {symbol}</strong></div>
         <div><span>Available</span><strong>{availableAmount} {symbol}</strong></div>
         <div><span>Min / Max</span><strong>{minAmount} / {maxAmount} {symbol}</strong></div>
       </div>
       <label className="buy-input-label" htmlFor="buy-amount">Amount ({symbol})</label>
-      <div className="buy-input-wrap"><input id="buy-amount" type="number" min={minAmount} max={maxAmount} step="0.000000000000000001" value={amount} onChange={(event) => setAmount(event.target.value)} disabled={isBusy || step === "success" || Boolean(resumeOrder)}/><span>{symbol}</span></div>
-      <div className="buy-total"><span>Total payment</span><strong>{formatUnits(grossPaymentPreview, USDC_DECIMALS)} USDC</strong></div>
+      <div className="buy-input-wrap"><input id="buy-amount" type="number" min={minAmount} max={maxAmount} step="any" value={amount} onChange={(event) => setAmount(event.target.value)} disabled={isBusy || step === "success" || Boolean(resumeOrder)}/><span>{symbol}</span></div>
+      <div className="buy-total"><span>Total payment</span><strong>{formatUnits(grossPaymentPreview, paymentDecimals)} {paymentSymbol}</strong></div>
       {resumeChecking && <div className="buy-status">Memeriksa order yang belum selesai…</div>}
       {resumeOrder && !isBusy && step !== "success" && <div className="buy-status">Order #{resumeOrder.orderId.toString()} masih {resumeOrder.state === ORDER_STATE_PAYMENT_PENDING ? "menunggu pembayaran" : "sudah dibayar"}. Tidak membuat order baru.</div>}
       {statusText && <div className="buy-status">{statusText}</div>}
@@ -411,9 +441,7 @@ export default function BuyModal(props: BuyModalProps) {
       {orderId !== null && <div className="buy-order">Order #{orderId.toString()}</div>}
       {visibleHashes.length > 0 && <div className="buy-tx-list">{visibleHashes.map(([label, hash]) => <a key={label} href={`${BASESCAN_TX}${hash}`} target="_blank" rel="noreferrer"><span>{label === "create" ? "Order" : label === "approve" ? "Approve" : label === "fund" ? "Payment" : "Complete"}</span><strong>{shortHash(hash as `0x${string}`)} ↗</strong></a>)}</div>}
       {resumeOrder ? (
-        <button className="buy-submit" type="button" onClick={resumeExistingOrder} disabled={isBusy || resumeChecking || step === "success"}>
-          {step === "success" ? "Purchased" : `Resume Order #${resumeOrder.orderId.toString()}`}
-        </button>
+        <button className="buy-submit" type="button" onClick={resumeExistingOrder} disabled={isBusy || resumeChecking || step === "success"}>{step === "success" ? "Purchased" : `Resume Order #${resumeOrder.orderId.toString()}`}</button>
       ) : (
         <button className="buy-submit" type="button" onClick={handleBuy} disabled={isBusy || resumeChecking || step === "success"}>{step === "success" ? "Purchased" : `Buy ${symbol}`}</button>
       )}
