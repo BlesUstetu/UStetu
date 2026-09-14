@@ -1,8 +1,12 @@
 import { Contract, JsonRpcProvider, Wallet } from "ethers";
 import { config } from "./config.js";
-import { ESCROW_ABI } from "./abi.js";
 
 const PAYMENT_PENDING = 1;
+const KEEPER_ABI = [
+  "event OrderCreated(uint256 indexed orderId,uint256 indexed listingId,address indexed buyer,address seller,address recipient,uint256 tokenAmount,uint256 unitPrice,uint256 grossPayment,address paymentToken)",
+  "function getOrder(uint256 orderId) view returns (uint256 listingId,address buyer,address seller,address recipient,address token,address paymentToken,uint256 tokenAmount,uint256 unitPrice,uint256 grossPayment,uint256 marketplaceFee,uint256 sellerProceeds,uint8 state,uint64 createdAt,uint64 paidAt,uint64 completedAt,uint64 refundedAt,uint64 expiresAt,uint256 disputeId)",
+  "function expireOrder(uint256 orderId)"
+] as const;
 
 function requiredKeeperKey(): string {
   const value = process.env.KEEPER_PRIVATE_KEY?.trim();
@@ -12,8 +16,8 @@ function requiredKeeperKey(): string {
 
 const provider = new JsonRpcProvider(config.rpcUrl, config.chainId);
 const wallet = new Wallet(requiredKeeperKey(), provider);
-const escrow = new Contract(config.escrowAddress, ESCROW_ABI, wallet);
-const readEscrow = new Contract(config.escrowAddress, ESCROW_ABI, provider);
+const escrow = new Contract(config.escrowAddress, KEEPER_ABI, wallet);
+const readEscrow = new Contract(config.escrowAddress, KEEPER_ABI, provider);
 
 const pollIntervalMs = Number(process.env.KEEPER_POLL_INTERVAL_MS ?? "30000");
 const bootstrapBlocks = Number(process.env.KEEPER_SCAN_BLOCKS ?? "5000");
@@ -51,7 +55,6 @@ async function expireExpiredOrders(fromBlock: number, toBlock: number) {
         attempted.add(key);
         continue;
       }
-
       if (BigInt(order.expiresAt) > now) continue;
 
       attempted.add(key);
