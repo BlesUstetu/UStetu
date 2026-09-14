@@ -37,6 +37,7 @@ export default function BuyModalFlow(props: Props) {
   const client = usePublicClient();
   const [flow, setFlow] = useState<FlowState>("normal");
   const [orderId, setOrderId] = useState<bigint | null>(null);
+  const [orderState, setOrderState] = useState<number | null>(null);
   const [orderAmount, setOrderAmount] = useState<bigint | null>(null);
   const [orderExpiresAt, setOrderExpiresAt] = useState<bigint | null>(null);
   const [now, setNow] = useState(0n);
@@ -55,16 +56,11 @@ export default function BuyModalFlow(props: Props) {
         if (!order) return;
         const state = Number(order.state);
         setOrderId((previous) => previous === null || order.orderId > previous ? order.orderId : previous);
+        setOrderState(state);
         setOrderAmount(order.tokenAmount);
         setOrderExpiresAt(order.expiresAt);
-        if (state === EXPIRED) {
-          setFlow("released");
-          return;
-        }
-        if (state === PAYMENT_PENDING) {
-          setFlow(order.expiresAt <= chainNow ? "expired" : "normal");
-          return;
-        }
+        if (state === EXPIRED) { setFlow("released"); return; }
+        if (state === PAYMENT_PENDING) { setFlow(order.expiresAt <= chainNow ? "expired" : "normal"); return; }
         setFlow("normal");
       } catch {}
     };
@@ -79,6 +75,7 @@ export default function BuyModalFlow(props: Props) {
   const createNewOrder = () => {
     setFlow("normal");
     setOrderId(null);
+    setOrderState(null);
     setOrderAmount(null);
     setOrderExpiresAt(null);
     setRemount((value) => value + 1);
@@ -95,7 +92,7 @@ export default function BuyModalFlow(props: Props) {
           <small>Menunggu sistem otomatis melepas inventory. Buyer tidak perlu melakukan RELEASE.</small>
         </div>
       )}
-      {open && flow === "normal" && orderId !== null && orderExpiresAt && orderExpiresAt > now && (
+      {open && flow === "normal" && orderState === PAYMENT_PENDING && orderId !== null && orderExpiresAt && orderExpiresAt > now && (
         <div className="buy-expiry-countdown" role="status">
           <span>Payment deadline · Order #{orderId.toString()}</span><strong>{remainingText}</strong>
         </div>
