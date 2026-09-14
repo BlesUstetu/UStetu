@@ -66,7 +66,6 @@ export default function BuyModalFlow(props: Props) {
   const baselineBlockRef = useRef<bigint | null>(null);
   const activeOrderRef = useRef<OrderRef | null>(null);
   const seenOrderRef = useRef<bigint | null>(null);
-  const mountedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +77,7 @@ export default function BuyModalFlow(props: Props) {
       baselineBlockRef.current = latest;
       activeOrderRef.current = null;
       seenOrderRef.current = null;
+      setCompleted(null);
       if (cancelled) return;
 
       // Establish the order that already existed when the modal opened.
@@ -128,7 +128,6 @@ export default function BuyModalFlow(props: Props) {
       baselineBlockRef.current = null;
       activeOrderRef.current = null;
       seenOrderRef.current = null;
-      mountedRef.current = false;
     };
   }, [props.open, props.listingId, client, address]);
 
