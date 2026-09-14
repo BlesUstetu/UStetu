@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useReadContract } from "wagmi";
 import Header from "@/components/Header";
-import BuyModal from "@/components/BuyModal";
+import BuyModalFlow from "@/components/BuyModalFlow";
 import TokenLogo from "@/components/TokenLogo";
 import { useLanguage } from "@/lib/LanguageContext";
 import { erc20MetadataAbi, escrowAbi, registryAbi, USTETU_ESCROW_ADDRESS, USTETU_REGISTRY_ADDRESS, USTETU_TOKEN_ID } from "@/lib/contracts";
@@ -17,7 +17,7 @@ export default function HomePage() {
   const [buyOpen, setBuyOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const listingQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [LISTING_ID] });
+  const listingQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [LISTING_ID], query: { refetchInterval: 5000 } });
   const tokenQuery = useReadContract({ address: USTETU_REGISTRY_ADDRESS, abi: registryAbi, functionName: "getToken", args: [USTETU_TOKEN_ID] });
   const tokenAddress = tokenQuery.data?.contractAddress;
   const paymentTokenAddress = listingQuery.data?.paymentToken;
@@ -103,7 +103,7 @@ export default function HomePage() {
               <button className="primary-glass" type="button" onClick={() => setBuyOpen(true)}>{t("buy")} {liveData.symbol}</button>
             </div>
           </aside>
-          <BuyModal open={buyOpen} onClose={() => setBuyOpen(false)} onCompleted={refreshListing} listingId={liveData.listingId} symbol={liveData.symbol} price={liveData.priceRaw} available={liveData.availableRaw} minOrderAmount={liveData.minOrderAmount} maxOrderAmount={liveData.maxOrderAmount} paymentToken={liveData.paymentToken} tokenDecimals={liveData.decimals} paymentDecimals={liveData.paymentDecimals} paymentSymbol={liveData.paymentSymbol} />
+          <BuyModalFlow open={buyOpen} onClose={() => setBuyOpen(false)} onCompleted={refreshListing} listingId={liveData.listingId} symbol={liveData.symbol} price={liveData.priceRaw} available={liveData.availableRaw} minOrderAmount={liveData.minOrderAmount} maxOrderAmount={liveData.maxOrderAmount} paymentToken={liveData.paymentToken} tokenDecimals={liveData.decimals} paymentDecimals={liveData.paymentDecimals} paymentSymbol={liveData.paymentSymbol} />
         </>
       )}
     </main>
