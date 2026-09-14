@@ -11,6 +11,8 @@ const PAYMENT_PENDING = 1;
 const PAID = 2;
 const COMPLETED = 5;
 const RPC_TIMEOUT = 8000;
+const COMPLETE_WRITE_TIMEOUT = 15000;
+const COMPLETE_RECOVERY_ATTEMPTS = 30;
 const SCAN_BLOCKS = 5000n;
 const MAX_LOG_RANGE = 5000n;
 const PENDING_STORAGE = "ustetu.pending-order.v1";
@@ -38,11 +40,7 @@ async function scanPending(client:PublicClient,listingId:bigint,buyer:`0x${strin
   for(let i=logs.length-1;i>=0;i--){
     const log=logs[i];
     let a:any;
-    try{
-      const d=decodeEventLog({abi:escrowAbi,data:log.data,topics:log.topics,eventName:"OrderCreated"});
-      if(d.eventName!=="OrderCreated")continue;
-      a=d.args;
-    }catch{continue}
+    try{const d=decodeEventLog({abi:escrowAbi,data:log.data,topics:log.topics,eventName:"OrderCreated"});if(d.eventName!=="OrderCreated")continue;a=d.args}catch{continue}
     if(a.listingId!==listingId||a.buyer.toLowerCase()!==buyer.toLowerCase())continue;
     const o=await timeout(client.readContract({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"getOrder",args:[a.orderId]}),RPC_TIMEOUT,"RPC order timeout");
     if(!o)continue;
@@ -59,6 +57,15 @@ async function readKnownOrder1(client:PublicClient,listingId:bigint,buyer:`0x${s
 }
 
 async function waitReceipt(client:PublicClient,hash:`0x${string}`){for(let i=0;i<30;i++){try{const r=await timeout(client.getTransactionReceipt({hash}),RPC_TIMEOUT,"RPC receipt timeout");if(r.status!=="success")throw new Error("Transaksi on-chain gagal atau di-revert.");return r}catch(e){const m=e instanceof Error?e.message.toLowerCase():"";if(m.includes("revert")||m.includes("on-chain gagal"))throw e;await sleep(700)}}throw new Error(`Receipt belum terbaca. Transaksi tidak dikirim ulang. Tx: ${hash}`)}
+
+async function waitOrderState(client:PublicClient,id:bigint,wanted:number[],attempts=COMPLETE_RECOVERY_ATTEMPTS){
+  for(let i=0;i<attempts;i++){
+    try{const o=await timeout(client.readContract({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"getOrder",args:[id]}),RPC_TIMEOUT,"RPC order recovery timeout");if(o){const s=Number(o.state);if(wanted.includes(s))return s}}
+    catch{}
+    await sleep(1000);
+  }
+  return null;
+}
 
 export default function BuyModal(p:Props){
   const {open,onClose,onCompleted,listingId,symbol,price,available,minOrderAmount,maxOrderAmount,paymentToken,tokenDecimals,paymentDecimals,paymentSymbol}=p;
@@ -85,7 +92,19 @@ export default function BuyModal(p:Props){
   const markComplete=async(id:bigint)=>{clear(storageKey);setResume(null);setStep("success");setStatus(`Order #${id} selesai. ${amount} ${symbol} berhasil dibeli.`);await refetchBalance();onCompleted()};
   const settle=async(id:bigint,gross:bigint,state:number,createHash?:`0x${string}`,confirmedBlock?:bigint)=>{setOrderId(id);if(createHash)setTx(x=>({...x,create:createHash}));const tokenAmount=resume?.orderId===id?resume.tokenAmount:parsed;save(storageKey,{chainId,escrow:USTETU_ESCROW_ADDRESS,listingId:listingId.toString(),buyer:address!,orderId:id.toString(),tokenAmount:tokenAmount?.toString()??"0",grossPayment:gross.toString(),createHash});if(state===COMPLETED)return markComplete(id);
     if(state===PAYMENT_PENDING){const liveOrder=await readOrder(id,confirmedBlock);if(!liveOrder)throw new Error(`Order #${id} tidak ditemukan.`);const liveState=Number(liveOrder.state);if(liveState!==PAYMENT_PENDING){if(liveState===PAID){state=PAID}else if(liveState===COMPLETED){return markComplete(id)}else throw new Error(`Order #${id} tidak lagi menunggu pembayaran. Status on-chain: ${liveState}.`)}else{const now=await readChainTimestamp();if(liveOrder.expiresAt<=now){clear(storageKey);setResume(null);setExpiredOrderId(id);throw new Error(`Order #${id} sudah melewati batas waktu pembayaran.`)}if(await readBalance()<gross)throw new Error(`Saldo ${paymentSymbol} tidak cukup. Order #${id} membutuhkan ${formatUnits(gross,paymentDecimals)} ${paymentSymbol}.`);let allowance=await readAllowance();if(allowance<gross){setStep("approving");setStatus(`Konfirmasi approval ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} di wallet…`);const h=await writeContractAsync({address:paymentToken,abi:erc20PaymentAbi,functionName:"approve",args:[USTETU_ESCROW_ADDRESS,gross]});setTx(x=>({...x,approve:h}));await waitReceipt(client!,h);allowance=gross}if(allowance<gross)throw new Error(`Allowance ${paymentSymbol} belum mencukupi untuk Order #${id}.`);setStep("funding");setStatus(`Konfirmasi pembayaran ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} di wallet…`);const h=await writeContractAsync({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"fundOrder",args:[id]});setTx(x=>({...x,fund:h}));const fundReceipt=await waitReceipt(client!,h);if(fundReceipt.status!=="success")throw new Error("Pembayaran on-chain gagal.");state=PAID}}
-    if(state===COMPLETED)return markComplete(id);if(state!==PAID)throw new Error(`Order #${id} belum PAID. Status on-chain: ${state}.`);setStep("completing");setStatus("Konfirmasi penyelesaian order di wallet…");const h=await writeContractAsync({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"completeOrder",args:[id]});setTx(x=>({...x,complete:h}));const completeReceipt=await waitReceipt(client!,h);if(completeReceipt.status!=="success")throw new Error("Penyelesaian order on-chain gagal.");await markComplete(id)};
+    if(state===COMPLETED)return markComplete(id);if(state!==PAID)throw new Error(`Order #${id} belum PAID. Status on-chain: ${state}.`);
+    setStep("completing");setStatus("Konfirmasi penyelesaian order di wallet…");
+    let completeHash:`0x${string}`|undefined;
+    try{
+      completeHash=await timeout(writeContractAsync({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"completeOrder",args:[id]}),COMPLETE_WRITE_TIMEOUT,"Complete wallet/RPC timeout");
+      setTx(x=>({...x,complete:completeHash}));
+    }catch(e){
+      const recovered=await waitOrderState(client!,id,[COMPLETED]);
+      if(recovered===COMPLETED)return markComplete(id);
+      throw new Error("Konfirmasi complete sudah dilakukan, tetapi transaksi belum dapat dipastikan on-chain. Tidak mengirim completeOrder kedua. Tunggu beberapa detik lalu Resume order lagi.");
+    }
+    try{await waitReceipt(client!,completeHash)}catch(e){const recovered=await waitOrderState(client!,id,[COMPLETED]);if(recovered===COMPLETED)return markComplete(id);throw e}
+    const final=await waitOrderState(client!,id,[COMPLETED],10);if(final!==COMPLETED)throw new Error(`Order #${id} belum COMPLETED setelah transaksi complete. Transaksi tidak dikirim ulang.`);await markComplete(id)};
   const resumeExisting=async()=>{if(!resume||!client||!address)return;setErr("");setStatus("");setTx({});try{setStatus(`Order #${resume.orderId} ditemukan. Nilai on-chain: ${formatUnits(resume.grossPayment,paymentDecimals)} ${paymentSymbol}.`);await settle(resume.orderId,resume.grossPayment,resume.state,resume.createHash)}catch(e){setStep("idle");setStatus("");setErr(errorText(e))}};
   const buy=async()=>{setErr("");setStatus("");setOrderId(null);setTx({});if(!isConnected||!address)return setErr("Hubungkan wallet terlebih dahulu.");if(chainId!==baseSepolia.id){try{setStatus("Mengganti jaringan ke Base Sepolia…");await switchChainAsync({chainId:baseSepolia.id});return setStatus("Jaringan sudah diarahkan ke Base Sepolia. Buka kembali Buy USTETU untuk memeriksa order.")}catch(e){return setErr(errorText(e))}}if(!client)return setErr("RPC client belum siap.");try{if(resume)return await resumeExisting();const now=await readChainTimestamp();const known=await readKnownOrder1(client,listingId,address,now);if(known.found){setResume(known.found);setOrderId(known.found.orderId);setAmount(formatUnits(known.found.tokenAmount,tokenDecimals));return setStatus(`Order #${known.found.orderId} ditemukan. Tidak membuat order baru.`)}const pending=await scanPending(client,listingId,address,now);if(pending){setResume(pending);setOrderId(pending.orderId);setAmount(formatUnits(pending.tokenAmount,tokenDecimals));save(storageKey,{chainId,escrow:USTETU_ESCROW_ADDRESS,listingId:listingId.toString(),buyer:address,orderId:pending.orderId.toString(),tokenAmount:pending.tokenAmount.toString(),grossPayment:pending.grossPayment.toString(),expiresAt:pending.expiresAt.toString(),createHash:pending.createHash});return setStatus(`Order #${pending.orderId} masih aktif. Tidak membuat order baru.`)}if(!parsed)return setErr(`Masukkan jumlah ${symbol} yang valid.`);if(parsed<minOrderAmount||parsed>maxOrderAmount||parsed>available)return setErr(`Jumlah harus ${min}–${max} ${symbol} dan tidak melebihi stok ${avail} ${symbol}.`);if((balance??0n)<preview)return setErr(`Saldo ${paymentSymbol} tidak cukup.`);setStep("creating");setStatus("Menunggu konfirmasi createOrder di wallet…");const h=await writeContractAsync({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"createOrder",args:[listingId,parsed]});setTx(x=>({...x,create:h}));const r=await waitReceipt(client,h);let id=0n,gross=preview;for(const log of r.logs){try{const d=decodeEventLog({abi:escrowAbi,data:log.data,topics:log.topics,eventName:"OrderCreated"});if(d.eventName==="OrderCreated"){id=d.args.orderId;gross=d.args.grossPayment;break}}catch{}}if(id===0n)throw new Error("OrderCreated event tidak ditemukan.");await settle(id,gross,PAYMENT_PENDING,h,r.blockNumber)}catch(e){setStep("idle");setStatus("");setErr(errorText(e))}};
   const hashes=Object.entries(tx).filter(([,v])=>v);
