@@ -12,18 +12,25 @@ const projectId =
 /**
  * USTETU wallet configuration.
  *
- * Keep RainbowKit's default wallet connectors. For Base Sepolia RPC access,
- * use two public endpoints so a lagging RPC cannot leave transaction receipts
- * invisible to the frontend after the wallet has already confirmed them.
+ * Buy Order performs several sequential eth_call/read operations around
+ * fundOrder/completeOrder. Do not let a short application-level timeout abort
+ * before the transport has a chance to retry/fail over to the second RPC.
  */
+const rpc = (url: string) =>
+  http(url, {
+    timeout: 15_000,
+    retryCount: 2,
+    retryDelay: 750,
+  });
+
 export const wagmiConfig = getDefaultConfig({
   appName: "USTETU",
   projectId,
   chains: [baseSepolia],
   transports: {
     [baseSepolia.id]: fallback([
-      http("https://sepolia.base.org", { timeout: 10_000 }),
-      http("https://base-sepolia-rpc.publicnode.com", { timeout: 10_000 }),
+      rpc("https://sepolia.base.org"),
+      rpc("https://base-sepolia-rpc.publicnode.com"),
     ]),
   },
   ssr: true,
