@@ -14,7 +14,16 @@ const EXPIRED = 9;
 const SCAN_BLOCKS = 5000n;
 const POLL_MS = 5000;
 
-async function findLatestOrder(client: PublicClient, listingId: bigint, buyer: `0x${string}`) {
+type FoundOrder = {
+  orderId: bigint;
+  order: {
+    state: number;
+    tokenAmount: bigint;
+    expiresAt: bigint;
+  };
+};
+
+async function findLatestOrder(client: PublicClient, listingId: bigint, buyer: `0x${string}`): Promise<FoundOrder | null> {
   const latest = await client.getBlockNumber();
   const fromBlock = latest > SCAN_BLOCKS ? latest - SCAN_BLOCKS : 0n;
   const logs = await client.getLogs({ address: USTETU_ESCROW_ADDRESS, fromBlock, toBlock: latest });
@@ -28,7 +37,15 @@ async function findLatestOrder(client: PublicClient, listingId: bigint, buyer: `
     } catch {}
   }
   if (latestId === null) return null;
-  return client.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getOrder", args: [latestId] });
+  const raw = await client.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getOrder", args: [latestId] });
+  return {
+    orderId: latestId,
+    order: {
+      state: Number(raw.state),
+      tokenAmount: raw.tokenAmount,
+      expiresAt: raw.expiresAt,
+    },
+  };
 }
 
 export default function BuyModalFlow(props: Props) {
@@ -50,12 +67,13 @@ export default function BuyModalFlow(props: Props) {
       try {
         const block = await client.getBlock({ blockTag: "latest" });
         const chainNow = block.timestamp;
-        const order = await findLatestOrder(client, props.listingId, address);
+        const found = await findLatestOrder(client, props.listingId, address);
         if (cancelled) return;
         setNow(chainNow);
-        if (!order) return;
-        const state = Number(order.state);
-        setOrderId((previous) => previous === null || order.orderId > previous ? order.orderId : previous);
+        if (!found) return;
+        const { orderId: foundOrderId, order } = found;
+        const state = order.state;
+        setOrderId((previous) => previous === null || foundOrderId > previous ? foundOrderId : previous);
         setOrderState(state);
         setOrderAmount(order.tokenAmount);
         setOrderExpiresAt(order.expiresAt);
