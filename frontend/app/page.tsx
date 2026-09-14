@@ -10,6 +10,8 @@ import { useLanguage } from "@/lib/LanguageContext";
 import { erc20MetadataAbi, escrowAbi, registryAbi, USTETU_ESCROW_ADDRESS, USTETU_REGISTRY_ADDRESS, USTETU_TOKEN_ID } from "@/lib/contracts";
 
 const LISTING_ID = 2n;
+const LISTING_ACTIVE = 1;
+const TOKEN_APPROVED = 2;
 
 export default function HomePage() {
   const { t } = useLanguage();
@@ -38,6 +40,7 @@ export default function HomePage() {
 
   const isLoading = listingQuery.isLoading || tokenQuery.isLoading || nameQuery.isLoading || symbolQuery.isLoading || paymentSymbolQuery.isLoading || paymentDecimalsQuery.isLoading;
   const hasError = listingQuery.isError || tokenQuery.isError || nameQuery.isError || symbolQuery.isError || paymentSymbolQuery.isError || paymentDecimalsQuery.isError;
+  const isBuyable = Boolean(liveData && liveData.listingStatus === LISTING_ACTIVE && liveData.status === TOKEN_APPROVED && liveData.availableRaw >= liveData.minOrderAmount);
   const matchesSearch = useMemo(() => {
     if (!liveData || !search.trim()) return true;
     const q = search.trim().toLowerCase();
@@ -66,7 +69,7 @@ export default function HomePage() {
         <div className="listing-glass">
           <div className="listing-toolbar">
             <span className="listing-count">{isLoading ? t("loading") : matchesSearch && liveData ? `1 ${t("listing")}` : `0 ${t("listings")}`}</span>
-            <span className="status-dot"><i /> {t("live")}</span>
+            <span className="status-dot"><i /> {liveData?.listingStatus === LISTING_ACTIVE ? t("live") : "Not available"}</span>
           </div>
           <div className="listing-table-wrap">
             <table className="listing-table">
@@ -94,13 +97,13 @@ export default function HomePage() {
             <div className="drawer-token-head"><TokenLogo address={liveData.address} chainId={liveData.chainId} name={liveData.token} symbol={liveData.symbol} size={58} /><div><h2>{liveData.token}</h2><span>{t("verifiedToken")} ✓</span></div></div>
             <div className="detail-grid">
               <div><span>{t("name")}</span><strong>{liveData.token}</strong></div><div><span>{t("symbol")}</span><strong>{liveData.symbol}</strong></div><div><span>{t("decimals")}</span><strong>{liveData.decimals}</strong></div><div><span>Payment</span><strong>{liveData.paymentSymbol} · {liveData.paymentDecimals} decimals</strong></div><div><span>{t("networkLabel")}</span><strong>Base Sepolia</strong></div>
-              <div className="detail-wide"><span>{t("contractAddress")}</span><strong className="address-value">{liveData.address}</strong></div><div className="detail-wide"><span>{t("status")}</span><strong className="approved">● {t("approved")}</strong></div>
+              <div className="detail-wide"><span>{t("contractAddress")}</span><strong className="address-value">{liveData.address}</strong></div><div className="detail-wide"><span>{t("status")}</span><strong className="approved">● {liveData.status === TOKEN_APPROVED ? t("approved") : "Not approved"}</strong></div>
             </div>
             <div className="drawer-listing-card"><div className="drawer-listing-title">Listing #{liveData.listingId.toString()}</div><div className="drawer-price"><strong>{liveData.price}</strong> <span>{liveData.paymentSymbol} / {liveData.symbol}</span></div><div className="drawer-available">{t("available")} <strong>{liveData.available} {liveData.symbol}</strong></div></div>
             <div className="drawer-actions">
               <button className="secondary-glass" type="button" onClick={() => navigator.clipboard?.writeText(liveData.address)}>{t("copyAddress")}</button>
               <a className="secondary-glass" href={`https://sepolia.basescan.org/token/${liveData.address}`} target="_blank" rel="noreferrer">{t("baseScan")}</a>
-              <button className="primary-glass" type="button" onClick={() => setBuyOpen(true)}>{t("buy")} {liveData.symbol}</button>
+              <button className="primary-glass" type="button" disabled={!isBuyable} onClick={() => setBuyOpen(true)} title={!isBuyable ? "Listing belum tersedia untuk pembelian." : undefined}>{isBuyable ? `${t("buy")} ${liveData.symbol}` : "Buy unavailable"}</button>
             </div>
           </aside>
           <BuyModalFlow open={buyOpen} onClose={() => setBuyOpen(false)} onCompleted={refreshListing} listingId={liveData.listingId} symbol={liveData.symbol} price={liveData.priceRaw} available={liveData.availableRaw} minOrderAmount={liveData.minOrderAmount} maxOrderAmount={liveData.maxOrderAmount} paymentToken={liveData.paymentToken} tokenDecimals={liveData.decimals} paymentDecimals={liveData.paymentDecimals} paymentSymbol={liveData.paymentSymbol} />
