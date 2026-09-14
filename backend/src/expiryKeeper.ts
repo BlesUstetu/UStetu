@@ -22,44 +22,31 @@ const readEscrow = new Contract(config.escrowAddress, KEEPER_ABI, provider);
 const pollIntervalMs = Number(process.env.KEEPER_POLL_INTERVAL_MS ?? "30000");
 const bootstrapBlocks = Number(process.env.KEEPER_SCAN_BLOCKS ?? "5000");
 let nextBlock = 0;
+const candidates = new Set<string>();
 const attempted = new Set<string>();
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+function sleep(ms: number) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
-async function expireExpiredOrders(fromBlock: number, toBlock: number) {
+async function discoverOrders(fromBlock: number, toBlock: number) {
   if (toBlock < fromBlock) return;
-
   const orderCreatedEvent = readEscrow.interface.getEvent("OrderCreated");
   if (!orderCreatedEvent) throw new Error("OrderCreated event is missing from keeper ABI");
-
-  const logs = await provider.getLogs({
-    address: config.escrowAddress,
-    fromBlock,
-    toBlock,
-    topics: [orderCreatedEvent.topicHash]
-  });
-
-  const block = await provider.getBlock(toBlock);
-  const now = BigInt(block?.timestamp ?? Math.floor(Date.now() / 1000));
-
+  const logs = await provider.getLogs({ address: config.escrowAddress, fromBlock, toBlock, topics: [orderCreatedEvent.topicHash] });
   for (const log of logs) {
     const parsed = readEscrow.interface.parseLog(log);
     if (!parsed || parsed.name !== "OrderCreated") continue;
+    candidates.add(BigInt(parsed.args[0]).toString());
+  }
+}
 
-    const orderId = BigInt(parsed.args[0]);
-    const key = orderId.toString();
+async function expireCandidates(now: bigint) {
+  for (const key of Array.from(candidates)) {
     if (attempted.has(key)) continue;
-
     try {
+      const orderId = BigInt(key);
       const order = await readEscrow.getOrder(orderId);
-      if (Number(order.state) !== PAYMENT_PENDING) {
-        attempted.add(key);
-        continue;
-      }
+      if (Number(order.state) !== PAYMENT_PENDING) { candidates.delete(key); continue; }
       if (BigInt(order.expiresAt) > now) continue;
-
       attempted.add(key);
       console.log(`Expiring Order #${key} for Listing #${order.listingId}…`);
       const tx = await escrow.expireOrder(orderId);
@@ -70,6 +57,7 @@ async function expireExpiredOrders(fromBlock: number, toBlock: number) {
         attempted.delete(key);
         continue;
       }
+      candidates.delete(key);
       console.log(`Order #${key} expired successfully: ${tx.hash}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -81,20 +69,20 @@ async function expireExpiredOrders(fromBlock: number, toBlock: number) {
 
 export async function runOnce() {
   const network = await provider.getNetwork();
-  if (Number(network.chainId) !== config.chainId) {
-    throw new Error(`RPC chain ${network.chainId} does not match CHAIN_ID ${config.chainId}`);
-  }
-
+  if (Number(network.chainId) !== config.chainId) throw new Error(`RPC chain ${network.chainId} does not match CHAIN_ID ${config.chainId}`);
   const latest = await provider.getBlockNumber();
   if (nextBlock === 0) nextBlock = Math.max(0, latest - bootstrapBlocks + 1);
-  if (nextBlock > latest) return;
-
-  const chunkSize = 2000;
-  for (let start = nextBlock; start <= latest; start += chunkSize) {
-    const end = Math.min(start + chunkSize - 1, latest);
-    await expireExpiredOrders(start, end);
-    nextBlock = end + 1;
+  if (nextBlock <= latest) {
+    const chunkSize = 2000;
+    for (let start = nextBlock; start <= latest; start += chunkSize) {
+      const end = Math.min(start + chunkSize - 1, latest);
+      await discoverOrders(start, end);
+      nextBlock = end + 1;
+    }
   }
+  const block = await provider.getBlock(latest);
+  const now = BigInt(block?.timestamp ?? Math.floor(Date.now() / 1000));
+  await expireCandidates(now);
 }
 
 async function main() {
@@ -103,13 +91,8 @@ async function main() {
   console.log(`Keeper wallet: ${keeper}`);
   console.log(`Escrow: ${config.escrowAddress}`);
   console.log(`Poll interval: ${pollIntervalMs} ms`);
-
   for (;;) {
-    try {
-      await runOnce();
-    } catch (error) {
-      console.error("Expiry keeper cycle failed:", error);
-    }
+    try { await runOnce(); } catch (error) { console.error("Expiry keeper cycle failed:", error); }
     await sleep(pollIntervalMs);
   }
 }
