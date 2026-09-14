@@ -1,5 +1,5 @@
+import "dotenv/config";
 import { Contract, JsonRpcProvider, Wallet } from "ethers";
-import { config } from "./config.js";
 
 const PAYMENT_PENDING = 1;
 const KEEPER_ABI = [
@@ -8,19 +8,27 @@ const KEEPER_ABI = [
   "function expireOrder(uint256 orderId)"
 ] as const;
 
-function requiredKeeperKey(): string {
-  const value = process.env.KEEPER_PRIVATE_KEY?.trim();
-  if (!value) throw new Error("Missing environment variable: KEEPER_PRIVATE_KEY");
+function required(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Missing environment variable: ${name}`);
   return value;
 }
 
-const provider = new JsonRpcProvider(config.rpcUrl, config.chainId);
+const rpcUrl = required("RPC_URL");
+const chainId = Number(required("CHAIN_ID"));
+const escrowAddress = required("ESCROW_ADDRESS");
+const provider = new JsonRpcProvider(rpcUrl, chainId);
+
+function requiredKeeperKey(): string {
+  return required("KEEPER_PRIVATE_KEY");
+}
+
 const wallet = new Wallet(requiredKeeperKey(), provider);
-const escrow = new Contract(config.escrowAddress, KEEPER_ABI, wallet);
-const readEscrow = new Contract(config.escrowAddress, KEEPER_ABI, provider);
+const escrow = new Contract(escrowAddress, KEEPER_ABI, wallet);
+const readEscrow = new Contract(escrowAddress, KEEPER_ABI, provider);
 
 const pollIntervalMs = Number(process.env.KEEPER_POLL_INTERVAL_MS ?? "30000");
-const bootstrapBlocks = Number(process.env.KEEPER_SCAN_BLOCKS ?? "5000");
+const bootstrapBlocks = Number(process.env.KEEPER_SCAN_BLOCKS ?? "50000");
 let nextBlock = 0;
 const candidates = new Set<string>();
 const attempted = new Set<string>();
@@ -31,7 +39,7 @@ async function discoverOrders(fromBlock: number, toBlock: number) {
   if (toBlock < fromBlock) return;
   const orderCreatedEvent = readEscrow.interface.getEvent("OrderCreated");
   if (!orderCreatedEvent) throw new Error("OrderCreated event is missing from keeper ABI");
-  const logs = await provider.getLogs({ address: config.escrowAddress, fromBlock, toBlock, topics: [orderCreatedEvent.topicHash] });
+  const logs = await provider.getLogs({ address: escrowAddress, fromBlock, toBlock, topics: [orderCreatedEvent.topicHash] });
   for (const log of logs) {
     const parsed = readEscrow.interface.parseLog(log);
     if (!parsed || parsed.name !== "OrderCreated") continue;
@@ -69,7 +77,7 @@ async function expireCandidates(now: bigint) {
 
 export async function runOnce() {
   const network = await provider.getNetwork();
-  if (Number(network.chainId) !== config.chainId) throw new Error(`RPC chain ${network.chainId} does not match CHAIN_ID ${config.chainId}`);
+  if (Number(network.chainId) !== chainId) throw new Error(`RPC chain ${network.chainId} does not match CHAIN_ID ${chainId}`);
   const latest = await provider.getBlockNumber();
   if (nextBlock === 0) nextBlock = Math.max(0, latest - bootstrapBlocks + 1);
   if (nextBlock <= latest) {
@@ -87,9 +95,9 @@ export async function runOnce() {
 
 async function main() {
   const keeper = await wallet.getAddress();
-  console.log(`UStetu expiry keeper started on chain ${config.chainId}`);
+  console.log(`UStetu expiry keeper started on chain ${chainId}`);
   console.log(`Keeper wallet: ${keeper}`);
-  console.log(`Escrow: ${config.escrowAddress}`);
+  console.log(`Escrow: ${escrowAddress}`);
   console.log(`Poll interval: ${pollIntervalMs} ms`);
   for (;;) {
     try { await runOnce(); } catch (error) { console.error("Expiry keeper cycle failed:", error); }
