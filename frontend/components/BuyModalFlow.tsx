@@ -69,7 +69,7 @@ export default function BuyModalFlow(props: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | undefined;
+    let timer: number | undefined;
 
     const resetForOpen = async () => {
       if (!props.open || !client || !address) return;
@@ -80,8 +80,6 @@ export default function BuyModalFlow(props: Props) {
       setCompleted(null);
       if (cancelled) return;
 
-      // Establish the order that already existed when the modal opened.
-      // An old COMPLETED order must never trigger the purchase-complete overlay.
       const existing = await scanCreated(client, latest > 100n ? latest - 100n : 0n, latest, props.listingId, address);
       if (!existing || cancelled) return;
       const state = await readState(client, existing.orderId);
@@ -124,7 +122,7 @@ export default function BuyModalFlow(props: Props) {
 
     return () => {
       cancelled = true;
-      if (timer) window.clearInterval(timer);
+      if (timer !== undefined) window.clearInterval(timer);
       baselineBlockRef.current = null;
       activeOrderRef.current = null;
       seenOrderRef.current = null;
