@@ -11,8 +11,10 @@ const PAYMENT_PENDING = 1;
 const PAID = 2;
 const COMPLETED = 5;
 const RPC_TIMEOUT = 4000;
-const SCAN_BLOCKS = 100000n;
-const MAX_LOG_RANGE = 40000n;
+// A PAYMENT_PENDING order lives for only 15 minutes. Scanning 100k Base Sepolia
+// blocks on every modal open is unnecessary and makes the UI look stuck.
+const SCAN_BLOCKS = 5000n;
+const MAX_LOG_RANGE = 5000n;
 const PENDING_STORAGE = "ustetu.pending-order.v1";
 
 type Step = "idle" | "creating" | "approving" | "funding" | "completing" | "success";
@@ -34,9 +36,26 @@ async function logsChunked(client:PublicClient,from:bigint,to:bigint){const out:
 async function scanPending(client:PublicClient,listingId:bigint,buyer:`0x${string}`,now:bigint):Promise<ResumeOrder|null>{
   const latest=await timeout(client.getBlockNumber(),RPC_TIMEOUT,"RPC block timeout");
   const from=latest>SCAN_BLOCKS?latest-SCAN_BLOCKS:0n;
-  const logs=await logsChunked(client,from,latest); let found:ResumeOrder|null=null;
-  for(const log of logs){try{const d=decodeEventLog({abi:escrowAbi,data:log.data,topics:log.topics,eventName:"OrderCreated"});if(d.eventName!=="OrderCreated")continue;const a=d.args;if(a.listingId!==listingId||a.buyer.toLowerCase()!==buyer.toLowerCase())continue;const o=await timeout(client.readContract({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"getOrder",args:[a.orderId]}),RPC_TIMEOUT,"RPC order timeout");if(!o)continue;const state=Number(o.state);if(state===PAYMENT_PENDING&&o.expiresAt<=now)continue;if((state===PAYMENT_PENDING||state===PAID)&&(!found||a.orderId>found.orderId))found={orderId:a.orderId,tokenAmount:a.tokenAmount,grossPayment:a.grossPayment,state,expiresAt:o.expiresAt,createHash:log.transactionHash??undefined}}catch{}}
-  return found;
+  const logs=await logsChunked(client,from,latest);
+  // OrderCreated logs are returned in block order. Start from the newest so we
+  // only need one getOrder() call for the latest matching order.
+  for(let i=logs.length-1;i>=0;i--){
+    const log=logs[i];
+    try{
+      const d=decodeEventLog({abi:escrowAbi,data:log.data,topics:log.topics,eventName:"OrderCreated"});
+      if(d.eventName!=="OrderCreated")continue;
+      const a=d.args;
+      if(a.listingId!==listingId||a.buyer.toLowerCase()!==buyer.toLowerCase())continue;
+      const o=await timeout(client.readContract({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"getOrder",args:[a.orderId]}),RPC_TIMEOUT,"RPC order timeout");
+      if(!o)continue;
+      const state=Number(o.state);
+      if(state===PAYMENT_PENDING&&o.expiresAt<=now)continue;
+      if(state===PAYMENT_PENDING||state===PAID)return {orderId:a.orderId,tokenAmount:a.tokenAmount,grossPayment:a.grossPayment,state,expiresAt:o.expiresAt,createHash:log.transactionHash??undefined};
+      // A newer completed/terminal order means there is no older active order
+      // to resume. Continue only if a newer matching event was terminal.
+    }catch{}
+  }
+  return null;
 }
 
 async function readKnownOrder1(client:PublicClient,listingId:bigint,buyer:`0x${string}`,now:bigint):Promise<{found:ResumeOrder|null;expiredOrderId:bigint|null}>{
