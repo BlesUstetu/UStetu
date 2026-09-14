@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { decodeEventLog, formatUnits, type PublicClient } from "viem";
+import { decodeEventLog, type PublicClient } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
 import BuyModal from "@/components/BuyModal";
 import { escrowAbi, USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
@@ -49,16 +49,14 @@ async function findLatestOrder(client: PublicClient, listingId: bigint, buyer: `
 }
 
 export default function BuyModalFlow(props: Props) {
-  const { open, onCompleted } = props;
+  const { open } = props;
   const { address } = useAccount();
   const client = usePublicClient();
   const [flow, setFlow] = useState<FlowState>("normal");
   const [orderId, setOrderId] = useState<bigint | null>(null);
   const [orderState, setOrderState] = useState<number | null>(null);
-  const [orderAmount, setOrderAmount] = useState<bigint | null>(null);
   const [orderExpiresAt, setOrderExpiresAt] = useState<bigint | null>(null);
   const [now, setNow] = useState(0n);
-  const [remount, setRemount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,56 +68,64 @@ export default function BuyModalFlow(props: Props) {
         const found = await findLatestOrder(client, props.listingId, address);
         if (cancelled) return;
         setNow(chainNow);
-        if (!found) return;
+        if (!found) {
+          setFlow("normal");
+          setOrderState(null);
+          setOrderId(null);
+          setOrderExpiresAt(null);
+          return;
+        }
+
         const { orderId: foundOrderId, order } = found;
-        const state = order.state;
-        setOrderId((previous) => previous === null || foundOrderId > previous ? foundOrderId : previous);
-        setOrderState(state);
-        setOrderAmount(order.tokenAmount);
+        setOrderId(foundOrderId);
+        setOrderState(order.state);
         setOrderExpiresAt(order.expiresAt);
-        if (state === EXPIRED) { setFlow("released"); return; }
-        if (state === PAYMENT_PENDING) { setFlow(order.expiresAt <= chainNow ? "expired" : "normal"); return; }
+
+        if (order.state === EXPIRED) {
+          setFlow("released");
+          return;
+        }
+        if (order.state === PAYMENT_PENDING) {
+          setFlow(order.expiresAt <= chainNow ? "expired" : "normal");
+          return;
+        }
         setFlow("normal");
       } catch {}
     };
+
     void poll();
     const timer = window.setInterval(() => void poll(), POLL_MS);
-    return () => { cancelled = true; window.clearInterval(timer); };
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
   }, [open, client, address, props.listingId]);
 
   const remaining = orderExpiresAt && orderExpiresAt > now ? Number(orderExpiresAt - now) : 0;
   const remainingText = `${Math.floor(remaining / 60).toString().padStart(2, "0")}:${(remaining % 60).toString().padStart(2, "0")}`;
 
-  const createNewOrder = () => {
-    setFlow("normal");
-    setOrderId(null);
-    setOrderState(null);
-    setOrderAmount(null);
-    setOrderExpiresAt(null);
-    setRemount((value) => value + 1);
-    onCompleted();
-  };
-
   return (
     <>
-      {open && flow === "normal" && <BuyModal key={remount} {...props} />}
-      {open && flow === "expired" && (
-        <div className="buy-expiry-banner" role="status">
-          <strong>Payment expired</strong>
-          <span>Order #{orderId?.toString() ?? "—"} melewati batas 15 menit.</span>
-          <small>Menunggu sistem otomatis melepas inventory. Buyer tidak perlu melakukan RELEASE.</small>
-        </div>
-      )}
+      {/* The BuyModal remains available throughout the lifecycle. Expiry is a system event,
+          not a buyer action, so it must never replace the Buy UI with a RELEASE screen. */}
+      {open && <BuyModal {...props} />}
+
       {open && flow === "normal" && orderState === PAYMENT_PENDING && orderId !== null && orderExpiresAt && orderExpiresAt > now && (
-        <div className="buy-expiry-countdown" role="status">
-          <span>Payment deadline · Order #{orderId.toString()}</span><strong>{remainingText}</strong>
+        <div className="buy-expiry-countdown" role="status" aria-live="polite">
+          <span>Payment deadline · Order #{orderId.toString()}</span>
+          <strong>{remainingText}</strong>
         </div>
       )}
+
+      {open && flow === "expired" && (
+        <div className="buy-expiry-state" role="status" aria-live="polite">
+          <span>Payment expired · waiting for automatic inventory release.</span>
+        </div>
+      )}
+
       {open && flow === "released" && (
-        <div className="buy-expiry-banner buy-expiry-released" role="status">
-          <strong>Order #{orderId?.toString() ?? "—"} expired — inventory released</strong>
-          <span>{orderAmount !== null ? formatUnits(orderAmount, props.tokenDecimals) : ""} {props.symbol} kembali tersedia di listing.</span>
-          <button type="button" onClick={createNewOrder}>Create New Order</button>
+        <div className="buy-expiry-state buy-expiry-state--released" role="status" aria-live="polite">
+          <span>Previous order expired. Inventory has been released. You can create a new order.</span>
         </div>
       )}
     </>
