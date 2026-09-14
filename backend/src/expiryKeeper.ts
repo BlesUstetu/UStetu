@@ -31,11 +31,14 @@ function sleep(ms: number) {
 async function expireExpiredOrders(fromBlock: number, toBlock: number) {
   if (toBlock < fromBlock) return;
 
+  const orderCreatedEvent = readEscrow.interface.getEvent("OrderCreated");
+  if (!orderCreatedEvent) throw new Error("OrderCreated event is missing from keeper ABI");
+
   const logs = await provider.getLogs({
     address: config.escrowAddress,
     fromBlock,
     toBlock,
-    topics: [readEscrow.interface.getEvent("OrderCreated").topicHash]
+    topics: [orderCreatedEvent.topicHash]
   });
 
   const block = await provider.getBlock(toBlock);
