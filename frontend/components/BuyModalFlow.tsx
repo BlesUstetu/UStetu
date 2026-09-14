@@ -84,7 +84,7 @@ export default function BuyModalFlow(props: Props) {
 
   return (
     <>
-      <BuyModal key={remount} {...props} />
+      {open && flow === "normal" && <BuyModal key={remount} {...props} />}
       {open && flow === "expired" && (
         <div className="buy-expiry-banner" role="status">
           <strong>Payment expired</strong>
