@@ -15,9 +15,9 @@ jobs:
       run:
         working-directory: backend
     env:
-      RPC_URL: ${{ secrets.KEEPER_RPC_URL }}
-      CHAIN_ID: ${{ secrets.KEEPER_CHAIN_ID }}
-      ESCROW_ADDRESS: ${{ secrets.KEEPER_ESCROW_ADDRESS }}
+      RPC_URL: https://sepolia.base.org
+      CHAIN_ID: "84532"
+      ESCROW_ADDRESS: "0x3c97fc6c63Dc2E1aA1F0f4e36fF3cdFd9Cc6dd2e"
       KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
       KEEPER_SCAN_BLOCKS: "50000"
     steps:
@@ -31,8 +31,8 @@ jobs:
 
       - name: Check keeper configuration
         run: |
-          if [ -z "$RPC_URL" ] || [ -z "$CHAIN_ID" ] || [ -z "$ESCROW_ADDRESS" ] || [ -z "$KEEPER_PRIVATE_KEY" ]; then
-            echo "Keeper secrets are not configured yet; expiry cycle skipped safely."
+          if [ -z "$KEEPER_PRIVATE_KEY" ]; then
+            echo "KEEPER_PRIVATE_KEY is not configured yet; expiry cycle skipped safely."
             exit 0
           fi
 
