@@ -1,0 +1,45 @@
+name: UStetu Expiry Keeper
+
+on:
+  schedule:
+    # Base Sepolia PAYMENT_PENDING orders expire after 15 minutes.
+    # Five minutes is the shortest GitHub Actions schedule interval.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  expire-orders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      RPC_URL: ${{ secrets.KEEPER_RPC_URL }}
+      CHAIN_ID: ${{ secrets.KEEPER_CHAIN_ID }}
+      ESCROW_ADDRESS: ${{ secrets.KEEPER_ESCROW_ADDRESS }}
+      KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+      KEEPER_SCAN_BLOCKS: "50000"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package.json
+
+      - name: Check keeper configuration
+        run: |
+          if [ -z "$RPC_URL" ] || [ -z "$CHAIN_ID" ] || [ -z "$ESCROW_ADDRESS" ] || [ -z "$KEEPER_PRIVATE_KEY" ]; then
+            echo "Keeper secrets are not configured yet; expiry cycle skipped safely."
+            exit 0
+          fi
+
+      - name: Install backend dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Expire eligible orders
+        run: npm run keeper:once
