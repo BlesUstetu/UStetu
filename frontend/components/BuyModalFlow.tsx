@@ -5,6 +5,7 @@ import { decodeEventLog, formatUnits, type PublicClient } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
 import BuyModal from "@/components/BuyModal";
 import { escrowAbi, USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
+import "./BuyModalFlow.css";
 
 type Props = React.ComponentProps<typeof BuyModal>;
 type FlowState = "normal" | "expired" | "released";
@@ -35,6 +36,7 @@ export default function BuyModalFlow(props: Props) {
   const { address } = useAccount();
   const client = usePublicClient();
   const [flow, setFlow] = useState<FlowState>("normal");
+  const [orderId, setOrderId] = useState<bigint | null>(null);
   const [orderAmount, setOrderAmount] = useState<bigint | null>(null);
   const [orderExpiresAt, setOrderExpiresAt] = useState<bigint | null>(null);
   const [now, setNow] = useState(0n);
@@ -47,37 +49,36 @@ export default function BuyModalFlow(props: Props) {
       try {
         const block = await client.getBlock({ blockTag: "latest" });
         const chainNow = block.timestamp;
+        const order = await findLatestOrder(client, props.listingId, address);
         if (cancelled) return;
         setNow(chainNow);
-        const order = await findLatestOrder(client, props.listingId, address);
-        if (!order || cancelled) return;
+        if (!order) return;
         const state = Number(order.state);
+        setOrderId((previous) => previous === null || order.orderId > previous ? order.orderId : previous);
+        setOrderAmount(order.tokenAmount);
+        setOrderExpiresAt(order.expiresAt);
         if (state === EXPIRED) {
-          setOrderAmount(order.tokenAmount);
-          setOrderExpiresAt(order.expiresAt);
-          setFlow((previous) => previous === "expired" ? "released" : "released");
+          setFlow("released");
           return;
         }
         if (state === PAYMENT_PENDING) {
-          setOrderAmount(order.tokenAmount);
-          setOrderExpiresAt(order.expiresAt);
-          if (order.expiresAt <= chainNow) setFlow("expired");
-          else setFlow("normal");
+          setFlow(order.expiresAt <= chainNow ? "expired" : "normal");
           return;
         }
-        if (flow !== "normal") setFlow("normal");
+        setFlow("normal");
       } catch {}
     };
     void poll();
     const timer = window.setInterval(() => void poll(), POLL_MS);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [open, client, address, props.listingId, flow]);
+  }, [open, client, address, props.listingId]);
 
   const remaining = orderExpiresAt && orderExpiresAt > now ? Number(orderExpiresAt - now) : 0;
   const remainingText = `${Math.floor(remaining / 60).toString().padStart(2, "0")}:${(remaining % 60).toString().padStart(2, "0")}`;
 
   const createNewOrder = () => {
     setFlow("normal");
+    setOrderId(null);
     setOrderAmount(null);
     setOrderExpiresAt(null);
     setRemount((value) => value + 1);
@@ -90,18 +91,18 @@ export default function BuyModalFlow(props: Props) {
       {open && flow === "expired" && (
         <div className="buy-expiry-banner" role="status">
           <strong>Payment expired</strong>
-          <span>Order #{orderAmount !== null ? "pending" : "—"} melewati batas 15 menit.</span>
+          <span>Order #{orderId?.toString() ?? "—"} melewati batas 15 menit.</span>
           <small>Menunggu sistem otomatis melepas inventory. Buyer tidak perlu melakukan RELEASE.</small>
         </div>
       )}
-      {open && flow === "normal" && orderExpiresAt && orderExpiresAt > now && (
+      {open && flow === "normal" && orderId !== null && orderExpiresAt && orderExpiresAt > now && (
         <div className="buy-expiry-countdown" role="status">
-          <span>Payment deadline</span><strong>{remainingText}</strong>
+          <span>Payment deadline · Order #{orderId.toString()}</span><strong>{remainingText}</strong>
         </div>
       )}
       {open && flow === "released" && (
         <div className="buy-expiry-banner buy-expiry-released" role="status">
-          <strong>Order expired — inventory released</strong>
+          <strong>Order #{orderId?.toString() ?? "—"} expired — inventory released</strong>
           <span>{orderAmount !== null ? formatUnits(orderAmount, props.tokenDecimals) : ""} {props.symbol} kembali tersedia di listing.</span>
           <button type="button" onClick={createNewOrder}>Create New Order</button>
         </div>
