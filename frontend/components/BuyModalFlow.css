@@ -1,51 +1,7 @@
-.buy-expiry-countdown,
-.buy-expiry-state {
-  position: fixed;
-  z-index: 1001;
-  left: 50%;
-  transform: translateX(-50%);
-  box-sizing: border-box;
-  width: min(520px, calc(100vw - 32px));
-  border: 1px solid rgba(120, 150, 255, .24);
-  border-radius: 12px;
-  padding: 10px 14px;
-  background: rgba(10, 14, 28, .92);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 34px rgba(0, 0, 0, .28);
-  color: #eef2ff;
-  pointer-events: none;
-}
-
-.buy-expiry-countdown {
-  bottom: 18px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: center;
-}
-
-.buy-expiry-countdown strong {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .08em;
-}
-
-.buy-expiry-state {
-  bottom: 18px;
-  display: block;
-  font-size: 12px;
-  opacity: .88;
-}
-
-.buy-expiry-state--released {
-  border-color: rgba(65, 220, 145, .30);
-  color: #dfffee;
-}
-
-@media (max-width: 640px) {
-  .buy-expiry-countdown,
-  .buy-expiry-state {
-    bottom: 12px;
-    width: calc(100vw - 20px);
-    padding: 9px 11px;
-  }
-}
+/*
+ * Intentionally empty.
+ *
+ * BuyModalFlow no longer renders expiry/countdown overlays. Order expiry is
+ * handled by the protocol/system flow while the normal BuyModal remains the
+ * only buyer-facing interface.
+ */
