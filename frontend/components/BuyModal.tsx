@@ -21,7 +21,7 @@ type ResumeOrder = { orderId: bigint; tokenAmount: bigint; grossPayment: bigint;
 type Props = { open:boolean; onClose:()=>void; onCompleted:()=>void; listingId:bigint; symbol:string; price:bigint; available:bigint; minOrderAmount:bigint; maxOrderAmount:bigint; paymentToken:`0x${string}`; tokenDecimals:number; paymentDecimals:number; paymentSymbol:string };
 
 const sleep = (ms:number) => new Promise(r => setTimeout(r, ms));
-function timeout<T>(p:Promise<T>, ms:number, message:string) { let t:ReturnType<typeof setTimeout>; const x=new Promise<T>((_,rej)=>{t=setTimeout(()=>rej(new Error(message)),ms)}); return Promise.race([p,x]).finally(()=>clearTimeout(t)); }
+function timeout(p:Promise<any>, ms:number, message:string): Promise<any> { let t:ReturnType<typeof setTimeout>; const x=new Promise<any>((_,rej)=>{t=setTimeout(()=>rej(new Error(message)),ms)}); return Promise.race([p,x]).finally(()=>clearTimeout(t)); }
 function key(chainId:number|undefined,buyer:string|undefined,listingId:bigint){return `${PENDING_STORAGE}:${chainId??0}:${buyer?.toLowerCase()??""}:${listingId}`}
 function save(k:string,v:unknown){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 function load(k:string){try{const x=localStorage.getItem(k);return x?JSON.parse(x):null}catch{return null}}
