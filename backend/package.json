@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "tsx src/indexer.ts",
     "api": "tsx src/api.ts",
+    "keeper": "tsx src/expiryKeeper.ts",
     "start": "node dist/indexer.js",
     "start:api": "node dist/api.js",
+    "start:keeper": "node dist/expiryKeeper.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
