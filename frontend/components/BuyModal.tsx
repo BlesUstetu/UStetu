@@ -277,8 +277,8 @@ export default function BuyModal(props: Props) {
         let allowance = await readAllowance();
         if (allowance < gross) {
           setStep("approving"); setStatus(`Konfirmasi approval ${formatUnits(gross, paymentDecimals)} ${paymentSymbol} di wallet…`);
-          const approvalWrite: Promise<ApprovalOutcome> = writeContractAsync({ address: paymentToken, abi: erc20PaymentAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, gross] }).then((hash) => { setTx((c) => ({ ...c, approve: hash })); return { kind: "submitted", hash }; }).catch((error) => ({ kind: "error", error }));
-          const allowanceWatch: Promise<ApprovalOutcome> = waitAllowance(client!, paymentToken, address!, USTETU_ESCROW_ADDRESS, gross).then((value) => value === null ? { kind: "timeout" } : { kind: "confirmed", allowance: value });
+          const approvalWrite: Promise<ApprovalOutcome> = writeContractAsync({ address: paymentToken, abi: erc20PaymentAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, gross] }).then((hash) => { setTx((c) => ({ ...c, approve: hash })); return { kind: "submitted" as const, hash }; }).catch((error) => ({ kind: "error" as const, error }));
+          const allowanceWatch: Promise<ApprovalOutcome> = waitAllowance(client!, paymentToken, address!, USTETU_ESCROW_ADDRESS, gross).then((value) => value === null ? { kind: "timeout" as const } : { kind: "confirmed" as const, allowance: value });
           const outcome = await Promise.race([approvalWrite, allowanceWatch]);
           if (outcome.kind === "confirmed") { allowance = outcome.allowance; setApprovalReady(true); setStatus(`Approval ${formatUnits(gross, paymentDecimals)} ${paymentSymbol} terkonfirmasi on-chain.`); }
           else if (outcome.kind === "submitted") { try { await waitReceipt(client!, outcome.hash); allowance = await readAllowance(); } catch (error) { const confirmed = await waitAllowance(client!, paymentToken, address!, USTETU_ESCROW_ADDRESS, gross, 20); if (confirmed === null) throw error; allowance = confirmed; } }
@@ -286,8 +286,8 @@ export default function BuyModal(props: Props) {
         }
         if (allowance < gross) throw new Error(`Allowance ${paymentSymbol} belum mencukupi untuk Order #${id}.`);
         setApprovalReady(true); setStep("funding"); setStatus(`Konfirmasi pembayaran ${formatUnits(gross, paymentDecimals)} ${paymentSymbol} di wallet…`);
-        const fundWrite: Promise<FundOutcome> = writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "fundOrder", args: [id] }).then((hash) => { setTx((c) => ({ ...c, fund: hash })); return { kind: "submitted", hash }; }).catch((error) => ({ kind: "error", error }));
-        const fundWatch: Promise<FundOutcome> = waitFundState(client!, id).then((value) => value === PAID || value === COMPLETED ? { kind: "paid" } : { kind: "timeout" });
+        const fundWrite: Promise<FundOutcome> = writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "fundOrder", args: [id] }).then((hash) => { setTx((c) => ({ ...c, fund: hash })); return { kind: "submitted" as const, hash }; }).catch((error) => ({ kind: "error" as const, error }));
+        const fundWatch: Promise<FundOutcome> = waitFundState(client!, id).then((value) => value === PAID || value === COMPLETED ? { kind: "paid" as const } : { kind: "timeout" as const });
         const outcome = await Promise.race([fundWrite, fundWatch]);
         if (outcome.kind === "paid") { state = PAID; setFundPhase("confirmed"); }
         else if (outcome.kind === "submitted") { setFundPhase("submitted"); try { await waitReceipt(client!, outcome.hash); state = PAID; setFundPhase("confirmed"); } catch (error) { const recovered = await waitFundState(client!, id, 20); if (recovered !== PAID && recovered !== COMPLETED) throw error; state = recovered; setFundPhase("confirmed"); } }
@@ -297,7 +297,6 @@ export default function BuyModal(props: Props) {
     if (state === COMPLETED) return markComplete(id);
     if (state !== PAID) throw new Error(`Order #${id} belum PAID. Status on-chain: ${state}.`);
     setApprovalReady(true); setFundPhase("confirmed");
-
     const recovery = load(completeRecoveryStorageKey) as StoredRecovery | null;
     if (recovery && recovery.orderId === id.toString() && recovery.buyer?.toLowerCase() === address?.toLowerCase()) {
       const knownHash = recovery.completeHash;
@@ -305,7 +304,6 @@ export default function BuyModal(props: Props) {
       if (await recoverComplete(id, knownHash)) return;
       throw new Error(`Order #${id} masih menunggu kepastian transaksi Complete. Tidak mengirim transaksi kedua.`);
     }
-
     setStep("completing"); setCompletePhase("wallet"); setStatus("Konfirmasi penyelesaian order di wallet…");
     let completeHash: `0x${string}`;
     try {
