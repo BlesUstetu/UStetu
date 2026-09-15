@@ -10,35 +10,34 @@
   letter-spacing: .02em;
 }
 
-/* Wallet / transaction is currently processing. */
+/* .escrow-flow has a header div before the four step divs.
+   Therefore steps are nth-of-type(2) through nth-of-type(5). */
 .buy-modal:has(.escrow-step:nth-of-type(2).active) .buy-submit::after {
-  content: "APPROVING USDC…";
+  content: "CREATING ORDER…";
 }
 .buy-modal:has(.escrow-step:nth-of-type(3).active) .buy-submit::after {
-  content: "FUNDING ESCROW…";
+  content: "APPROVING USDC…";
 }
 .buy-modal:has(.escrow-step:nth-of-type(4).active) .buy-submit::after {
+  content: "FUNDING ESCROW…";
+}
+.buy-modal:has(.escrow-step:nth-of-type(5).active) .buy-submit::after {
   content: "COMPLETING ORDER…";
 }
 
-/* Create Order itself is being processed. */
-.buy-modal:has(.escrow-step:nth-of-type(1).active) .buy-submit::after {
-  content: "CREATING ORDER…";
-}
-
 /* Active order with no currently active wallet step: show the next action. */
-.buy-modal:has(.escrow-step:nth-of-type(1).done):not(:has(.escrow-step:nth-of-type(2).done)) .buy-submit::after {
+.buy-modal:has(.escrow-step:nth-of-type(2).done):not(:has(.escrow-step:nth-of-type(3).done)) .buy-submit::after {
   content: "APPROVE USDC";
 }
-.buy-modal:has(.escrow-step:nth-of-type(2).done):not(:has(.escrow-step:nth-of-type(3).done)) .buy-submit::after {
+.buy-modal:has(.escrow-step:nth-of-type(3).done):not(:has(.escrow-step:nth-of-type(4).done)) .buy-submit::after {
   content: "FUND ESCROW";
 }
-.buy-modal:has(.escrow-step:nth-of-type(3).done):not(:has(.escrow-step:nth-of-type(4).done)) .buy-submit::after {
+.buy-modal:has(.escrow-step:nth-of-type(4).done):not(:has(.escrow-step:nth-of-type(5).done)) .buy-submit::after {
   content: "COMPLETE ORDER";
 }
 
 /* Completed lifecycle. */
-.buy-modal:has(.escrow-step:nth-of-type(4).done) .buy-submit::after {
+.buy-modal:has(.escrow-step:nth-of-type(5).done) .buy-submit::after {
   content: "ORDER COMPLETED ✓";
 }
 
