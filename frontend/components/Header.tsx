@@ -15,7 +15,7 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
       <div className="brand-block brand-center">
         <img className="ustetu-logo" src="/UStetu/ustetu-logo.svg" alt="USTETU" />
         <div className="brand-copy">
-          <div className="brand">USTETU</div>
+          <div className="brand"><span className="brand-ust">UST</span><span className="brand-etu">ETU</span></div>
           <div className="tagline">Own What’s Next.</div>
         </div>
       </div>
@@ -52,6 +52,8 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .brand-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
         .ustetu-logo{width:27px;height:44px;object-fit:contain;display:block;filter:drop-shadow(0 0 8px rgba(255,100,30,.18))}
         .brand-copy{text-align:center}
+        .brand-ust{color:#48a8ff}
+        .brand-etu{color:#ff4b5f}
         .home-nav-link,.seller-orders-link{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
         .home-nav-link svg,.seller-orders-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
