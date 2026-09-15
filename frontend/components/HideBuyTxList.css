@@ -1,0 +1,5 @@
+/* Transaction list below the BUY button is intentionally hidden.
+   Transaction hashes remain available inside the Escrow Flow. */
+.buy-tx-list {
+  display: none !important;
+}
