@@ -222,7 +222,7 @@ async function scanActiveOrder(
   return null;
 }
 
-async function findCompletedTx(client: PublicClient, orderId: bigint) {
+async function findCompletedTx(client: PublicClient, orderId: bigint): Promise<`0x${string}` | undefined> {
   const latest = await timeout(client.getBlockNumber(), RPC_TIMEOUT, "RPC completion block timeout");
   const from = latest > COMPLETION_SCAN_BLOCKS ? latest - COMPLETION_SCAN_BLOCKS : 0n;
   const logs = await logsChunked(client, from, latest);
@@ -242,7 +242,7 @@ async function findCompletedTx(client: PublicClient, orderId: bigint) {
     } catch {}
   }
 
-  return null;
+  return undefined;
 }
 
 function createdOrderIdFromReceipt(receipt: any, listingId: bigint, buyer: `0x${string}`) {
@@ -561,7 +561,8 @@ export default function BuyModal(props: Props) {
     let completionHash = tx.complete;
     if (!completionHash && client) {
       try {
-        completionHash = await findCompletedTx(client, id);
+        const recoveredHash = await findCompletedTx(client, id);
+        if (recoveredHash) completionHash = recoveredHash;
       } catch {}
     }
     if (completionHash) setTx((current) => ({ ...current, complete: completionHash }));
