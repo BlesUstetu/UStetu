@@ -55,11 +55,7 @@ export default function HomePage() {
       <div className="ambient-glow ambient-glow-two" aria-hidden="true" />
       <section className="marketplace-shell">
         <div className="marketplace-heading">
-          <div>
-            <span className="eyebrow">{t("marketplaceEyebrow")}</span>
-            <h1>{t("findNext")}</h1>
-            <p>{t("verifiedListings")}</p>
-          </div>
+          <div className="marketplace-heading-spacer" aria-hidden="true" />
           <div className="search-glass">
             <span aria-hidden="true">⌕</span>
             <input value={search} onChange={(event) => setSearch(event.target.value)} aria-label={t("searchPlaceholder")} placeholder={t("searchPlaceholder")} />
