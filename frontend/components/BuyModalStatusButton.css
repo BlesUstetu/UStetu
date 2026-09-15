@@ -1,0 +1,48 @@
+/* Replace the generic BUY label with the current escrow lifecycle status. */
+.buy-submit {
+  font-size: 0 !important;
+}
+
+.buy-submit::after {
+  content: "CREATE ORDER";
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .02em;
+}
+
+/* Wallet / transaction is currently processing. */
+.buy-modal:has(.escrow-step:nth-of-type(2).active) .buy-submit::after {
+  content: "APPROVING USDC…";
+}
+.buy-modal:has(.escrow-step:nth-of-type(3).active) .buy-submit::after {
+  content: "FUNDING ESCROW…";
+}
+.buy-modal:has(.escrow-step:nth-of-type(4).active) .buy-submit::after {
+  content: "COMPLETING ORDER…";
+}
+
+/* Create Order itself is being processed. */
+.buy-modal:has(.escrow-step:nth-of-type(1).active) .buy-submit::after {
+  content: "CREATING ORDER…";
+}
+
+/* Active order with no currently active wallet step: show the next action. */
+.buy-modal:has(.escrow-step:nth-of-type(1).done):not(:has(.escrow-step:nth-of-type(2).done)) .buy-submit::after {
+  content: "APPROVE USDC";
+}
+.buy-modal:has(.escrow-step:nth-of-type(2).done):not(:has(.escrow-step:nth-of-type(3).done)) .buy-submit::after {
+  content: "FUND ESCROW";
+}
+.buy-modal:has(.escrow-step:nth-of-type(3).done):not(:has(.escrow-step:nth-of-type(4).done)) .buy-submit::after {
+  content: "COMPLETE ORDER";
+}
+
+/* Completed lifecycle. */
+.buy-modal:has(.escrow-step:nth-of-type(4).done) .buy-submit::after {
+  content: "ORDER COMPLETED ✓";
+}
+
+/* Keep the label readable while the action is disabled. */
+.buy-submit:disabled::after {
+  opacity: .72;
+}
