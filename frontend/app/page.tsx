@@ -50,7 +50,7 @@ export default function HomePage() {
 
   return (
     <main className="app-shell">
-      <Header />
+      <Header showHome={false} />
       <div className="ambient-glow ambient-glow-one" aria-hidden="true" />
       <div className="ambient-glow ambient-glow-two" aria-hidden="true" />
       <section className="marketplace-shell">
