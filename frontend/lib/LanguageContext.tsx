@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getInitialLanguage, translations, type Language } from "@/lib/i18n";
+import { translations, type Language } from "@/lib/i18n";
 
 type LanguageContextValue = {
   language: Language;
@@ -11,26 +11,26 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
+/* USTETU production UI is English-only. The translation catalog remains
+   available for future localization, but the live application always uses EN. */
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
 
   useEffect(() => {
-    setLanguageState(getInitialLanguage());
-    const onLanguageChange = () => setLanguageState(getInitialLanguage());
-    window.addEventListener("ustetu-language-change", onLanguageChange);
-    return () => window.removeEventListener("ustetu-language-change", onLanguageChange);
+    setLanguageState("en");
+    window.localStorage.setItem("ustetu-language", "en");
+    window.dispatchEvent(new Event("ustetu-language-change"));
   }, []);
 
-  const setLanguage = (next: Language) => {
-    setLanguageState(next);
-    window.localStorage.setItem("ustetu-language", next);
-    window.dispatchEvent(new Event("ustetu-language-change"));
+  const setLanguage = (_next: Language) => {
+    setLanguageState("en");
+    window.localStorage.setItem("ustetu-language", "en");
   };
 
   const value = useMemo<LanguageContextValue>(() => ({
     language,
     setLanguage,
-    t: (key: string) => translations[language][key] ?? translations.en[key] ?? key,
+    t: (key: string) => translations.en[key] ?? key,
   }), [language]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
