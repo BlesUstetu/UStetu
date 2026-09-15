@@ -22,6 +22,11 @@ type TxPhase = "idle" | "wallet" | "submitted" | "confirmed";
 type TxHashes = { create?: `0x${string}`; approve?: `0x${string}`; fund?: `0x${string}`; complete?: `0x${string}` };
 type ResumeOrder = { orderId: bigint; tokenAmount: bigint; grossPayment: bigint; state: number; expiresAt: bigint; createHash?: `0x${string}` };
 type StoredCompleteRecovery = { chainId:number; escrow:string; listingId:string; buyer:string; orderId:string; startedAt:number };
+type ApprovalOutcome =
+  | { kind:"submitted"; hash:`0x${string}` }
+  | { kind:"confirmed"; allowance:bigint }
+  | { kind:"error"; error:unknown }
+  | { kind:"timeout" };
 type Props = { open:boolean; onClose:()=>void; onCompleted:()=>void; listingId:bigint; symbol:string; price:bigint; available:bigint; minOrderAmount:bigint; maxOrderAmount:bigint; paymentToken:`0x${string}`; tokenDecimals:number; paymentDecimals:number; paymentSymbol:string };
 
 const sleep = (ms:number) => new Promise(r => setTimeout(r, ms));
@@ -43,7 +48,7 @@ function createdOrderIdFromReceipt(receipt:any,listingId:bigint,buyer:`0x${strin
 
 async function waitReceipt(client:PublicClient,hash:`0x${string}`){for(let i=0;i<30;i++){try{const r=await timeout(client.getTransactionReceipt({hash}),RPC_TIMEOUT,"RPC receipt timeout");if(r.status!=="success")throw new Error("Transaksi on-chain gagal atau di-revert.");return r}catch(e){const m=e instanceof Error?e.message.toLowerCase():"";if(m.includes("revert")||m.includes("on-chain gagal"))throw e;await sleep(700)}}throw new Error(`Receipt belum terbaca. Transaksi tidak dikirim ulang. Tx: ${hash}`)}
 
-async function waitAllowance(client:PublicClient,token:`0x${string}`,owner:`0x${string}`,spender:`0x${string}`,expected:bigint,attempts=30){for(let i=0;i<attempts;i++){try{const a=await timeout(client.readContract({address:token,abi:erc20PaymentAbi,functionName:"allowance",args:[owner,spender]}),RPC_TIMEOUT,"RPC allowance confirmation timeout");if(a>=expected)return a}catch{}await sleep(700)}return null}
+async function waitAllowance(client:PublicClient,token:`0x${string}`,owner:`0x${string}`,spender:`0x${string}`,expected:bigint,attempts=45){for(let i=0;i<attempts;i++){try{const a=await timeout(client.readContract({address:token,abi:erc20PaymentAbi,functionName:"allowance",args:[owner,spender]}),RPC_TIMEOUT,"RPC allowance confirmation timeout");if(a>=expected)return a}catch{}await sleep(700)}return null}
 
 async function waitOrderState(client:PublicClient,id:bigint,wanted:number[],attempts=COMPLETE_RECOVERY_ATTEMPTS){for(let i=0;i<attempts;i++){try{const o:any=await timeout(client.readContract({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"getOrder",args:[id]}),RPC_TIMEOUT,"RPC order recovery timeout");if(o){const s=Number(o.state);if(wanted.includes(s))return s}}catch{}await sleep(1000)}return null}
 
@@ -73,7 +78,69 @@ export default function BuyModal(p:Props){
   const recoverComplete=async(id:bigint)=>{if(!client)return false;setStep("completing");setStatus(`Memastikan Order #${id} sudah COMPLETED on-chain…`);const s=await waitOrderState(client,id,[COMPLETED]);if(s===COMPLETED){setCompletePhase("confirmed");await markComplete(id);return true}setStep("idle");setStatus(`Transaksi Complete belum dapat dipastikan on-chain. Tidak mengirim transaksi kedua. Coba Resume Order #${id} lagi beberapa detik lagi.`);return false};
 
   const settle=async(id:bigint,gross:bigint,state:number,createHash?:`0x${string}`,confirmedBlock?:bigint)=>{setOrderId(id);if(createHash)setTx(x=>({...x,create:createHash}));const tokenAmount=resume?.orderId===id?resume.tokenAmount:parsed;save(storageKey,{chainId,escrow:USTETU_ESCROW_ADDRESS,listingId:listingId.toString(),buyer:address!,orderId:id.toString(),tokenAmount:tokenAmount?.toString()??"0",grossPayment:gross.toString(),createHash});if(state===COMPLETED)return markComplete(id);
-    if(state===PAYMENT_PENDING){const liveOrder:any=await readOrder(id,confirmedBlock);if(!liveOrder)throw new Error(`Order #${id} tidak ditemukan.`);const liveState=Number(liveOrder.state);if(liveState!==PAYMENT_PENDING){if(liveState===PAID){state=PAID;setFundPhase("confirmed")}else if(liveState===COMPLETED)return markComplete(id);else throw new Error(`Order #${id} tidak lagi menunggu pembayaran. Status on-chain: ${liveState}.`)}else{const now=await readChainTimestamp();if(liveOrder.expiresAt<=now){clear(storageKey);setResume(null);setExpiredOrderId(id);throw new Error(`Order #${id} sudah melewati batas waktu pembayaran.`)}if(await readBalance()<gross)throw new Error(`Saldo ${paymentSymbol} tidak cukup. Order #${id} membutuhkan ${formatUnits(gross,paymentDecimals)} ${paymentSymbol}.`);let allowance=await readAllowance();if(allowance<gross){setStep("approving");setStatus(`Konfirmasi approval ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} di wallet…`);const h=await writeContractAsync({address:paymentToken,abi:erc20PaymentAbi,functionName:"approve",args:[USTETU_ESCROW_ADDRESS,gross]});setTx(x=>({...x,approve:h}));setStatus(`Approval ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} sudah dikirim. Menunggu konfirmasi blockchain…`);try{await waitReceipt(client!,h);allowance=await readAllowance()}catch(receiptError){const confirmed=await waitAllowance(client!,paymentToken,address!,USTETU_ESCROW_ADDRESS,gross);if(confirmed===null)throw receiptError;allowance=confirmed}if(allowance<gross){const confirmed=await waitAllowance(client!,paymentToken,address!,USTETU_ESCROW_ADDRESS,gross);if(confirmed===null)throw new Error(`Approval ${paymentSymbol} belum terkonfirmasi on-chain. Tidak mengirim approval kedua.`);allowance=confirmed}}if(allowance>=gross)setApprovalReady(true);if(allowance<gross)throw new Error(`Allowance ${paymentSymbol} belum mencukupi untuk Order #${id}.`);setStep("funding");setFundPhase("wallet");setStatus(`Konfirmasi pembayaran ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} di wallet…`);const h=await writeContractAsync({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"fundOrder",args:[id]});setTx(x=>({...x,fund:h}));setFundPhase("submitted");setStatus(`Fund Escrow sudah dikirim. Menunggu konfirmasi blockchain…`);const fundReceipt=await waitReceipt(client!,h);if(fundReceipt.status!=="success")throw new Error("Pembayaran on-chain gagal.");setFundPhase("confirmed");setStatus(`Fund Escrow terkonfirmasi on-chain. ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} masuk ke escrow.`);state=PAID}}
+    if(state===PAYMENT_PENDING){const liveOrder:any=await readOrder(id,confirmedBlock);if(!liveOrder)throw new Error(`Order #${id} tidak ditemukan.`);const liveState=Number(liveOrder.state);if(liveState!==PAYMENT_PENDING){if(liveState===PAID){state=PAID;setFundPhase("confirmed")}else if(liveState===COMPLETED)return markComplete(id);else throw new Error(`Order #${id} tidak lagi menunggu pembayaran. Status on-chain: ${liveState}.`)}else{const now=await readChainTimestamp();if(liveOrder.expiresAt<=now){clear(storageKey);setResume(null);setExpiredOrderId(id);throw new Error(`Order #${id} sudah melewati batas waktu pembayaran.`)}if(await readBalance()<gross)throw new Error(`Saldo ${paymentSymbol} tidak cukup. Order #${id} membutuhkan ${formatUnits(gross,paymentDecimals)} ${paymentSymbol}.`);let allowance=await readAllowance();
+      if(allowance<gross){
+        setStep("approving");
+        setStatus(`Konfirmasi approval ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} di wallet…`);
+
+        // Wallet/RPC tertentu dapat menahan promise writeContractAsync walaupun user
+        // sudah menekan Confirm. Jangan menunggu promise itu sendirian. Allowance
+        // on-chain adalah sumber kebenaran: begitu allowance >= gross, approval
+        // terbukti berhasil dan flow aman untuk lanjut ke Fund Escrow.
+        const approvalWriteOutcome:Promise<ApprovalOutcome>=writeContractAsync({
+          address:paymentToken,
+          abi:erc20PaymentAbi,
+          functionName:"approve",
+          args:[USTETU_ESCROW_ADDRESS,gross]
+        }).then((h)=>{
+          setTx(x=>({...x,approve:h}));
+          return {kind:"submitted",hash:h} as const;
+        }).catch((error)=>({kind:"error",error}) as const);
+
+        const approvalAllowanceOutcome:Promise<ApprovalOutcome>=waitAllowance(
+          client!,paymentToken,address!,USTETU_ESCROW_ADDRESS,gross,45
+        ).then((a)=>a===null?({kind:"timeout"} as const):({kind:"confirmed",allowance:a} as const));
+
+        const outcome=await Promise.race([approvalWriteOutcome,approvalAllowanceOutcome]);
+
+        if(outcome.kind==="confirmed"){
+          allowance=outcome.allowance;
+          setApprovalReady(true);
+          setStatus(`Approval ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} terkonfirmasi on-chain.`);
+        }else if(outcome.kind==="submitted"){
+          setStatus(`Approval ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} sudah dikirim. Menunggu konfirmasi blockchain…`);
+          try{
+            await waitReceipt(client!,outcome.hash);
+            allowance=await readAllowance();
+          }catch(receiptError){
+            const confirmed=await waitAllowance(client!,paymentToken,address!,USTETU_ESCROW_ADDRESS,gross,20);
+            if(confirmed===null)throw receiptError;
+            allowance=confirmed;
+          }
+        }else{
+          // Jika wallet promise gagal/timeout, beri kesempatan singkat untuk
+          // memastikan transaksi yang sudah dikonfirmasi user ternyata sudah
+          // masuk ke chain. Jika allowance belum berubah, jangan mengirim approve
+          // kedua karena kita tidak tahu apakah tx pertama masih pending.
+          const confirmed=await waitAllowance(client!,paymentToken,address!,USTETU_ESCROW_ADDRESS,gross,15);
+          if(confirmed!==null){
+            allowance=confirmed;
+            setApprovalReady(true);
+            setStatus(`Approval ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} terkonfirmasi on-chain.`);
+          }else if(outcome.kind==="error"){
+            throw outcome.error;
+          }else{
+            throw new Error(`Approval ${paymentSymbol} belum terkonfirmasi on-chain. Tidak mengirim approval kedua.`);
+          }
+        }
+
+        if(allowance<gross){
+          const confirmed=await waitAllowance(client!,paymentToken,address!,USTETU_ESCROW_ADDRESS,gross,20);
+          if(confirmed===null)throw new Error(`Approval ${paymentSymbol} belum terkonfirmasi on-chain. Tidak mengirim approval kedua.`);
+          allowance=confirmed;
+        }
+      }
+      if(allowance>=gross)setApprovalReady(true);if(allowance<gross)throw new Error(`Allowance ${paymentSymbol} belum mencukupi untuk Order #${id}.`);setStep("funding");setFundPhase("wallet");setStatus(`Konfirmasi pembayaran ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} di wallet…`);const h=await writeContractAsync({address:USTETU_ESCROW_ADDRESS,abi:escrowAbi,functionName:"fundOrder",args:[id]});setTx(x=>({...x,fund:h}));setFundPhase("submitted");setStatus(`Fund Escrow sudah dikirim. Menunggu konfirmasi blockchain…`);const fundReceipt=await waitReceipt(client!,h);if(fundReceipt.status!=="success")throw new Error("Pembayaran on-chain gagal.");setFundPhase("confirmed");setStatus(`Fund Escrow terkonfirmasi on-chain. ${formatUnits(gross,paymentDecimals)} ${paymentSymbol} masuk ke escrow.`);state=PAID}}
     if(state===COMPLETED)return markComplete(id);if(state!==PAID)throw new Error(`Order #${id} belum PAID. Status on-chain: ${state}.`);
     if(state===PAID){setApprovalReady(true);setFundPhase("confirmed")}
     const recovery=load(completeRecoveryStorageKey) as StoredCompleteRecovery|null;if(recovery&&recovery.orderId===id.toString()&&recovery.buyer?.toLowerCase()===address?.toLowerCase()){const recovered=await recoverComplete(id);if(recovered)return;throw new Error(`Order #${id} masih menunggu kepastian transaksi Complete. Tidak mengirim transaksi kedua.`)}
