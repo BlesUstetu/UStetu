@@ -86,4 +86,10 @@ html[data-theme="light"] .buy-modal { background: rgba(248, 251, 255, 0.97); box
 .escrow-tx-address:hover { color:#c8ffda; text-shadow:0 0 12px rgba(90,220,150,.55); }
 .escrow-tx-external { flex:0 0 auto; font-family:system-ui,sans-serif; font-size:13px; line-height:1; }
 .escrow-step.done>b:has(.escrow-tx-address) { display:flex; align-items:center; justify-content:flex-end; min-width:0; animation:none; }
+/* Keep the lifecycle panel closed until Create Order is confirmed on-chain. */
+.buy-modal .escrow-flow,
+.buy-modal .escrow-timing { display:none; }
+.buy-modal:has(.escrow-flow > .escrow-step:nth-of-type(2).done) .escrow-flow,
+.buy-modal:has(.escrow-flow > .escrow-step:nth-of-type(2).done) .escrow-timing { display:grid; }
+.buy-modal:has(.escrow-flow > .escrow-step:nth-of-type(2).done) .escrow-flow { display:block; }
 @media (max-width:560px) { .buy-modal-overlay{padding:10px}.buy-modal{top:auto;bottom:10px;max-height:calc(100vh - 20px);transform:translateX(-50%);padding:18px;border-radius:20px}.buy-balance-grid{grid-template-columns:1fr}.buy-order-summary{grid-template-columns:1fr}.buy-order-summary div:last-child{grid-column:auto}.escrow-tx-address{max-width:118px;font-size:8px}.escrow-tx-external{font-size:12px}@keyframes buy-modal-in{from{opacity:0;transform:translate(-50%,10px) scale(.985)}to{opacity:1;transform:translate(-50%,0) scale(1)}} }
