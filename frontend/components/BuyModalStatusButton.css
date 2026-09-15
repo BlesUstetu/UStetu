@@ -36,9 +36,18 @@
   content: "COMPLETE ORDER";
 }
 
-/* Completed lifecycle. */
+/*
+ * Complete Order is the end of the current purchase cycle.
+ * Return the modal visually to the initial Create Order state so the
+ * next click starts a new order instead of leaving the completed flow visible.
+ */
 .buy-modal:has(.escrow-step:nth-of-type(5).done) .buy-submit::after {
-  content: "ORDER COMPLETED ✓";
+  content: "CREATE ORDER";
+}
+.buy-modal:has(.escrow-step:nth-of-type(5).done) .escrow-flow,
+.buy-modal:has(.escrow-step:nth-of-type(5).done) .escrow-timing,
+.buy-modal:has(.escrow-step:nth-of-type(5).done) .buy-status {
+  display: none;
 }
 
 /* Keep the label readable while the action is disabled. */
