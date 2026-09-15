@@ -21,6 +21,7 @@ const RPC_TIMEOUT = 8000;
 const COMPLETE_WRITE_TIMEOUT = 15000;
 const COMPLETE_RECOVERY_ATTEMPTS = 30;
 const SCAN_BLOCKS = 5000n;
+const COMPLETION_SCAN_BLOCKS = 20000n;
 const MAX_LOG_RANGE = 5000n;
 const ACTIVE_ORDER_STORAGE = "ustetu.active-order.v1";
 
@@ -47,6 +48,7 @@ type StoredCompleteRecovery = {
   buyer: string;
   orderId: string;
   startedAt: number;
+  completeHash?: `0x${string}`;
 };
 type ApprovalOutcome =
   | { kind: "submitted"; hash: `0x${string}` }
@@ -215,6 +217,29 @@ async function scanActiveOrder(
         createHash: log.transactionHash ?? undefined,
       };
     }
+  }
+
+  return null;
+}
+
+async function findCompletedTx(client: PublicClient, orderId: bigint) {
+  const latest = await timeout(client.getBlockNumber(), RPC_TIMEOUT, "RPC completion block timeout");
+  const from = latest > COMPLETION_SCAN_BLOCKS ? latest - COMPLETION_SCAN_BLOCKS : 0n;
+  const logs = await logsChunked(client, from, latest);
+
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const log = logs[i];
+    try {
+      const decoded = decodeEventLog({
+        abi: escrowAbi,
+        data: log.data,
+        topics: log.topics,
+        eventName: "OrderCompleted",
+      });
+      if (decoded.eventName !== "OrderCompleted") continue;
+      const args: any = decoded.args;
+      if (args.orderId === orderId && log.transactionHash) return log.transactionHash as `0x${string}`;
+    } catch {}
   }
 
   return null;
@@ -533,6 +558,14 @@ export default function BuyModal(props: Props) {
   if (!open) return null;
 
   const markComplete = async (id: bigint) => {
+    let completionHash = tx.complete;
+    if (!completionHash && client) {
+      try {
+        completionHash = await findCompletedTx(client, id);
+      } catch {}
+    }
+    if (completionHash) setTx((current) => ({ ...current, complete: completionHash }));
+
     clear(activeStorageKey);
     clear(completeRecoveryStorageKey);
     setActiveOrder(null);
@@ -773,6 +806,7 @@ export default function BuyModal(props: Props) {
       recovery.orderId === id.toString() &&
       recovery.buyer?.toLowerCase() === address?.toLowerCase()
     ) {
+      if (recovery.completeHash) setTx((current) => ({ ...current, complete: recovery.completeHash }));
       const recovered = await recoverComplete(id);
       if (recovered) return;
       throw new Error(`Order #${id} masih menunggu kepastian transaksi Complete. Tidak mengirim transaksi kedua.`);
@@ -801,6 +835,7 @@ export default function BuyModal(props: Props) {
         buyer: address!,
         orderId: id.toString(),
         startedAt: Date.now(),
+        completeHash,
       });
       setTx((current) => ({ ...current, complete: completeHash }));
       setCompletePhase("submitted");
