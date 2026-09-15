@@ -93,8 +93,8 @@ export default function ExpireOrderPanel() {
   if (orderState !== 1 || !expired) return null;
 
   return (
-    <section style={{ margin: "0 auto 24px", maxWidth: 1180, padding: "0 22px" }}>
-      <div style={{ border: "1px solid rgba(255,100,100,.25)", background: "rgba(35,12,18,.78)", borderRadius: 18, padding: 20 }}>
+    <section className="expire-order-panel" style={{ margin: "0 auto 24px", maxWidth: 1180, padding: "0 22px" }}>
+      <div className="expire-order-card" style={{ border: "1px solid rgba(255,100,100,.25)", background: "rgba(35,12,18,.78)", borderRadius: 18, padding: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: 11, letterSpacing: ".16em", opacity: .65 }}>ORDER RECOVERY</div>
@@ -106,7 +106,7 @@ export default function ExpireOrderPanel() {
               Inventory locked: {formatUnits(listing.inventoryLocked, TOKEN_DECIMALS)} USTETU · Available: {formatUnits(available, TOKEN_DECIMALS)} USTETU
             </p>
           </div>
-          <button onClick={expire} disabled={busy} style={{ border: 0, borderRadius: 11, padding: "12px 17px", cursor: busy ? "wait" : "pointer", background: "#e55353", color: "white", fontWeight: 800 }}>
+          <button onClick={expire} disabled={!canExpire} style={{ border: 0, borderRadius: 11, padding: "12px 17px", cursor: busy ? "wait" : "pointer", background: "#e55353", color: "white", fontWeight: 800 }}>
             {busy ? "Memproses…" : "EXPIRE ORDER #1"}
           </button>
         </div>
