@@ -48,7 +48,8 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         </div>
       </div>
       <style jsx global>{`
-        .brand-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
+        .topbar{position:relative !important}
+        .brand-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
         .ustetu-logo{width:27px;height:44px;object-fit:contain;display:block;filter:drop-shadow(0 0 8px rgba(255,100,30,.18))}
         .brand-copy{text-align:center}
         .home-nav-link,.seller-orders-link{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
