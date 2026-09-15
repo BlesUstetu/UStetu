@@ -7,10 +7,7 @@ export const USTETU_TOKEN_ID = "0xf19bf134998f50d4a944b0f33819be5eb2a2fc364a99f4
 
 export const escrowAbi = [
   {
-    type: "function",
-    name: "getListing",
-    stateMutability: "view",
-    inputs: [{ name: "listingId", type: "uint256" }],
+    type: "function", name: "getListing", stateMutability: "view", inputs: [{ name: "listingId", type: "uint256" }],
     outputs: [{ name: "listing", type: "tuple", components: [
       { name: "tokenId", type: "uint256" }, { name: "seller", type: "address" }, { name: "paymentToken", type: "address" },
       { name: "price", type: "uint256" }, { name: "inventoryDeposited", type: "uint256" }, { name: "inventoryLocked", type: "uint256" },
@@ -19,10 +16,7 @@ export const escrowAbi = [
     ] }],
   },
   {
-    type: "function",
-    name: "getOrder",
-    stateMutability: "view",
-    inputs: [{ name: "orderId", type: "uint256" }],
+    type: "function", name: "getOrder", stateMutability: "view", inputs: [{ name: "orderId", type: "uint256" }],
     outputs: [{ name: "order", type: "tuple", components: [
       { name: "listingId", type: "uint256" }, { name: "buyer", type: "address" }, { name: "seller", type: "address" },
       { name: "recipient", type: "address" }, { name: "token", type: "address" }, { name: "paymentToken", type: "address" },
@@ -87,6 +81,15 @@ export const escrowAbi = [
       { indexed: false, name: "recipient", type: "address" }, { indexed: false, name: "tokenAmount", type: "uint256" },
       { indexed: false, name: "unitPrice", type: "uint256" }, { indexed: false, name: "grossPayment", type: "uint256" },
       { indexed: false, name: "paymentToken", type: "address" },
+    ],
+  },
+  {
+    type: "event", name: "OrderCompleted", anonymous: false,
+    inputs: [
+      { indexed: true, name: "orderId", type: "uint256" },
+      { indexed: true, name: "buyer", type: "address" },
+      { indexed: true, name: "seller", type: "address" },
+      { indexed: false, name: "tokenAmount", type: "uint256" },
     ],
   },
 ] as const;
