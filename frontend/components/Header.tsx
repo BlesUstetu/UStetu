@@ -43,7 +43,9 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
             </svg>
           </a>
         )}
-        <ConnectButton showBalance={false} chainStatus="icon" />
+        <div className="wallet-connect-control">
+          <ConnectButton showBalance={false} chainStatus="icon" />
+        </div>
       </div>
       <style jsx global>{`
         .brand-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
@@ -54,6 +56,8 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
         .seller-nav-link{font-size:12px;text-decoration:none;color:inherit;opacity:.78;border:1px solid rgba(255,255,255,.1);padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
         .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
+        .wallet-connect-control [data-rk] button{font-size:11px !important;letter-spacing:.01em !important}
+        .wallet-connect-control [data-rk] button span{font-size:11px !important}
         @media(max-width:760px){
           .brand-center{gap:5px}
           .ustetu-logo{width:19px;height:32px}
@@ -62,6 +66,8 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
           .seller-nav-link{font-size:11px;padding:7px 9px}
           .home-nav-link,.seller-orders-link{width:32px;height:32px}
           .home-nav-link svg,.seller-orders-link svg{width:16px;height:16px}
+          .wallet-connect-control [data-rk] button{font-size:10px !important}
+          .wallet-connect-control [data-rk] button span{font-size:10px !important}
         }
       `}</style>
     </header>
