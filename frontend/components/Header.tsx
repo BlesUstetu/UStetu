@@ -59,7 +59,7 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
         .wallet-connect-control{position:relative;isolation:isolate;display:inline-flex;align-items:center;padding:1px;border-radius:12px;overflow:hidden;background:transparent}
         .wallet-connect-control::before{content:"";position:absolute;inset:-80%;z-index:-1;background:conic-gradient(from 0deg,transparent 0deg,rgba(80,220,255,.15) 65deg,rgba(0,255,180,.95) 120deg,rgba(90,130,255,.9) 180deg,rgba(190,80,255,.75) 235deg,transparent 300deg,transparent 360deg);animation:ustetu-wallet-border-spin 2.8s linear infinite;filter:blur(2px)}
-        .wallet-connect-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:rgba(7,16,28,.58);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+        .wallet-connect-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
         .wallet-connect-control [data-rk] button{font-size:11px !important;letter-spacing:.01em !important;background:transparent !important;border:0 !important;box-shadow:none !important;color:var(--text) !important}
         .wallet-connect-control [data-rk] button span{font-size:11px !important}
         .wallet-connect-control [data-rk] button:hover{background:transparent !important}
