@@ -59,6 +59,7 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
         .wallet-connect-control [data-rk] button{font-size:11px !important;letter-spacing:.01em !important}
         .wallet-connect-control [data-rk] button span{font-size:11px !important}
+        .topbar-left .system-info-trigger{order:-1}
         @media(max-width:760px){
           .brand-center{gap:5px}
           .ustetu-logo{width:19px;height:32px}
@@ -69,6 +70,9 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
           .home-nav-link svg,.seller-orders-link svg{width:16px;height:16px}
           .wallet-connect-control [data-rk] button{font-size:10px !important}
           .wallet-connect-control [data-rk] button span{font-size:10px !important}
+        }
+        @media(max-width:520px){
+          .topbar-left .system-info-trigger{order:2}
         }
       `}</style>
     </header>
