@@ -4,7 +4,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import ThemeLanguageControls from "@/components/ThemeLanguageControls";
 import SystemInfo from "@/components/SystemInfo";
 
-export default function Header({ showSellerOrders = false }: { showSellerOrders?: boolean }) {
+export default function Header({ showSellerOrders = false, showHome = true }: { showSellerOrders?: boolean; showHome?: boolean }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -21,13 +21,15 @@ export default function Header({ showSellerOrders = false }: { showSellerOrders?
       </div>
 
       <div className="topbar-right">
-        <a href="/UStetu/" className="home-nav-link" aria-label="Kembali ke halaman utama" title="Home">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 10.5 12 3l9 7.5" />
-            <path d="M5.5 9.5V21h13V9.5" />
-            <path d="M9.5 21v-6h5v6" />
-          </svg>
-        </a>
+        {showHome && (
+          <a href="/UStetu/" className="home-nav-link" aria-label="Home" title="Home">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5.5 9.5V21h13V9.5" />
+              <path d="M9.5 21v-6h5v6" />
+            </svg>
+          </a>
+        )}
         <a href="/UStetu/seller/" className="seller-nav-link">Seller Center</a>
         {showSellerOrders && (
           <a href="/UStetu/seller/orders/" className="seller-orders-link" aria-label="Orders" title="Orders">
