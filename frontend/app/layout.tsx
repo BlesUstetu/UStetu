@@ -3,6 +3,7 @@ import Providers from "./providers";
 import "./globals.css";
 import "./buy-modal.css";
 import "../components/BuyModalStyles.css";
+import "../components/HideBuyTxList.css";
 import "../components/SystemInfoStyles.css";
 import "../components/LivingMinimalStyles.css";
 
