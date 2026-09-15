@@ -46,7 +46,6 @@ export default function ExpireOrderPanel() {
 
   const listing = listingQuery.data;
   const order = orderQuery.data;
-  const status = listing ? Number(listing.status) : null;
   const orderState = order ? Number(order.state) : null;
   const available = listing ? listing.inventoryDeposited - listing.inventoryLocked : 0n;
   const expired = !!order && orderState === 1 && BigInt(Math.floor(Date.now() / 1000)) >= order.expiresAt;
@@ -63,13 +62,13 @@ export default function ExpireOrderPanel() {
     setMessage("");
     setError("");
     try {
-      if (!address) throw new Error("Hubungkan wallet Seller terlebih dahulu.");
+      if (!address) throw new Error("Connect the Seller wallet first.");
       if (chainId !== baseSepolia.id) {
         await switchChainAsync({ chainId: baseSepolia.id });
       }
-      if (!owner) throw new Error("Wallet aktif bukan owner Listing #2.");
-      if (!order || orderState !== 1) throw new Error("Order #1 bukan PAYMENT_PENDING.");
-      if (!expired) throw new Error("Order #1 belum melewati expiry.");
+      if (!owner) throw new Error("The connected wallet is not the owner of Listing #2.");
+      if (!order || orderState !== 1) throw new Error("Order #1 is not in PAYMENT_PENDING state.");
+      if (!expired) throw new Error("Order #1 has not reached its expiry time.");
 
       const hash = await writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
@@ -79,7 +78,7 @@ export default function ExpireOrderPanel() {
       });
 
       if (publicClient) await publicClient.waitForTransactionReceipt({ hash });
-      setMessage(`Order #1 berhasil di-expire: ${hash.slice(0, 10)}…${hash.slice(-8)}`);
+      setMessage(`Order #1 expired successfully: ${hash.slice(0, 10)}…${hash.slice(-8)}`);
       refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -107,7 +106,7 @@ export default function ExpireOrderPanel() {
             </p>
           </div>
           <button onClick={expire} disabled={!canExpire} style={{ border: 0, borderRadius: 11, padding: "12px 17px", cursor: busy ? "wait" : "pointer", background: "#e55353", color: "white", fontWeight: 800 }}>
-            {busy ? "Memproses…" : "EXPIRE ORDER #1"}
+            {busy ? "Processing…" : "EXPIRE ORDER #1"}
           </button>
         </div>
         {message && <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "rgba(20,80,45,.35)", color: "#75f7ae", fontSize: 13 }}>{message}</div>}
