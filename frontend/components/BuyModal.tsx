@@ -85,7 +85,7 @@ function timeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T
 }
 
 function storageKey(chainId: number | undefined, buyer: string | undefined, listingId: bigint) {
-  return `${ACTIVE_ORDER_STORAGE}:${chainId ?? 0}:${buyer?.toLowerCase() ?? ""}:${listingId}`;
+  return `ustetu.active-order.v1:${chainId ?? 0}:${buyer?.toLowerCase() ?? ""}:${listingId}`;
 }
 
 function recoveryKey(chainId: number | undefined, buyer: string | undefined, listingId: bigint) {
@@ -1002,6 +1002,23 @@ export default function BuyModal(props: Props) {
             : "Completing order…"
       : "BUY";
 
+  const txAddress = (hash?: `0x${string}`) => {
+    if (!hash) return null;
+    return (
+      <a
+        className="escrow-tx-address"
+        href={`${BASESCAN_TX}${hash}`}
+        target="_blank"
+        rel="noreferrer"
+        title={hash}
+        aria-label={`Open transaction ${hash} on BaseScan`}
+      >
+        <span>{hashShort(hash)}</span>
+        <span className="escrow-tx-external" aria-hidden="true">↗</span>
+      </a>
+    );
+  };
+
   return (
     <div className="buy-modal-overlay">
       <div className="buy-modal">
@@ -1071,22 +1088,22 @@ export default function BuyModal(props: Props) {
           <div className={`escrow-step ${createDone ? "done" : step === "creating" ? "active" : "pending"}`}>
             <span className="escrow-index">1</span>
             <div><strong>Create Order</strong><small>Escrow locks seller inventory</small></div>
-            <b>{createDone ? "✓" : step === "creating" ? "…" : "WAIT"}</b>
+            <b>{createDone ? txAddress(tx.create) ?? "ON-CHAIN" : step === "creating" ? "…" : "WAIT"}</b>
           </div>
           <div className={`escrow-step ${approveDone ? "done" : step === "approving" ? "active" : "pending"}`}>
             <span className="escrow-index">2</span>
             <div><strong>Approve {paymentSymbol}</strong><small>Allow Escrow to spend payment</small></div>
-            <b>{approveDone ? "✓" : step === "approving" ? "…" : "WAIT"}</b>
+            <b>{approveDone ? txAddress(tx.approve) ?? "ALLOWANCE OK" : step === "approving" ? "…" : "WAIT"}</b>
           </div>
           <div className={`escrow-step ${fundDone ? "done" : step === "funding" ? "active" : "pending"}`}>
             <span className="escrow-index">3</span>
             <div><strong>Fund Escrow</strong><small>Payment moves into escrow</small></div>
-            <b>{fundDone ? "✓" : step === "funding" ? "…" : "WAIT"}</b>
+            <b>{fundDone ? txAddress(tx.fund) ?? "ON-CHAIN" : step === "funding" ? "…" : "WAIT"}</b>
           </div>
           <div className={`escrow-step ${completeDone ? "done" : step === "completing" ? "active" : "pending"}`}>
             <span className="escrow-index">4</span>
             <div><strong>Complete Order</strong><small>Token released to buyer · auto-release after 24h</small></div>
-            <b>{completeDone ? "✓" : step === "completing" ? "…" : "WAIT"}</b>
+            <b>{completeDone ? txAddress(tx.complete) ?? "ON-CHAIN" : step === "completing" ? "…" : "WAIT"}</b>
           </div>
         </div>
 
