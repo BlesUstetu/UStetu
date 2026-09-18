@@ -3,25 +3,13 @@
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
-import { escrowAbi, USTETU_ESCROW_ADDRESS, USTETU_SELLER_REGISTRY_ADDRESS, USTETU_TOKEN_ADDRESS, USDC_BASE_SEPOLIA_ADDRESS } from "@/lib/contracts";
+import { base } from "wagmi/chains";
+import { escrowAbi, USTETU_ESCROW_ADDRESS, USTETU_SELLER_REGISTRY_ADDRESS, USTETU_TOKEN_ADDRESS, BASE_MAINNET_USDC_ADDRESS, sellerRegistryAbi } from "@/lib/contracts";
 
 const LISTING_ID = 2n;
 const TOKEN_DECIMALS = 18;
 const USDC_DECIMALS = 6;
 const ZERO = "0x0000000000000000000000000000000000000000";
-
-const sellerRegistryAbi = [
-  { type: "function", name: "isRegisteredSeller", stateMutability: "view", inputs: [{ name: "seller", type: "address" }], outputs: [{ name: "", type: "bool" }] },
-  { type: "function", name: "isVerifiedSeller", stateMutability: "view", inputs: [{ name: "seller", type: "address" }], outputs: [{ name: "", type: "bool" }] },
-  { type: "function", name: "getSeller", stateMutability: "view", inputs: [{ name: "seller", type: "address" }], outputs: [{ name: "seller", type: "tuple", components: [
-    { name: "wallet", type: "address" }, { name: "withdrawalWallet", type: "address" }, { name: "registeredAt", type: "uint64" }, { name: "withdrawalWalletChangeEffectiveAt", type: "uint64" }, { name: "verificationStatus", type: "uint8" }, { name: "activeListingCount", type: "uint32" }, { name: "totalCompletedOrders", type: "uint256" }, { name: "totalDisputedOrders", type: "uint256" }
-  ] }] },
-  { type: "function", name: "getPendingWithdrawalWallet", stateMutability: "view", inputs: [{ name: "seller", type: "address" }], outputs: [{ name: "", type: "address" }] },
-  { type: "function", name: "registerSeller", stateMutability: "nonpayable", inputs: [{ name: "withdrawalWallet", type: "address" }], outputs: [] },
-  { type: "function", name: "requestWithdrawalWalletChange", stateMutability: "nonpayable", inputs: [{ name: "newWallet", type: "address" }], outputs: [] },
-  { type: "function", name: "activateWithdrawalWalletChange", stateMutability: "nonpayable", inputs: [], outputs: [] },
-] as const;
 
 const tokenAbi = [
   { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "value", type: "uint256" }], outputs: [{ name: "", type: "bool" }] },
@@ -48,9 +36,9 @@ export default function SellerDashboard() {
 
   const sellerQuery = useReadContract({ address: USTETU_SELLER_REGISTRY_ADDRESS, abi: sellerRegistryAbi, functionName: "getSeller", args: address ? [address] : undefined, query: { enabled: !!address, retry: false } });
   const registeredQuery = useReadContract({ address: USTETU_SELLER_REGISTRY_ADDRESS, abi: sellerRegistryAbi, functionName: "isRegisteredSeller", args: address ? [address] : undefined, query: { enabled: !!address } });
-  const verifiedQuery = useReadContract({ address: USTETU_SELLER_REGISTRY_ADDRESS, abi: sellerRegistryAbi, functionName: "isVerifiedSeller", args: address ? [address] : undefined, query: { enabled: !!address } });
-  const listingQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [LISTING_ID], query: { enabled: !!address } });
-  const claimableQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "claimable", args: address ? [address, USDC_BASE_SEPOLIA_ADDRESS] : undefined, query: { enabled: !!address } });
+    const listingQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [LISTING_ID], query: { enabled: !!address } });
+  const paymentTokenQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "paymentToken" });
+  const claimableQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "claimable", args: address && paymentTokenQuery.data ? [address, paymentTokenQuery.data] : undefined, query: { enabled: !!address } });
   const balanceQuery = useReadContract({ address: USTETU_TOKEN_ADDRESS, abi: tokenAbi, functionName: "balanceOf", args: address ? [address] : undefined, query: { enabled: !!address } });
   const allowanceQuery = useReadContract({ address: USTETU_TOKEN_ADDRESS, abi: tokenAbi, functionName: "allowance", args: address ? [address, USTETU_ESCROW_ADDRESS] : undefined, query: { enabled: !!address } });
   const pendingWalletQuery = useReadContract({ address: USTETU_SELLER_REGISTRY_ADDRESS, abi: sellerRegistryAbi, functionName: "getPendingWithdrawalWallet", args: address ? [address] : undefined, query: { enabled: !!address && !!registeredQuery.data } });
@@ -67,21 +55,21 @@ export default function SellerDashboard() {
   const effectiveAt = seller?.withdrawalWalletChangeEffectiveAt ? Number(seller.withdrawalWalletChangeEffectiveAt) : 0;
   const pendingActive = !!pendingWallet && pendingWallet !== ZERO;
   const canActivate = pendingActive && effectiveAt > 0 && Date.now() >= effectiveAt * 1000;
-  const statusLabel = status === 1 ? "ACTIVE" : status === 2 ? "PAUSED" : status === 3 ? "CLOSED" : status === 4 ? "SUSPENDED" : "—";
+  const statusLabel = status === 1 ? "ACTIVE" : status === 2 ? "PAUSED" : status === 3 ? "CLOSED" : "—";
 
   useEffect(() => {
     if (seller?.withdrawalWallet) setWithdrawalWallet(seller.withdrawalWallet);
   }, [seller?.withdrawalWallet]);
 
   const refresh = () => {
-    void listingQuery.refetch(); void sellerQuery.refetch(); void registeredQuery.refetch(); void verifiedQuery.refetch();
+    void listingQuery.refetch(); void sellerQuery.refetch(); void registeredQuery.refetch(); 
     void claimableQuery.refetch(); void balanceQuery.refetch(); void allowanceQuery.refetch(); void pendingWalletQuery.refetch();
   };
 
   const ensureSeller = async () => {
     if (!address) throw new Error("Connect wallet terlebih dahulu.");
     if (!isOwner) throw new Error(`Wallet aktif bukan owner Listing #${LISTING_ID.toString()}.`);
-    if (chainId !== baseSepolia.id) await switchChainAsync({ chainId: baseSepolia.id });
+    if (chainId !== base.id) await switchChainAsync({ chainId: base.id });
   };
 
   const transact = async (label: string, fn: () => Promise<`0x${string}`>) => {
@@ -137,7 +125,7 @@ export default function SellerDashboard() {
 
   const withdrawEarnings = async () => {
     try { await ensureSeller(); if (claimable === 0n) throw new Error("Tidak ada USDC claimable.");
-      await transact("Withdraw earnings", () => writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "withdrawClaimable", args: [USDC_BASE_SEPOLIA_ADDRESS] }));
+      await transact("Withdraw earnings", () => writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "withdrawClaimable", args: [] }));
     } catch {}
   };
 
@@ -183,7 +171,7 @@ export default function SellerDashboard() {
           <div className="seller-two">
             <div>
               <div className="seller-card seller-section">
-                <div className="seller-listing-top"><div className="seller-token"><div className="seller-token-mark">U</div><div><strong>USTETU / USDC</strong><div className="seller-sub">Listing #{LISTING_ID.toString()} • Base Sepolia</div></div></div><span className="seller-status">● {statusLabel}</span></div>
+                <div className="seller-listing-top"><div className="seller-token"><div className="seller-token-mark">U</div><div><strong>USTETU / USDC</strong><div className="seller-sub">Listing #{LISTING_ID.toString()} • Base Mainnet</div></div></div><span className="seller-status">● {statusLabel}</span></div>
                 <div className="seller-stats"><div className="seller-stat"><span>Price</span><strong>{listing ? formatUnits(listing.price, USDC_DECIMALS) : "—"} USDC</strong></div><div className="seller-stat"><span>Deposited</span><strong>{listing ? formatUnits(listing.inventoryDeposited, TOKEN_DECIMALS) : "—"}</strong></div><div className="seller-stat"><span>Locked</span><strong>{listing ? formatUnits(listing.inventoryLocked, TOKEN_DECIMALS) : "—"}</strong></div><div className="seller-stat"><span>Available</span><strong>{formatUnits(available, TOKEN_DECIMALS)}</strong></div></div>
                 {!isOwner && <div className="seller-error">Listing #2 bukan milik wallet yang sedang terhubung.</div>}
                 <div className="seller-actions"><button className="primary" disabled={disabled || status !== 1} onClick={() => void listingAction("Pause listing", "pauseListing")}>Pause</button><button disabled={disabled || status !== 2} onClick={() => void listingAction("Resume listing", "resumeListing")}>Resume</button><button className="danger" disabled={disabled || status === 3} onClick={() => void listingAction("Close listing", "closeListing")}>Close</button></div>
