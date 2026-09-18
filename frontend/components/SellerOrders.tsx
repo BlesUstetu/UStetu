@@ -16,23 +16,12 @@ const orderCreatedEvent = parseAbiItem(
 
 const short = (v?: string) => (v ? `${v.slice(0, 6)}…${v.slice(-4)}` : "—");
 
-const stateLabel: Record<number, string> = {
-  0: "CREATED",
-  1: "PAYMENT PENDING",
-  2: "PAID",
-  3: "ESCROWED",
-  4: "RELEASABLE",
-  5: "COMPLETED",
-  6: "REFUNDED",
-  7: "CANCELLED",
-  8: "DISPUTED",
-  9: "EXPIRED",
-};
+const stateLabel: Record<number, string> = { 0: "PAYMENT PENDING", 1: "PAID", 2: "COMPLETED", 3: "EXPIRED" };
 
 const stateClass = (state: number) => {
-  if (state === 5) return "ok";
-  if (state === 1 || state === 2 || state === 3 || state === 4) return "pending";
-  if (state === 6 || state === 7 || state === 9) return "bad";
+  if (state === 2) return "ok";
+  if (state === 0 || state === 1) return "pending";
+  if (state === 3) return "bad";
   return "neutral";
 };
 
@@ -90,7 +79,7 @@ export default function SellerOrders() {
         const fromBlock = latest > ORDER_SCAN_BLOCKS ? latest - ORDER_SCAN_BLOCKS : 0n;
         const allLogs = [] as Awaited<ReturnType<typeof publicClient.getLogs<typeof orderCreatedEvent>>>;
 
-        // Base Mainnet RPC limits eth_getLogs to 50,000 blocks.
+        // Base Mainnet RPC limits eth_getLogs to the provider range limit.
         // Keep a lower safety margin and scan the same 100k window in chunks.
         for (let start = fromBlock; start <= latest; start += RPC_LOG_CHUNK) {
           if (cancelled) return;
