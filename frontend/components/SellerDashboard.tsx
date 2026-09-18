@@ -232,22 +232,21 @@ export default function SellerDashboard() {
       const token = listingTokenAddress as `0x${string}`;
       const id = BigInt(listingIdInput.trim());
       if (id <= 0n) throw new Error("Listing ID harus lebih besar dari 0.");
+      if (!publicClient) throw new Error("RPC client belum tersedia.");
       const price = parseUnits(listingPrice || "0", paymentDecimals);
-      const inventory = parseUnits(listingInventory || "0", tokenDecimals);
-      const min = parseUnits(listingMin || "0", tokenDecimals);
-      const max = parseUnits(listingMax || "0", tokenDecimals);
-      if (price <= 0n || inventory <= 0n || min <= 0n || max < min) throw new Error("Parameter listing tidak valid.");
 
       const tokenId = tokenIdFor(token);
-      const registeredToken = await publicClient?.readContract({
+      const registeredToken = await publicClient.readContract({
         address: USTETU_REGISTRY_ADDRESS,
         abi: registryAbi,
         functionName: "getToken",
         args: [tokenId]
       });
-      if (!registeredToken) throw new Error("Token belum terdaftar di UStetu Registry.");
       const decimals = Number(registeredToken.decimalsSnapshot);
-      if (decimals !== tokenDecimals) throw new Error("Decimals token berubah dari snapshot registry. Listing dibatalkan.");
+      const inventory = parseUnits(listingInventory || "0", decimals);
+      const min = parseUnits(listingMin || "0", decimals);
+      const max = parseUnits(listingMax || "0", decimals);
+      if (price <= 0n || inventory <= 0n || min <= 0n || max < min) throw new Error("Parameter listing tidak valid.");
 
       const allowance = await publicClient?.readContract({
         address: token,
