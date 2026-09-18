@@ -3,18 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { escrowAbi, USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 
 const LISTING_ID = 2n;
 const TOKEN_DECIMALS = 18;
 const PAYMENT_PENDING = 1;
-const EXPIRED = 9;
+const EXPIRED = 3;
 
-const STATE_NAMES: Record<number, string> = {
-  0: "UNKNOWN", 1: "PAYMENT_PENDING", 2: "PAID", 3: "ESCROWED", 4: "RELEASABLE",
-  5: "COMPLETED", 6: "REFUNDED", 7: "CANCELLED", 8: "DISPUTED", 9: "EXPIRED",
-};
+const STATE_NAMES: Record<number, string> = { 0: "PAYMENT_PENDING", 1: "PAID", 2: "COMPLETED", 3: "EXPIRED" };
 
 export default function OrderRecoveryPage() {
   const { address, isConnected } = useAccount();
@@ -33,7 +30,7 @@ export default function OrderRecoveryPage() {
     try { const parsed = BigInt(value); if (parsed > 0n) setOrderId(parsed); } catch {}
   }, []);
 
-  const listingQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [LISTING_ID], query: { enabled: chainId === baseSepolia.id } });
+  const listingQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [LISTING_ID], query: { enabled: chainId === base.id } });
   const orderQuery = useReadContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getOrder", args: [orderId], query: { enabled: chainId === baseSepolia.id && orderId > 0n } });
   const listing = listingQuery.data;
   const order = orderQuery.data;
@@ -49,7 +46,7 @@ export default function OrderRecoveryPage() {
     setBusy(true); setError(""); setMessage("");
     try {
       if (!address) throw new Error("Hubungkan wallet terlebih dahulu.");
-      if (chainId !== baseSepolia.id) await switchChainAsync({ chainId: baseSepolia.id });
+      if (chainId !== base.id) await switchChainAsync({ chainId: base.id });
       if (!order || orderState !== PAYMENT_PENDING) throw new Error(`Order #${orderId} bukan PAYMENT_PENDING.`);
       if (!expired) throw new Error(`Order #${orderId} belum melewati expiry.`);
       const hash = await writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "expireOrder", args: [orderId] });
@@ -71,7 +68,7 @@ export default function OrderRecoveryPage() {
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}><div style={{ fontSize: 12, letterSpacing: 2, opacity: .65 }}>USTETU ORDER RECOVERY</div><h1 style={{ margin: "8px 0 4px", fontSize: 30 }}>Release Expired Order #{orderId.toString()}</h1><p style={{ margin: 0, opacity: .7 }}>Recovery on-chain untuk mengembalikan inventory yang masih terkunci pada Listing #2.</p></div>
         {!isConnected && <Notice text="Hubungkan wallet terlebih dahulu." />}
-        {chainId !== baseSepolia.id && <Notice text="Wallet harus berada di Base Sepolia (chain ID 84532)." />}
+        {chainId !== baseSepolia.id && <Notice text="Wallet harus berada di Base Mainnet (chain ID 8453)." />}
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 14, marginBottom: 16 }}>
           <Card label="LISTING #2" value={status === null ? "Loading…" : status === 1 ? "ACTIVE" : status === 2 ? "PAUSED" : `STATE ${status}`} />
           <Card label="DEPOSITED" value={listing ? `${formatUnits(listing.inventoryDeposited, TOKEN_DECIMALS)} USTETU` : "—"} />
