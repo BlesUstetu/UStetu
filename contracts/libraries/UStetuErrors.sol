@@ -8,29 +8,39 @@ library UStetuErrors {
     error InvalidAddress();
     error AlreadyRegistered();
     error NotRegisteredSeller();
+
     error UnsupportedToken();
     error UnsupportedPaymentToken();
     error TokenNotApproved();
     error TokenAlreadyRegistered();
     error TokenNotRegistered();
+    error InvalidTokenDecimals();
+    error InvalidPaymentToken();
+
     error InvalidChainId();
     error NotAContract();
+
     error InvalidListingState();
     error InvalidOrderState();
     error InvalidVerificationState();
+
     error InsufficientInventory();
     error InsufficientPayment();
     error InsufficientClaimable();
+
     error InvalidAmount();
     error InvalidPrice();
     error InvalidOrderLimits();
+
     error DisputeActive();
     error DisputeNotFound();
     error NotDisputeParty();
     error NotExpired();
+
     error WithdrawalLocked();
     error RecipientImmutable();
     error AccountingInvariantViolation();
+
     error UnsupportedChain();
     error WrongChain();
     error Paused();
