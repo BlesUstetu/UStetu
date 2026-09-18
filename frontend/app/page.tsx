@@ -111,10 +111,20 @@ export default function HomePage() {
     setLoading(true);
     setApiError("");
     try {
-      const response = await fetch(`${INDEXER_API_URL.replace(/\/$/, "")}/listings?status=ACTIVE&limit=100`, { cache: "no-store" });
-      const body = await response.json() as { success?: boolean; items?: ApiListing[]; error?: string };
-      if (!response.ok || !body.success) throw new Error(body.error ?? "Unable to read marketplace listings.");
-      setListings((body.items ?? []).filter((item) => item.token_contract));
+      const baseUrl = INDEXER_API_URL.replace(/\/$/, "");
+      const collected: ApiListing[] = [];
+      let cursor: string | null = null;
+      do {
+        const query = new URLSearchParams({ status: "ACTIVE", limit: "100" });
+        if (cursor) query.set("cursor", cursor);
+        const response = await fetch(`${baseUrl}/listings?${query.toString()}`, { cache: "no-store" });
+        const body = await response.json() as { success?: boolean; items?: ApiListing[]; pagination?: { nextCursor?: string | null; hasMore?: boolean }; error?: string };
+        if (!response.ok || !body.success) throw new Error(body.error ?? "Unable to read marketplace listings.");
+        collected.push(...(body.items ?? []));
+        cursor = body.pagination?.hasMore ? (body.pagination.nextCursor ?? null) : null;
+        if (body.pagination?.hasMore && !cursor) throw new Error("Marketplace pagination returned an invalid cursor.");
+      } while (cursor);
+      setListings(collected.filter((item) => item.token_contract));
     } catch (error) {
       setApiError(error instanceof Error ? error.message : "Unable to read marketplace listings.");
       setListings([]);
