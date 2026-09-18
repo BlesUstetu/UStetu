@@ -5,7 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {UStetuEscrow} from "../contracts/core/UStetuEscrow.sol";
 import {UStetuRegistry} from "../contracts/core/UStetuRegistry.sol";
 import {UStetuSellerRegistry} from "../contracts/core/UStetuSellerRegistry.sol";
-import {UStetuTypes} from "../contracts/libraries/UStetuTypes.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract UStetuEscrowTreasuryTest is Test {
@@ -15,7 +14,7 @@ contract UStetuEscrowTreasuryTest is Test {
     MockERC20 internal asset;
     MockERC20 internal usdc;
 
-    address internal admin = address(0xA11CE);
+    address internal feeRecipient = address(0xA11CE);
     address internal seller = address(0xB0B);
     address internal buyer = address(0xCAFE);
     address internal attacker = address(0xBAD);
@@ -23,28 +22,25 @@ contract UStetuEscrowTreasuryTest is Test {
     bytes32 internal tokenId;
 
     function setUp() public {
-        vm.startPrank(admin);
-        registry = new UStetuRegistry(8453, admin);
-        sellerRegistry = new UStetuSellerRegistry(admin);
-        escrow = new UStetuEscrow(address(registry), address(sellerRegistry), admin);
-        sellerRegistry.grantRole(sellerRegistry.CONFIG_ROLE(), address(escrow));
-
+        vm.chainId(8453);
+        sellerRegistry = new UStetuSellerRegistry();
         asset = new MockERC20("Test Asset", "TAST", 18);
         usdc = new MockERC20("USD Coin", "USDC", 6);
+        vm.etch(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, address(usdc).code);
+        usdc = MockERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
+        registry = new UStetuRegistry(8453, address(usdc));
+        escrow = new UStetuEscrow(address(registry), address(sellerRegistry), feeRecipient);
         tokenId = registry.registerToken(8453, address(asset));
-        registry.setTokenVerification(tokenId, UStetuTypes.VerificationStatus.APPROVED);
-        registry.setPaymentTokenSupported(address(usdc), true);
-        vm.stopPrank();
 
         vm.prank(seller);
         sellerRegistry.registerSeller(withdrawalWallet);
+
         asset.mint(seller, 1_000 ether);
         usdc.mint(buyer, 10_000e6);
     }
 
     function testFeeRecipientCanWithdrawMarketplaceFee() public {
         _createListing();
-
         vm.prank(buyer);
         uint256 orderId = escrow.createOrder(1, 100 ether);
 
@@ -54,23 +50,21 @@ contract UStetuEscrowTreasuryTest is Test {
         escrow.completeOrder(orderId);
         vm.stopPrank();
 
-        uint256 fee = escrow.claimable(admin, address(usdc));
-        assertEq(fee, 2.7e6);
-        assertEq(usdc.balanceOf(admin), 0);
+        assertEq(escrow.claimable(feeRecipient, address(usdc)), 2.7e6);
 
-        vm.prank(admin);
-        escrow.withdrawMarketplaceFee(address(usdc));
+        vm.prank(feeRecipient);
+        escrow.withdrawMarketplaceFee();
 
-        assertEq(escrow.claimable(admin, address(usdc)), 0);
-        assertEq(usdc.balanceOf(admin), fee);
+        assertEq(escrow.claimable(feeRecipient, address(usdc)), 0);
+        assertEq(usdc.balanceOf(feeRecipient), 2.7e6);
         assertEq(usdc.balanceOf(address(escrow)), 267.3e6);
     }
 
     function testNonFeeRecipientCannotWithdrawMarketplaceFee() public {
         _createListing();
-
         vm.prank(buyer);
         uint256 orderId = escrow.createOrder(1, 100 ether);
+
         vm.startPrank(buyer);
         usdc.approve(address(escrow), 270e6);
         escrow.fundOrder(orderId);
@@ -79,32 +73,38 @@ contract UStetuEscrowTreasuryTest is Test {
 
         vm.expectRevert();
         vm.prank(attacker);
-        escrow.withdrawMarketplaceFee(address(usdc));
+        escrow.withdrawMarketplaceFee();
     }
 
-    function testFeeWithdrawalCannotBeRepeated() public {
+    function testClaimableWithdrawDoesNotDependOnRegistrySupportFlag() public {
         _createListing();
-
         vm.prank(buyer);
         uint256 orderId = escrow.createOrder(1, 100 ether);
+
         vm.startPrank(buyer);
         usdc.approve(address(escrow), 270e6);
         escrow.fundOrder(orderId);
         escrow.completeOrder(orderId);
         vm.stopPrank();
 
-        vm.prank(admin);
-        escrow.withdrawMarketplaceFee(address(usdc));
+        vm.prank(seller);
+        escrow.withdrawClaimable();
 
-        vm.expectRevert();
-        vm.prank(admin);
-        escrow.withdrawMarketplaceFee(address(usdc));
+        assertEq(usdc.balanceOf(withdrawalWallet), 267.3e6);
     }
 
     function _createListing() internal {
         vm.startPrank(seller);
         asset.approve(address(escrow), 500 ether);
-        escrow.createListingAndDeposit(1, tokenId, seller, address(usdc), 2_700_000, 500 ether, 1 ether, 500 ether);
+        escrow.createListingAndDeposit(
+            1,
+            tokenId,
+            seller,
+            2_700_000,
+            500 ether,
+            1 ether,
+            500 ether
+        );
         vm.stopPrank();
     }
 }

@@ -1,4 +1,4 @@
-export type ListingStatus = "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED" | "SUSPENDED";
+export type ListingStatus = "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED";
 
 export interface ListingProjection {
   chain_id: number;

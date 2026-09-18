@@ -1,5 +1,5 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { fallback, http } from "viem";
 
 // WalletConnect Project ID is a public dApp identifier. The environment
@@ -26,11 +26,11 @@ const rpc = (url: string) =>
 export const wagmiConfig = getDefaultConfig({
   appName: "USTETU",
   projectId,
-  chains: [baseSepolia],
+  chains: [base],
   transports: {
-    [baseSepolia.id]: fallback([
-      rpc("https://sepolia.base.org"),
-      rpc("https://base-sepolia-rpc.publicnode.com"),
+    [base.id]: fallback([
+      rpc("https://mainnet.base.org"),
+      rpc("https://base.publicnode.com"),
     ]),
   },
   ssr: true,

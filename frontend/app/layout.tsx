@@ -11,7 +11,7 @@ import "../components/MobileResponsive.css";
 
 export const metadata: Metadata = {
   title: "USTETU — Own What’s Next.",
-  description: "USTETU Web3 marketplace on Base Sepolia.",
+  description: "USTETU Web3 marketplace on Base Mainnet.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

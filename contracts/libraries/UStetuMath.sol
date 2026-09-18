@@ -5,11 +5,14 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {UStetuErrors} from "./UStetuErrors.sol";
 
 /// @title UStetuMath
-/// @notice Deterministic protocol math helpers.
+/// @notice Deterministic arithmetic helpers for UStetu V1.
 library UStetuMath {
     uint256 internal constant BPS_DENOMINATOR = 10_000;
     uint256 internal constant DEFAULT_FEE_BPS = 100;
+    uint8 internal constant MAX_TOKEN_DECIMALS = 36;
 
+    /// @notice Calculates the marketplace fee and seller proceeds.
+    /// @dev Fee calculation rounds down. The two outputs always conserve grossPayment.
     function calculateFee(uint256 grossPayment, uint256 feeBps)
         internal
         pure
@@ -19,7 +22,7 @@ library UStetuMath {
             revert UStetuErrors.InvalidAmount();
         }
 
-        fee = (grossPayment * feeBps) / BPS_DENOMINATOR;
+        fee = Math.mulDiv(grossPayment, feeBps, BPS_DENOMINATOR);
         sellerProceeds = grossPayment - fee;
 
         if (fee + sellerProceeds != grossPayment) {
@@ -27,9 +30,8 @@ library UStetuMath {
         }
     }
 
-    /// @notice Converts a token-denominated amount into payment-token units.
-    /// @dev `unitPrice` is the price of one whole token in payment-token
-    ///      smallest units. `tokenAmount` is in the listed token's smallest units.
+    /// @notice Converts listed-token units and a unit price into payment-token base units.
+    /// @dev Integer division deliberately rounds down. A zero result is rejected.
     function calculateGrossPayment(
         uint256 tokenAmount,
         uint256 unitPrice,
@@ -38,9 +40,13 @@ library UStetuMath {
         if (tokenAmount == 0 || unitPrice == 0) {
             revert UStetuErrors.InvalidAmount();
         }
+        if (tokenDecimals > MAX_TOKEN_DECIMALS) {
+            revert UStetuErrors.InvalidTokenDecimals();
+        }
 
         uint256 scale = 10 ** uint256(tokenDecimals);
         grossPayment = Math.mulDiv(tokenAmount, unitPrice, scale);
+
         if (grossPayment == 0) {
             revert UStetuErrors.InvalidAmount();
         }

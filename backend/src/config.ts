@@ -16,7 +16,8 @@ export const config = {
   startBlock: Number(process.env.START_BLOCK ?? "0"),
   supabaseUrl: required("SUPABASE_URL"),
   supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
-  apiPort: Number(process.env.API_PORT ?? "8787")
+  apiPort: Number(process.env.API_PORT ?? "8787"),
+  corsOrigin: process.env.CORS_ORIGIN ?? "*"
 };
 
 if (!Number.isInteger(config.chainId) || config.chainId <= 0) throw new Error("CHAIN_ID must be a positive integer");

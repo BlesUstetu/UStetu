@@ -7,7 +7,8 @@ const MAX_LIMIT = 100;
 function json(res: http.ServerResponse, status: number, body: unknown) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store"
+    "cache-control": "no-store",
+    "access-control-allow-origin": config.corsOrigin
   });
   res.end(JSON.stringify(body));
 }
@@ -47,7 +48,7 @@ async function listListings(url: URL) {
 
   if (url.searchParams.has("seller") && !seller) throw new Error("Invalid seller address");
   if (url.searchParams.has("token") && !token) throw new Error("Invalid token address");
-  if (status && !["UNKNOWN", "ACTIVE", "PAUSED", "CLOSED", "SUSPENDED"].includes(status)) {
+  if (status && !["UNKNOWN", "ACTIVE", "PAUSED", "CLOSED"].includes(status)) {
     throw new Error("Invalid status");
   }
   if (url.searchParams.has("cursor") && cursor === null) throw new Error("Invalid cursor");
