@@ -74,7 +74,7 @@ export default function HomePage() {
               <tbody>
                 {hasError ? <tr><td colSpan={6} className="empty-state">{t("unableRead")}</td></tr> : isLoading ? <tr><td colSpan={6} className="empty-state">{t("readingListing")}</td></tr> : matchesSearch && liveData ? (
                   <tr className="listing-row" onClick={() => setSelected(true)}>
-                    <td><div className="token-cell"><TokenLogo address={liveData.address} chainId={liveData.chainId} name={liveData.token} symbol={liveData.symbol} size={38} /><div><strong>{liveData.token}</strong><span>{liveData.symbol}</span></div><b className="verified-badge">✓</b></div></td>
+                    <td><div className="token-cell"><TokenLogo address={liveData.address} chainId={liveData.chainId} name={liveData.token} symbol={liveData.symbol} size={38} /><div><strong>{liveData.token}</strong><span>{liveData.symbol}</span></div><span className="registered-badge">Registered</span></div></td>
                     <td className="mono">{liveData.seller.slice(0, 6)}…{liveData.seller.slice(-4)}</td>
                     <td>{liveData.available} {liveData.symbol}</td><td><strong>{liveData.price}</strong> {liveData.paymentSymbol}</td><td><span className="network-text">Base Mainnet</span></td>
                     <td><button className="row-action" type="button">{t("view")}</button></td>
@@ -91,7 +91,7 @@ export default function HomePage() {
           <button className="drawer-backdrop" aria-label={t("close")} onClick={() => setSelected(false)} />
           <aside className="token-drawer" aria-label="Registered token">
             <div className="drawer-topline"><span className="eyebrow">REGISTERED TOKEN</span><button className="drawer-close" type="button" onClick={() => setSelected(false)}>×</button></div>
-            <div className="drawer-token-head"><TokenLogo address={liveData.address} chainId={liveData.chainId} name={liveData.token} symbol={liveData.symbol} size={58} /><div><h2>{liveData.token}</h2><span>Registered on-chain ✓</span></div></div>
+            <div className="drawer-token-head"><TokenLogo address={liveData.address} chainId={liveData.chainId} name={liveData.token} symbol={liveData.symbol} size={58} /><div><h2>{liveData.token}</h2><span>Registered on-chain</span></div></div>
             <div className="detail-grid">
               <div><span>{t("name")}</span><strong>{liveData.token}</strong></div><div><span>{t("symbol")}</span><strong>{liveData.symbol}</strong></div><div><span>{t("decimals")}</span><strong>{liveData.decimals}</strong></div><div><span>Payment</span><strong>{liveData.paymentSymbol} · {liveData.paymentDecimals} decimals</strong></div><div><span>{t("networkLabel")}</span><strong>Base Mainnet</strong></div>
               <div className="detail-wide"><span>{t("contractAddress")}</span><strong className="address-value">{liveData.address}</strong></div><div className="detail-wide"><span>{t("status")}</span><strong className="approved">● Registered</strong></div>
