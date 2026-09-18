@@ -100,12 +100,6 @@ contract UStetuSellerRegistry {
     function isRegisteredSeller(address seller) external view returns (bool) {
         return _sellerExists[seller];
     }
-
-    function isVerifiedSeller(address seller) external view returns (bool) {
-        // Compatibility alias: V1 has no seller-verification layer.
-        return _sellerExists[seller];
-    }
-
     function getWithdrawalWallet(address seller) external view returns (address) {
         if (!_sellerExists[seller]) revert UStetuErrors.NotRegisteredSeller();
         return _sellers[seller].withdrawalWallet;
