@@ -23,7 +23,6 @@ contract UStetuEscrowTreasuryTest is Test {
 
     function setUp() public {
         vm.chainId(8453);
-        registry = new UStetuRegistry(8453, address(0x1111));
         sellerRegistry = new UStetuSellerRegistry();
         asset = new MockERC20("Test Asset", "TAST", 18);
         usdc = new MockERC20("USD Coin", "USDC", 6);
