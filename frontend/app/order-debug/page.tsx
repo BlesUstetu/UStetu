@@ -77,7 +77,7 @@ export default function OrderDebugPage() {
   });
 
   const balance = useReadContract({
-    address: USDC_BASE_SEPOLIA_ADDRESS,
+    address: BASE_MAINNET_USDC_ADDRESS,
     abi: erc20PaymentAbi,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
@@ -122,7 +122,7 @@ export default function OrderDebugPage() {
           </div>
         )}
 
-        {chainId !== baseSepolia.id && (
+        {chainId !== base.id && (
           <div style={{ padding: 16, borderRadius: 14, background: "#2a2111", marginBottom: 16 }}>
             Wallet harus berada di Base Mainnet (chain ID 8453).
           </div>
@@ -181,7 +181,7 @@ export default function OrderDebugPage() {
         </section>
 
         <p style={{ marginTop: 18, fontSize: 12, opacity: 0.55 }}>
-          Escrow: {USTETU_ESCROW_ADDRESS} · USDC: {USDC_BASE_SEPOLIA_ADDRESS}
+          Escrow: {USTETU_ESCROW_ADDRESS} · USDC: {BASE_MAINNET_USDC_ADDRESS}
         </p>
       </div>
     </main>
