@@ -31,6 +31,7 @@ library UStetuErrors {
 
     error WithdrawalLocked();
     error AccountingInvariantViolation();
+    error TokenTransferMismatch();
 
     error DeadlineExpired();
     error DeadlineNotReached();
