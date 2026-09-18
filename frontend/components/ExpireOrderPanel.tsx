@@ -10,13 +10,7 @@ const LISTING_ID = 2n;
 const ORDER_ID = 1n;
 const TOKEN_DECIMALS = 18;
 
-const STATE_NAMES: Record<number, string> = {
-  1: "PAYMENT_PENDING",
-  2: "PAID",
-  3: "EXPIRED",
-  4: "CANCELLED",
-  5: "COMPLETED",
-};
+const STATE_NAMES: Record<number, string> = { 0: "PAYMENT_PENDING", 1: "PAID", 2: "COMPLETED", 3: "EXPIRED" };
 
 export default function ExpireOrderPanel() {
   const { address, isConnected } = useAccount();
@@ -48,9 +42,8 @@ export default function ExpireOrderPanel() {
   const order = orderQuery.data;
   const orderState = order ? Number(order.state) : null;
   const available = listing ? listing.inventoryDeposited - listing.inventoryLocked : 0n;
-  const expired = !!order && orderState === 1 && BigInt(Math.floor(Date.now() / 1000)) >= order.expiresAt;
-  const owner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
-  const canExpire = isConnected && chainId === base.id && expired && !busy;
+  const expired = !!order && orderState === 0 && BigInt(Math.floor(Date.now() / 1000)) >= order.expiresAt;
+    const canExpire = isConnected && chainId === base.id && expired && !busy;
 
   const refresh = () => {
     void listingQuery.refetch();
