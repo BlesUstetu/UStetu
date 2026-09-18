@@ -13,6 +13,7 @@ interface IERC20MetadataLike {
 /// @notice Permissionless token identity registry for UStetu V1.
 /// @dev Registration is not verification. There are no admin, verifier, or upgrade roles.
 contract UStetuRegistry is IUStetuRegistry {
+    uint256 public constant BASE_MAINNET_CHAIN_ID = 8453;
     uint8 public constant MAX_TOKEN_DECIMALS = 36;
 
     uint256 public immutable deploymentChainId;
@@ -30,7 +31,7 @@ contract UStetuRegistry is IUStetuRegistry {
     );
 
     constructor(uint256 chainId, address paymentToken_) {
-        if (chainId == 0) revert UStetuErrors.InvalidChainId();
+        if (chainId != BASE_MAINNET_CHAIN_ID) revert UStetuErrors.InvalidChainId();
         if (paymentToken_ == address(0)) revert UStetuErrors.InvalidPaymentToken();
         if (paymentToken_.code.length == 0) revert UStetuErrors.NotAContract();
 
