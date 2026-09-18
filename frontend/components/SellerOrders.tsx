@@ -62,7 +62,7 @@ const orderAbi = [{
     { name: "tokenAmount", type: "uint256" }, { name: "unitPrice", type: "uint256" }, { name: "grossPayment", type: "uint256" },
     { name: "marketplaceFee", type: "uint256" }, { name: "sellerProceeds", type: "uint256" }, { name: "state", type: "uint8" },
     { name: "createdAt", type: "uint64" }, { name: "paidAt", type: "uint64" }, { name: "completedAt", type: "uint64" },
-    { name: "refundedAt", type: "uint64" }, { name: "expiresAt", type: "uint64" }, { name: "disputeId", type: "uint256" },
+    { name: "expiresAt", type: "uint64" },
   ] }],
 }] as const;
 
@@ -90,7 +90,7 @@ export default function SellerOrders() {
         const fromBlock = latest > ORDER_SCAN_BLOCKS ? latest - ORDER_SCAN_BLOCKS : 0n;
         const allLogs = [] as Awaited<ReturnType<typeof publicClient.getLogs<typeof orderCreatedEvent>>>;
 
-        // Base Sepolia RPC limits eth_getLogs to 50,000 blocks.
+        // Base Mainnet RPC limits eth_getLogs to 50,000 blocks.
         // Keep a lower safety margin and scan the same 100k window in chunks.
         for (let start = fromBlock; start <= latest; start += RPC_LOG_CHUNK) {
           if (cancelled) return;
