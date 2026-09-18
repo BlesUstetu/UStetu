@@ -43,7 +43,7 @@ export default function ExpireOrderPanel() {
   const orderState = order ? Number(order.state) : null;
   const available = listing ? listing.inventoryDeposited - listing.inventoryLocked : 0n;
   const expired = !!order && orderState === 0 && BigInt(Math.floor(Date.now() / 1000)) >= order.expiresAt;
-    const canExpire = isConnected && chainId === base.id && expired && !busy;
+  const canExpire = isConnected && chainId === base.id && expired && !busy;
 
   const refresh = () => {
     void listingQuery.refetch();
@@ -59,8 +59,7 @@ export default function ExpireOrderPanel() {
       if (chainId !== base.id) {
         await switchChainAsync({ chainId: base.id });
       }
-      if (!owner) throw new Error("The connected wallet is not the owner of Listing #2.");
-      if (!order || orderState !== 1) throw new Error("Order #1 is not in PAYMENT_PENDING state.");
+      if (!order || orderState !== 0) throw new Error("Order #1 is not in PAYMENT_PENDING state.");
       if (!expired) throw new Error("Order #1 has not reached its expiry time.");
 
       const hash = await writeContractAsync({
@@ -81,8 +80,7 @@ export default function ExpireOrderPanel() {
   };
 
   if (!isConnected || chainId !== base.id || !listing || !order) return null;
-  if (!owner) return null;
-  if (orderState !== 1 || !expired) return null;
+  if (orderState !== 0 || !expired) return null;
 
   return (
     <section className="expire-order-panel" style={{ margin: "0 auto 24px", maxWidth: 1180, padding: "0 22px" }}>
