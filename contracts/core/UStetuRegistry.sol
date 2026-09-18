@@ -102,16 +102,6 @@ contract UStetuRegistry is IUStetuRegistry {
         return _tokenExists[tokenId];
     }
 
-    function isApprovedToken(bytes32 tokenId) external view returns (bool) {
-        // Compatibility alias: V1 has no verification layer.
-        return _tokenExists[tokenId];
-    }
-
-    function isSupportedPaymentToken(address token) external view returns (bool) {
-        // Compatibility alias: V1 has exactly one immutable payment asset.
-        return token == paymentToken;
-    }
-
     function getPaymentToken() external view returns (address) {
         return paymentToken;
     }
