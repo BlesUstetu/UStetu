@@ -14,6 +14,7 @@ interface IERC20MetadataLike {
 /// @dev Registration is not verification. There are no admin, verifier, or upgrade roles.
 contract UStetuRegistry is IUStetuRegistry {
     uint256 public constant BASE_MAINNET_CHAIN_ID = 8453;
+    address public constant BASE_MAINNET_USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     uint8 public constant MAX_TOKEN_DECIMALS = 36;
 
     uint256 public immutable deploymentChainId;
@@ -32,7 +33,7 @@ contract UStetuRegistry is IUStetuRegistry {
 
     constructor(uint256 chainId, address paymentToken_) {
         if (chainId != BASE_MAINNET_CHAIN_ID) revert UStetuErrors.InvalidChainId();
-        if (paymentToken_ == address(0)) revert UStetuErrors.InvalidPaymentToken();
+        if (paymentToken_ != BASE_MAINNET_USDC) revert UStetuErrors.InvalidPaymentToken();
         if (paymentToken_.code.length == 0) revert UStetuErrors.NotAContract();
 
         uint8 paymentDecimals;
@@ -46,7 +47,7 @@ contract UStetuRegistry is IUStetuRegistry {
         }
 
         deploymentChainId = chainId;
-        paymentToken = paymentToken_;
+        paymentToken = BASE_MAINNET_USDC;
     }
 
     /// @notice Permissionlessly register a token identity for this deployment chain.
