@@ -47,7 +47,7 @@ async function listListings(url: URL) {
 
   if (url.searchParams.has("seller") && !seller) throw new Error("Invalid seller address");
   if (url.searchParams.has("token") && !token) throw new Error("Invalid token address");
-  if (status && !["UNKNOWN", "ACTIVE", "PAUSED", "CLOSED", "SUSPENDED"].includes(status)) {
+  if (status && !["UNKNOWN", "ACTIVE", "PAUSED", "CLOSED"].includes(status)) {
     throw new Error("Invalid status");
   }
   if (url.searchParams.has("cursor") && cursor === null) throw new Error("Invalid cursor");
