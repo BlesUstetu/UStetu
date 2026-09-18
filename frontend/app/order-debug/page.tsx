@@ -3,21 +3,19 @@
 import { useMemo } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useChainId, useReadContract, useSimulateContract } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import {
   erc20PaymentAbi,
   escrowAbi,
-  USDC_BASE_SEPOLIA_ADDRESS,
+  BASE_MAINNET_USDC_ADDRESS,
   USTETU_ESCROW_ADDRESS,
 } from "@/lib/contracts";
 
 const STATE_NAMES: Record<number, string> = {
-  0: "UNKNOWN / NONE",
-  1: "PAYMENT_PENDING",
-  2: "PAID",
+  0: "PAYMENT_PENDING",
+  1: "PAID",
+  2: "COMPLETED",
   3: "EXPIRED",
-  4: "CANCELLED",
-  5: "COMPLETED",
 };
 
 const LISTING_STATUS_NAMES: Record<number, string> = {
@@ -25,7 +23,7 @@ const LISTING_STATUS_NAMES: Record<number, string> = {
   1: "ACTIVE",
   2: "PAUSED",
   3: "CLOSED",
-  4: "SUSPENDED",
+  
 };
 
 function shortAddress(value?: string) {
@@ -41,7 +39,7 @@ function formatDate(timestamp?: bigint) {
 export default function OrderDebugPage() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const enabled = chainId === baseSepolia.id;
+  const enabled = chainId === base.id;
 
   const order = useReadContract({
     address: USTETU_ESCROW_ADDRESS,
@@ -71,7 +69,7 @@ export default function OrderDebugPage() {
   });
 
   const allowance = useReadContract({
-    address: USDC_BASE_SEPOLIA_ADDRESS,
+    address: BASE_MAINNET_USDC_ADDRESS,
     abi: erc20PaymentAbi,
     functionName: "allowance",
     args: address ? [address, USTETU_ESCROW_ADDRESS] : undefined,
@@ -126,7 +124,7 @@ export default function OrderDebugPage() {
 
         {chainId !== baseSepolia.id && (
           <div style={{ padding: 16, borderRadius: 14, background: "#2a2111", marginBottom: 16 }}>
-            Wallet harus berada di Base Sepolia (chain ID 84532).
+            Wallet harus berada di Base Mainnet (chain ID 8453).
           </div>
         )}
 
