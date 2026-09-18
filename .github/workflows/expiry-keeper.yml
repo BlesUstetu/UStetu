@@ -1,43 +1,14 @@
-name: UStetu Expiry Keeper
+name: UStetu Expiry Keeper (Legacy Disabled)
 
 on:
-  schedule:
-    # Base Sepolia PAYMENT_PENDING orders expire after 15 minutes.
-    # Five minutes is the shortest GitHub Actions schedule interval.
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
-  expire-orders:
+  legacy-disabled:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      RPC_URL: https://sepolia.base.org
-      CHAIN_ID: "84532"
-      ESCROW_ADDRESS: "0x3c97fc6c63Dc2E1aA1F0f4e36fF3cdFd9Cc6dd2e"
-      KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
-      KEEPER_SCAN_BLOCKS: "50000"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Check keeper configuration
+      - name: Protocol note
         run: |
-          if [ -z "$KEEPER_PRIVATE_KEY" ]; then
-            echo "KEEPER_PRIVATE_KEY is not configured yet; expiry cycle skipped safely."
-            exit 0
-          fi
-
-      - name: Install backend dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Expire eligible orders
-        run: npm run keeper:once
+          echo "Legacy keeper disabled."
+          echo "UStetu V1 expiry and auto-release functions are permissionless."
+          echo "No off-chain keeper is required for protocol correctness."
