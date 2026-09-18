@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { escrowAbi, USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 
 const LISTING_ID = 2n;
@@ -33,7 +33,7 @@ export default function ExpireOrderPanel() {
     abi: escrowAbi,
     functionName: "getListing",
     args: [LISTING_ID],
-    query: { enabled: chainId === baseSepolia.id },
+    query: { enabled: chainId === base.id },
   });
 
   const orderQuery = useReadContract({
@@ -41,7 +41,7 @@ export default function ExpireOrderPanel() {
     abi: escrowAbi,
     functionName: "getOrder",
     args: [ORDER_ID],
-    query: { enabled: chainId === baseSepolia.id },
+    query: { enabled: chainId === base.id },
   });
 
   const listing = listingQuery.data;
@@ -50,7 +50,7 @@ export default function ExpireOrderPanel() {
   const available = listing ? listing.inventoryDeposited - listing.inventoryLocked : 0n;
   const expired = !!order && orderState === 1 && BigInt(Math.floor(Date.now() / 1000)) >= order.expiresAt;
   const owner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
-  const canExpire = isConnected && chainId === baseSepolia.id && owner && expired && !busy;
+  const canExpire = isConnected && chainId === base.id && expired && !busy;
 
   const refresh = () => {
     void listingQuery.refetch();
@@ -63,8 +63,8 @@ export default function ExpireOrderPanel() {
     setError("");
     try {
       if (!address) throw new Error("Connect the Seller wallet first.");
-      if (chainId !== baseSepolia.id) {
-        await switchChainAsync({ chainId: baseSepolia.id });
+      if (chainId !== base.id) {
+        await switchChainAsync({ chainId: base.id });
       }
       if (!owner) throw new Error("The connected wallet is not the owner of Listing #2.");
       if (!order || orderState !== 1) throw new Error("Order #1 is not in PAYMENT_PENDING state.");
@@ -87,7 +87,7 @@ export default function ExpireOrderPanel() {
     }
   };
 
-  if (!isConnected || chainId !== baseSepolia.id || !listing || !order) return null;
+  if (!isConnected || chainId !== base.id || !listing || !order) return null;
   if (!owner) return null;
   if (orderState !== 1 || !expired) return null;
 
