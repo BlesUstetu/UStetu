@@ -38,7 +38,6 @@ function statusName(value: unknown): ListingProjection["status"] {
   if (n === 1) return "ACTIVE";
   if (n === 2) return "PAUSED";
   if (n === 3) return "CLOSED";
-  if (n === 4) return "SUSPENDED";
   return "UNKNOWN";
 }
 
@@ -53,7 +52,8 @@ function jsonValue(value: unknown): unknown {
 
 async function refreshListing(listingId: bigint, log: Log, finalized: boolean) {
   const raw = await escrow.getListing(listingId);
-  const token = await registry.getToken(BigInt(raw.tokenId));
+  const token = await registry.getToken(raw.tokenId);
+  const paymentToken = await escrow.paymentToken();
 
   const projection: ListingProjection = {
     chain_id: config.chainId,
@@ -62,7 +62,7 @@ async function refreshListing(listingId: bigint, log: Log, finalized: boolean) {
     seller: address(raw.seller),
     token_id: big(raw.tokenId),
     token_contract: address(token.contractAddress),
-    payment_token: address(raw.paymentToken),
+    payment_token: address(paymentToken),
     price: big(raw.price),
     inventory_deposited: big(raw.inventoryDeposited),
     inventory_locked: big(raw.inventoryLocked),
