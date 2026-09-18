@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {UStetuRegistry} from "../contracts/core/UStetuRegistry.sol";
 import {UStetuErrors} from "../contracts/libraries/UStetuErrors.sol";
+import {UStetuTypes} from "../contracts/libraries/UStetuTypes.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract UStetuRegistryTest is Test {
@@ -43,19 +44,13 @@ contract UStetuRegistryTest is Test {
     function testPermissionlessTokenRegistrationSnapshotsDecimals() public {
         bytes32 tokenId = registry.registerToken(8453, address(otherToken));
 
-        (
-            uint256 chainId,
-            address contractAddress,
-            uint8 decimalsSnapshot,
-            address registeredBy,
-            uint64 registeredAt
-        ) = registry.getToken(tokenId);
+        UStetuTypes.Token memory token = registry.getToken(tokenId);
 
-        assertEq(chainId, 8453);
-        assertEq(contractAddress, address(otherToken));
-        assertEq(decimalsSnapshot, 18);
-        assertEq(registeredBy, address(this));
-        assertGt(registeredAt, 0);
+        assertEq(token.chainId, 8453);
+        assertEq(token.contractAddress, address(otherToken));
+        assertEq(token.decimalsSnapshot, 18);
+        assertEq(token.registeredBy, address(this));
+        assertGt(token.registeredAt, 0);
     }
 
     function testDuplicateTokenRegistrationReverts() public {
