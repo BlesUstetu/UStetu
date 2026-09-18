@@ -75,7 +75,7 @@ export default function HomePage() {
 
   const tokenConfigs = useMemo(
     () => listings.map((item) => ({
-      address: normalizeAddress(item.token_contract ?? ""),
+      address: USTETU_REGISTRY_ADDRESS,
       abi: registryAbi,
       functionName: "getToken" as const,
       args: [hexTokenId(item.token_id)] as const
