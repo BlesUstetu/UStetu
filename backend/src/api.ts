@@ -7,7 +7,8 @@ const MAX_LIMIT = 100;
 function json(res: http.ServerResponse, status: number, body: unknown) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store"
+    "cache-control": "no-store",
+    "access-control-allow-origin": config.corsOrigin
   });
   res.end(JSON.stringify(body));
 }
