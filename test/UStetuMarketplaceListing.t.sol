@@ -26,6 +26,8 @@ contract UStetuMarketplaceListingTest is Test {
         vm.chainId(8453);
         asset = new MockERC20("Test Asset", "TAST", 18);
         usdc = new MockERC20("USD Coin", "USDC", 6);
+        vm.etch(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, address(usdc).code);
+        usdc = MockERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
         registry = new UStetuRegistry(8453, address(usdc));
         sellerRegistry = new UStetuSellerRegistry();
         escrow = new UStetuEscrow(address(registry), address(sellerRegistry), feeRecipient);
