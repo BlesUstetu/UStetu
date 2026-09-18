@@ -570,10 +570,22 @@ contract UStetuEscrow is ReentrancyGuard {
             revert UStetuErrors.InsufficientInventory();
         }
 
+        IERC20 token = IERC20(order.token);
+        uint256 recipientBalanceBefore = token.balanceOf(order.recipient);
+
+        token.safeTransfer(order.recipient, order.tokenAmount);
+
+        uint256 recipientBalanceAfter = token.balanceOf(order.recipient);
+        if (recipientBalanceAfter < recipientBalanceBefore) {
+            revert UStetuErrors.TokenTransferMismatch();
+        }
+        uint256 received = recipientBalanceAfter - recipientBalanceBefore;
+        if (received != order.tokenAmount) {
+            revert UStetuErrors.TokenTransferMismatch();
+        }
+
         listing.inventoryLocked -= order.tokenAmount;
         listing.inventoryDeposited -= order.tokenAmount;
-
-        IERC20(order.token).safeTransfer(order.recipient, order.tokenAmount);
 
         claimable[order.seller][paymentToken] += order.sellerProceeds;
         claimable[feeRecipient][paymentToken] += order.marketplaceFee;
