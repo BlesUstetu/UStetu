@@ -164,7 +164,7 @@ export default function SellerDashboard() {
           <div className="seller-head"><div><div className="seller-eyebrow">USTETU Seller Center</div><h1>Seller Dashboard</h1><p>Kelola listing, inventory, penjualan, dan hasil settlement.</p></div><div className="seller-wallet">{short(address)}</div></div>
           <div className="seller-grid">
             <div className="seller-card"><label>Registration</label><div className={`seller-value ${registeredQuery.data ? "seller-ok" : "seller-warn"}`}>{registeredQuery.data ? "REGISTERED" : "NOT REGISTERED"}</div><div className="seller-sub">Permissionless Seller Registry</div></div>
-            <div className="seller-card"><label>Completed Orders</label><div className="seller-value">{seller?.totalCompletedOrders?.toString() ?? "—"}</div><div className="seller-sub">On-chain seller statistic</div></div>
+            
             <div className="seller-card"><label>Claimable</label><div className="seller-value">{formatUnits(claimable, USDC_DECIMALS)} USDC</div><div className="seller-sub">Seller proceeds setelah settlement</div></div>
           </div>
 
