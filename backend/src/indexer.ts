@@ -117,13 +117,16 @@ export async function runOnce() {
     throw new Error(`RPC chain ${network.chainId} does not match CHAIN_ID ${config.chainId}`);
   }
   const latest = await provider.getBlockNumber();
+  const finalizedTarget = latest - config.confirmations;
+  if (finalizedTarget < 0) return;
+
   const state = await getIndexerState();
   const from = state ? Number(state.last_scanned_block) + 1 : config.startBlock;
-  if (from > latest) return;
+  if (from > finalizedTarget) return;
 
   const chunkSize = 2_000;
-  for (let start = from; start <= latest; start += chunkSize) {
-    await scan(start, Math.min(start + chunkSize - 1, latest));
+  for (let start = from; start <= finalizedTarget; start += chunkSize) {
+    await scan(start, Math.min(start + chunkSize - 1, finalizedTarget));
   }
 }
 
