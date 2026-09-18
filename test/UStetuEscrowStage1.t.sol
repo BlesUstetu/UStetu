@@ -188,6 +188,34 @@ contract UStetuEscrowStage1Test is Test {
         assertEq(uint8(escrow.getOrder(orderId).state), uint8(UStetuTypes.OrderState.COMPLETED));
     }
 
+    function testSettlementRevertsWhenRecipientReceivesLessThanOrderAmount() public {
+        _createListing(500 ether);
+
+        vm.prank(buyer);
+        uint256 orderId = escrow.createOrder(1, 100 ether);
+
+        vm.startPrank(buyer);
+        usdc.approve(address(escrow), 270e6);
+        escrow.fundOrder(orderId);
+        vm.stopPrank();
+
+        asset.setTransferFeeBps(1_000);
+
+        vm.expectRevert();
+        vm.prank(buyer);
+        escrow.completeOrder(orderId);
+
+        UStetuTypes.Order memory order = escrow.getOrder(orderId);
+        UStetuTypes.Listing memory listing = escrow.getListing(1);
+
+        assertEq(uint8(order.state), uint8(UStetuTypes.OrderState.PAID));
+        assertEq(listing.inventoryDeposited, 500 ether);
+        assertEq(listing.inventoryLocked, 100 ether);
+        assertEq(escrow.claimable(seller, address(usdc)), 0);
+        assertEq(escrow.claimable(feeRecipient, address(usdc)), 0);
+        assertEq(asset.balanceOf(buyer), 0);
+    }
+
     function testSellerWithdrawalUsesRegisteredWallet() public {
         _createListing(500 ether);
 
