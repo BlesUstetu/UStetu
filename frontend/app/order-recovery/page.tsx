@@ -38,7 +38,7 @@ export default function OrderRecoveryPage() {
   const orderState = order ? Number(order.state) : null;
   const available = listing ? listing.inventoryDeposited - listing.inventoryLocked : 0n;
   const expired = !!order && orderState === PAYMENT_PENDING && BigInt(Math.floor(Date.now() / 1000)) >= order.expiresAt;
-  const canExpire = isConnected && chainId === baseSepolia.id && expired && !busy;
+  const canExpire = isConnected && chainId === base.id && expired && !busy;
 
   const refresh = async () => { await Promise.all([listingQuery.refetch(), orderQuery.refetch()]); };
 
