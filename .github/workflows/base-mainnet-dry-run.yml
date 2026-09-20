@@ -1,0 +1,41 @@
+name: Base Mainnet Deployment Dry Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      fee_recipient:
+        description: "UStetu fee recipient wallet"
+        required: true
+        default: "0x393c8Ab9FA306D0e3631AA9e027B467c61d7Bc29"
+        type: string
+
+jobs:
+  dry-run:
+    name: Simulate Base Mainnet deployment
+    runs-on: ubuntu-latest
+    env:
+      BASE_RPC_URL: https://mainnet.base.org
+      USTETU_FEE_RECIPIENT: ${{ inputs.fee_recipient }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Compile
+        run: forge build
+
+      - name: Dry-run deployment against Base Mainnet
+        run: |
+          forge script script/DeployBaseMainnet.s.sol:DeployBaseMainnet \
+            --rpc-url "$BASE_RPC_URL" \
+            -vvvv
