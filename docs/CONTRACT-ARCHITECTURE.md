@@ -1,167 +1,147 @@
-# UStetu Smart Contract Architecture v1.0
+# UStetu Smart Contract Architecture — V1
 
 ## Status
 
-Design specification — not production code.
+**Current V1 architecture — Base Mainnet pre-mainnet release.**
 
-## Design Goals
+UStetu V1 is non-custodial and intentionally has no platform administrator, owner, verifier, governance controller, upgrade administrator, or dispute resolver.
 
-1. Non-custodial asset protection.
-2. Deterministic order settlement.
-3. Minimal privileged authority.
-4. Explicit separation of funds, marketplace logic, and governance.
-5. Safe future migration without silently abandoning seller assets.
-6. Auditability through events and deterministic accounting.
-7. No AI dependency in the core protocol.
+## Deployed Contract Set
 
-## Proposed Contract Modules
+```text
+UStetuRegistry
+       │
+       ├── token registration / token metadata snapshot
+       └── immutable Base Mainnet payment-token configuration
+       
+UStetuSellerRegistry
+       │
+       └── permissionless seller registration + withdrawal-wallet delay
 
-### 1. UStetuEscrow
+UStetuEscrow
+       │
+       ├── listings + deposited inventory
+       ├── orders + payment escrow
+       ├── exact settlement accounting
+       ├── claimable seller proceeds
+       └── claimable marketplace fees
+```
 
-Core settlement contract responsible for:
+## 1. UStetuRegistry
 
-- Seller token deposits allocated to listings/orders.
-- Buyer payment escrow where applicable.
-- Order state transitions.
-- Token release to the recorded buyer recipient.
-- Seller proceeds accounting.
-- Refund accounting.
-- Dispute state locks.
-- Anti-double-release invariants.
+Responsibilities:
 
-The escrow contract must not expose arbitrary administrator withdrawal of user assets.
+- Pin the deployment to Base Mainnet (chain ID 8453).
+- Pin the V1 payment asset to native Circle USDC:
+  `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`.
+- Permissionlessly register token contracts on the deployment chain.
+- Snapshot token decimals at registration.
+- Derive deterministic token IDs from chain ID + token address.
 
-### 2. UStetuMarketplace
+**Registration is not verification, audit, endorsement, or safety certification.**
 
-Marketplace coordination layer responsible for:
+The registry has no privileged token verifier or token allowlist administrator.
 
-- Seller registration references.
-- Token/listing registration.
-- Listing price and stock rules.
-- Order creation.
-- Listing status.
-- Marketplace fee calculation.
-- Interaction with escrow.
+## 2. UStetuSellerRegistry
 
-It must not be treated as a wallet or treasury for user assets.
+Responsibilities:
 
-### 3. UStetuRegistry
+- Permissionless self-registration.
+- Store seller wallet and withdrawal wallet.
+- Protect withdrawal-wallet changes with a 24-hour delay.
 
-Canonical registry for protocol objects and configuration references:
+There is no seller approval role, reputation authority, or admin role.
 
-- Supported networks/configuration where applicable.
-- Approved token contracts.
-- Seller verification status references.
-- Contract version references.
-- Marketplace configuration references.
+## 3. UStetuEscrow
 
-Registry updates must be governed and must not retroactively alter immutable order facts.
+Responsibilities:
 
-### 4. UStetuTreasury
+- Create and manage seller listings.
+- Hold deposited seller inventory.
+- Lock inventory against orders.
+- Create and fund orders using the immutable V1 payment token.
+- Complete orders after valid payment.
+- Support permissionless auto-release after the defined release window.
+- Expire unpaid orders after the payment deadline.
+- Credit seller proceeds and marketplace fees as claimable balances.
+- Allow seller and fee-recipient withdrawals under the protocol rules.
 
-Receives marketplace fees only after successful settlement according to protocol rules.
+The contract uses OpenZeppelin `SafeERC20` and `ReentrancyGuard`.
 
-Treasury withdrawals are governance-controlled and separate from seller/buyer balances.
+## 4. Accounting Model
 
-### 5. UStetuSecurity / Governance Layer
+For a completed order:
 
-Governed controls using OpenZeppelin AccessManager and a self-governed Timelock, with a Security Council for emergency response according to the final governance policy.
+```text
+gross payment
+├── 99% seller claimable proceeds
+└──  1% marketplace fee claimable balance
+```
 
-Responsibilities may include:
+The contract verifies actual payment/token movements where required and enforces conservation of recorded settlement amounts.
 
-- Configuration changes.
-- Role administration.
-- Emergency pause/unpause within tightly defined scope.
-- Contract upgrades only if an upgradeable architecture is explicitly approved.
-- Migration execution under predefined safeguards.
+## 5. Permission Model
 
-No role may arbitrarily transfer seller inventory or buyer funds.
+There is intentionally no:
 
-## Upgrade / Migration Principle
+- `owner`
+- `AccessControl` administrator
+- fee setter
+- payment-token setter
+- registry setter
+- pause authority
+- upgrade path
+- token seizure function
+- privileged token verifier
+- dispute resolver
 
-UStetu should prefer immutable core settlement logic where practical. If an upgradeable proxy is required, upgrades must be governed by multisig + timelock and must preserve user obligations.
+Seller and token registration are permissionless where safe.
 
-A migration must provide a deterministic path for all active seller inventory, buyer payments, claimable proceeds, refunds, and pending orders. No upgrade may silently make an existing user obligation inaccessible.
+## 6. Immutability
 
-## Asset Accounting
+V1 is not upgradeable. Critical deployment configuration is fixed at construction:
 
-The protocol must maintain separate accounting for:
+- deployment chain ID
+- payment token
+- seller registry address
+- registry address
+- fee recipient
+- marketplace fee basis points
 
-- Seller deposited token inventory.
-- Tokens locked against active orders.
-- Seller claimable proceeds.
-- Buyer escrowed payment.
-- Refundable buyer payment.
-- Marketplace fee.
-- Treasury balance.
+Existing order facts are recorded on-chain and are not rewritten by later listing edits.
 
-A key invariant is:
+## 7. Off-Chain Components
 
-`Escrow-controlled assets >= Outstanding user obligations`
+The backend/indexer is a discovery and projection layer only.
 
-The exact invariant set will be formalized before implementation.
+It may provide:
 
-## Token Handling
+- listing search
+- pagination
+- filtering
+- indexed event history
 
-ERC-20 operations must use SafeERC20-compatible patterns. Token contracts are identified by `chainId + contractAddress`.
+It is never the authority for:
 
-The protocol must define behavior for:
+- balances
+- ownership
+- payment
+- settlement
+- withdrawals
+- order authorization
 
-- Standard ERC-20.
-- Fee-on-transfer tokens.
-- Rebasing tokens.
-- Pausable tokens.
-- Blacklist-restricted tokens.
-- Upgradeable token contracts.
-- Non-standard return values.
+The frontend uses the contracts for financial actions.
 
-Unsupported token behaviors must be rejected or explicitly isolated before a listing becomes active.
+## 8. V1 Boundaries
 
-## Events
+V1 intentionally excludes:
 
-Critical state changes must emit indexed events, including:
+- disputes/refunds as a governance workflow
+- multi-chain settlement
+- upgradeability
+- centralized verification
+- protocol governance
+- emergency pause controls
+- AI-driven settlement
 
-- SellerRegistered
-- SellerVerificationUpdated
-- TokenRegistered
-- ListingCreated
-- ListingUpdated
-- ListingPaused
-- ListingClosed
-- InventoryDeposited
-- OrderCreated
-- PaymentEscrowed
-- PaymentVerified
-- OrderReleased
-- OrderRefunded
-- DisputeOpened
-- DisputeResolved
-- SellerWithdrawal
-- EmergencyStateChanged
-- GovernanceActionScheduled
-- GovernanceActionExecuted
-- ContractVersionChanged / MigrationExecuted where applicable
-
-## Explicit Non-Goals for v1
-
-- AI-driven settlement.
-- AI-driven custody decisions.
-- Centralized custody of buyer or seller assets.
-- Manual database-based balance adjustments.
-- Arbitrary admin token seizure.
-- Hidden transfer mechanisms.
-
-## Implementation Gate
-
-Do not deploy this design to mainnet until the following are complete:
-
-1. Final role matrix.
-2. Threat model.
-3. State-machine specification.
-4. Accounting invariants.
-5. Solidity implementation review.
-6. Unit/integration/fuzz/invariant tests.
-7. Static analysis.
-8. Testnet validation.
-9. Independent security audit.
-10. Mainnet deployment checklist.
+Future architecture documents must be explicitly marked as future design and are not implementation requirements for V1.
