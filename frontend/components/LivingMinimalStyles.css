@@ -1,22 +1,22 @@
 /* ==========================================================
    USTETU — Living Minimal
-   Deep black + deep navy + soft blue ambient motion.
+   Dark charcoal + electric purple ambient motion.
    Minimal, premium, calm. No decorative motifs.
    ========================================================== */
 
 .app-shell {
   background:
-    radial-gradient(ellipse at 50% 48%, #020711 0%, #020711 34%, transparent 66%),
-    radial-gradient(circle at 4% 48%, rgba(11, 49, 99, 0.42), transparent 34%),
-    radial-gradient(circle at 96% 48%, rgba(10, 45, 92, 0.38), transparent 34%),
-    linear-gradient(135deg, #01050b 0%, #020914 45%, #01060d 100%);
+    radial-gradient(ellipse at 50% 48%, rgba(24,24,24,.96) 0%, rgba(24,24,24,.96) 34%, transparent 66%),
+    radial-gradient(circle at 4% 48%, rgba(26,4,174,.42), transparent 34%),
+    radial-gradient(circle at 96% 48%, rgba(26,4,174,.34), transparent 34%),
+    linear-gradient(135deg, #181818 0%, #181818 45%, #120b42 100%);
 }
 
 .app-shell::before {
   background:
-    radial-gradient(ellipse at 8% 24%, rgba(20, 76, 145, 0.22), transparent 30%),
-    radial-gradient(ellipse at 92% 76%, rgba(18, 69, 137, 0.20), transparent 32%),
-    radial-gradient(ellipse at 50% 100%, rgba(8, 35, 75, 0.16), transparent 38%);
+    radial-gradient(ellipse at 8% 24%, rgba(26,4,174,.42), transparent 30%),
+    radial-gradient(ellipse at 92% 76%, rgba(26,4,174,.34), transparent 32%),
+    radial-gradient(ellipse at 50% 100%, rgba(26,4,174,.18), transparent 38%);
   animation: living-drift 42s ease-in-out infinite alternate;
   will-change: transform, opacity;
 }
@@ -46,18 +46,18 @@
 .ambient-glow-one {
   right: -180px;
   top: 4%;
-  background: #1768c9;
+  background: #1A04AE;
   animation: living-orbit-one 44s ease-in-out infinite alternate;
 }
 
 .ambient-glow-two {
   left: -180px;
   bottom: -210px;
-  background: #123f82;
+  background: #1A04AE;
   animation: living-orbit-two 50s ease-in-out infinite alternate;
 }
 
-@keyframes living-drift {
+@keyframes ustetu-surface-shift { from { background-position:0% 50%; } to { background-position:100% 50%; } } @keyframes living-drift {
   from { opacity: 0.62; transform: translate3d(-1.5%, 0, 0) scale(1); }
   to { opacity: 0.92; transform: translate3d(1.5%, 1%, 0) scale(1.025); }
 }
@@ -81,16 +81,16 @@
 .topbar,
 .listing-glass,
 .search-glass {
-  background: rgba(5, 14, 27, 0.58);
-  border-color: rgba(104, 157, 219, 0.16);
+  background: rgba(24, 24, 24, 0.58);
+  border-color: rgba(130, 105, 255, 0.22);
 }
 
 .topbar {
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255,255,255,.045);
 }
 
 .listing-glass {
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.30);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255,255,255,.045);
 }
 
 .eyebrow {
