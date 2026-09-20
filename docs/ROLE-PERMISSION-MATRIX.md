@@ -1,129 +1,58 @@
-# UStetu Role & Permission Matrix v1.0
+# UStetu V1 Role & Permission Model
 
-## Principles
+## Status
 
-- Least privilege.
-- Separation of duties.
-- No single operational role can freely move user assets.
-- Governance changes are delayed and auditable.
-- Emergency authority is narrowly scoped and cannot become a hidden custody path.
+**Current V1 architecture — no privileged role system.**
 
-## Roles
+UStetu V1 deliberately does not implement an operator/admin/governance role hierarchy.
 
-| Role | Main Responsibility | May Change User Asset Balances? | Governance Required? |
-|---|---|---:|---:|
-| BUYER | Purchase and receive tokens | No | No |
-| SELLER | List tokens and withdraw own claimable proceeds | Only own eligible proceeds through protocol rules | No |
-| OPERATOR | Operational marketplace configuration within assigned limits | No | Usually no; bounded role |
-| TOKEN_VERIFIER | Review token eligibility / verification state | No | Policy-defined |
-| DISPUTE_RESOLVER | Execute deterministic dispute resolution authority | Only through approved dispute state transitions | Policy-defined |
-| SECURITY_COUNCIL | Emergency response / pause authority | No arbitrary transfers | Yes / predefined emergency path |
-| GOVERNOR | Governance decisions | No direct custody | Yes |
-| TIMELOCK | Delays approved sensitive changes | No direct custody | Yes |
-| TREASURY_ROLE | Execute approved treasury operations | Treasury fees only | Yes |
-| ADMIN / DEFAULT_ADMIN | Manage role administration through AccessManager | No arbitrary user-asset transfer | Multisig / governance |
+## Actors
 
-## Buyer Permissions
+| Actor | V1 permissions |
+|---|---|
+| Buyer | Create orders, fund own orders, complete eligible orders, use normal wallet actions |
+| Seller | Self-register, register tokens permissionlessly, create/manage own listings, withdraw own claimable proceeds |
+| Any caller | Register eligible token, trigger permissionless expiry/auto-release when conditions are met, read public state |
+| Fee recipient | Withdraw only marketplace fee claimable balance |
+| Backend/indexer | Read/index public blockchain state; no settlement authority |
+| Frontend | Construct wallet transactions; no custody authority |
 
-Buyer may:
+## Explicitly Absent
 
-- Connect wallet.
-- Create eligible orders.
-- Approve payment token in their wallet.
-- Cancel only where the order state permits.
-- Open disputes within defined rules.
-- Claim eligible refunds.
-- View transactions and receipts.
+V1 has no:
 
-Buyer may not:
+- ADMIN / DEFAULT_ADMIN
+- OPERATOR
+- TOKEN_VERIFIER
+- DISPUTE_RESOLVER
+- SECURITY_COUNCIL
+- GOVERNOR
+- TIMELOCK
+- ACCESSMANAGER_ADMIN
+- treasury operator role
 
-- Change seller inventory.
-- Change order recipient after order creation.
-- Change seller proceeds.
-- Modify protocol configuration.
+There is no privileged function that can rewrite user balances or historical order facts.
 
-## Seller Permissions
+## Seller Boundaries
 
-Seller may:
+A seller can only operate on listings they own and inventory they control through the protocol.
 
-- Register seller profile.
-- Register eligible token.
-- Create listings backed by deposited inventory.
-- Update price within rules.
-- Pause/close own listing where allowed.
-- Withdraw own unlocked token inventory.
-- Withdraw own claimable USDC/USDT to the registered wallet.
-- Open/respond to disputes involving own orders.
+A seller cannot:
 
-Seller may not:
+- withdraw locked inventory
+- withdraw another seller's proceeds
+- change an existing order recipient
+- change an existing order price
+- bypass settlement accounting
 
-- Withdraw locked inventory.
-- Withdraw another seller's assets.
-- Change an existing order recipient.
-- Bypass escrow settlement.
-- Change marketplace fee configuration.
+## Withdrawal Wallet
 
-## Operator Permissions
+Seller proceeds are claimable and can be withdrawn only to the seller's effective withdrawal wallet.
 
-Operators may perform bounded operational actions such as:
+A withdrawal-wallet change has a 24-hour delay.
 
-- Manage marketplace metadata.
-- Process approved operational workflows.
-- Suspend a listing or seller only where policy permits.
-- Review system health.
+## Protocol Boundary
 
-Operators must not receive arbitrary transfer permissions over escrow assets.
+The absence of privileged roles is intentional. It also means V1 cannot provide centralized emergency recovery or manual dispute resolution.
 
-## Token Verifier
-
-The token verification role may:
-
-- Review token contract metadata.
-- Approve or reject token eligibility according to published policy.
-- Record verification state.
-
-It must not have permission to transfer user funds or inventory.
-
-## Dispute Resolver
-
-Dispute resolution must operate only on eligible order states and according to a documented resolution policy.
-
-The resolver must not have a general-purpose transfer function. Resolution should cause the escrow contract to execute one of the explicitly allowed outcomes, such as release or refund.
-
-## Security Council
-
-Emergency powers should be limited to actions such as:
-
-- Pause new order creation.
-- Pause withdrawals where required by an active incident.
-- Pause a specific affected module or listing path where technically supported.
-
-Emergency authority must not include arbitrary withdrawal of seller or buyer assets.
-
-Emergency actions must emit events and be reviewable through governance/audit logs.
-
-## Governor / Timelock
-
-Sensitive changes should follow:
-
-`Proposal → Approval → Timelock Delay → Execution`
-
-Examples:
-
-- Marketplace fee configuration.
-- Critical role assignment.
-- Contract upgrade, if upgrades are enabled.
-- Migration execution.
-- Supported token policy changes.
-
-## Treasury
-
-Treasury may only move marketplace fees that have become treasury-owned according to settlement accounting. Treasury operations must never overlap with user escrow balances.
-
-## Access Control Implementation Direction
-
-Use OpenZeppelin AccessManager for granular function-level permissions and a self-governed Timelock for high-impact governance. Exact roles, selectors, delays, and emergency scopes must be finalized before Solidity implementation.
-
-## Finalization Gate
-
-This matrix is a design baseline. Before deployment, every externally callable privileged function must be mapped to exactly one or more authorized roles and tested for unauthorized access.
+Future governance designs must be documented separately and must not be treated as V1 functionality.
