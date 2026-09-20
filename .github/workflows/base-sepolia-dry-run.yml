@@ -1,6 +1,9 @@
 name: Base Sepolia Deployment Dry Run
 
 on:
+  push:
+    branches:
+      - testnet/base-sepolia
   workflow_dispatch:
 
 jobs:
