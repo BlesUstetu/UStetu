@@ -1,0 +1,54 @@
+name: Prepare UStetu Registry Verification JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    name: Build registry verification input
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout exact deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: testnet/base-sepolia
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Build with build-info
+        run: forge build --build-info
+
+      - name: Extract Registry Standard JSON Input
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_INFO="$(grep -l '"contracts/testnet/UStetuRegistryBaseSepolia.sol"' out/build-info/*.json | head -n 1)"
+          test -n "$BUILD_INFO"
+          jq '.input' "$BUILD_INFO" > UStetuRegistryBaseSepolia.standard-input.json
+          jq '{solcVersion, id, contractFile: "contracts/testnet/UStetuRegistryBaseSepolia.sol", contractName: "UStetuRegistryBaseSepolia"}' "$BUILD_INFO" > UStetuRegistryBaseSepolia.build-info-summary.json
+          echo "Build info: $BUILD_INFO"
+          echo "Compiler:"
+          jq -r '.solcVersion' "$BUILD_INFO"
+          echo "EVM version:"
+          jq -r '.input.settings.evmVersion // "not explicitly present"' "$BUILD_INFO"
+          echo "Optimizer:"
+          jq -r '.input.settings.optimizer' "$BUILD_INFO"
+          echo "Runs:"
+          jq -r '.input.settings.optimizer.runs' "$BUILD_INFO"
+
+      - name: Upload verification files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ustetu-registry-verification
+          path: |
+            UStetuRegistryBaseSepolia.standard-input.json
+            UStetuRegistryBaseSepolia.build-info-summary.json
+          if-no-files-found: error
