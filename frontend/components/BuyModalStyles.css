@@ -8,13 +8,13 @@
   overflow-y: auto;
   transform: translate(-50%, -50%);
   padding: 24px;
-  border: 1px solid rgba(150, 195, 245, 0.18);
+  border: 1px solid rgba(130, 105, 255, 0.25);
   border-radius: 24px;
-  background: rgba(10, 20, 34, 0.96);
+  background: rgba(24, 24, 24, 0.78);
   color: var(--text);
   box-shadow: 0 35px 110px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(255,255,255,0.025) inset;
-  backdrop-filter: blur(32px) saturate(135%);
-  -webkit-backdrop-filter: blur(32px) saturate(135%);
+  backdrop-filter: blur(34px) saturate(130%);
+  -webkit-backdrop-filter: blur(34px) saturate(130%);
   animation: buy-modal-in 180ms ease both;
 }
 html[data-theme="light"] .buy-modal { background: rgba(248, 251, 255, 0.97); box-shadow: 0 35px 110px rgba(50, 70, 95, 0.24), 0 0 0 1px rgba(20,35,55,0.04) inset; }

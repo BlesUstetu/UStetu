@@ -11,10 +11,10 @@ type Props = React.ComponentProps<typeof BuyModal>;
 type OrderRef = { orderId: bigint; blockNumber: bigint; txHash?: `0x${string}` };
 type Completed = { orderId: bigint; txHash?: `0x${string}` };
 
-const PAYMENT_PENDING = 1;
-const PAID = 2;
-const COMPLETED = 5;
-const BASESCAN_TX = "https://sepolia.basescan.org/tx/";
+const PAYMENT_PENDING = 0;
+const PAID = 1;
+const COMPLETED = 2;
+const BASESCAN_TX = "https://basescan.org/tx/";
 
 async function scanCreated(client: PublicClient, fromBlock: bigint, toBlock: bigint, listingId: bigint, buyer: `0x${string}`): Promise<OrderRef | null> {
   if (toBlock < fromBlock) return null;

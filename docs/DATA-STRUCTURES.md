@@ -1,149 +1,79 @@
-# UStetu Data Structures v1.0
+# UStetu V1 Data Structures
 
-## 1. Design Rule
+Canonical definitions are in `contracts/libraries/UStetuTypes.sol`.
 
-Storage is optimized for deterministic settlement, explicit ownership, and auditability. Human-readable metadata may exist off-chain, but critical financial state must be represented and enforced on-chain.
+## Token
 
-## 2. Seller
+```solidity
+struct Token {
+    uint256 chainId;
+    address contractAddress;
+    uint8 decimalsSnapshot;
+    address registeredBy;
+    uint64 registeredAt;
+}
+```
 
-Conceptual fields:
+## Seller
 
-- `sellerId`
-- `wallet`
-- `registeredAt`
-- `status`
-- `verificationStatus`
-- `registeredWithdrawalWallet`
-- `withdrawalWalletChangeEffectiveAt`
-- `totalCompletedOrders`
-- `totalDisputedOrders`
-- `activeListingCount`
+```solidity
+struct Seller {
+    address wallet;
+    address withdrawalWallet;
+    uint64 registeredAt;
+    uint64 withdrawalWalletChangeEffectiveAt;
+}
+```
 
-The seller's registered withdrawal wallet is separate from arbitrary UI input and is protected by wallet-change rules.
+## Listing
 
-## 3. Token
+```solidity
+struct Listing {
+    uint256 tokenId;
+    address seller;
+    uint256 price;
+    uint256 inventoryDeposited;
+    uint256 inventoryLocked;
+    uint256 minOrderAmount;
+    uint256 maxOrderAmount;
+    ListingStatus status;
+    uint64 createdAt;
+    uint64 updatedAt;
+}
+```
 
-Conceptual identity:
+Available inventory is derived as deposited minus locked inventory.
 
-`tokenId = hash(chainId, tokenContractAddress)`
+## Order
 
-Fields:
+```solidity
+struct Order {
+    uint256 listingId;
+    address buyer;
+    address seller;
+    address recipient;
+    address token;
+    address paymentToken;
+    uint256 tokenAmount;
+    uint256 unitPrice;
+    uint256 grossPayment;
+    uint256 marketplaceFee;
+    uint256 sellerProceeds;
+    OrderState state;
+    uint64 createdAt;
+    uint64 paidAt;
+    uint64 completedAt;
+    uint64 expiresAt;
+}
+```
 
-- `chainId`
-- `contractAddress`
-- `symbolSnapshot`
-- `decimalsSnapshot`
-- `status`
-- `verificationStatus`
-- `registeredBy`
-- `registeredAt`
+V1 has no dispute, refund, verification, or governance fields in these core structs.
 
-The contract address and chain are authoritative. Metadata snapshots are informational and must not override the address identity.
+## Enums
 
-## 4. Listing
+```solidity
+enum ListingStatus { ACTIVE, PAUSED, CLOSED }
+enum OrderState { PAYMENT_PENDING, PAID, COMPLETED, EXPIRED }
+```
 
-Fields:
-
-- `listingId`
-- `sellerId`
-- `tokenId`
-- `price`
-- `paymentAsset`
-- `inventoryDeposited`
-- `inventoryLocked`
-- `inventoryAvailable`
-- `minOrderAmount`
-- `maxOrderAmount`
-- `status`
-- `createdAt`
-- `updatedAt`
-
-Listing state is separate from token verification state.
-
-## 5. Order
-
-Fields:
-
-- `orderId`
-- `listingId`
-- `buyer`
-- `seller`
-- `recipient`
-- `tokenId`
-- `paymentToken`
-- `tokenAmount`
-- `unitPrice`
-- `grossPayment`
-- `marketplaceFee`
-- `sellerProceeds`
-- `state`
-- `createdAt`
-- `paidAt`
-- `completedAt`
-- `refundedAt`
-- `disputeId`
-
-`buyer` and `recipient` are recorded when the order is created. The recipient is immutable for that order.
-
-## 6. Claimable Balances
-
-Seller proceeds should be represented as claimable balances rather than immediately transferred to an arbitrary destination.
-
-Conceptual mapping:
-
-`claimable[paymentToken][seller] => amount`
-
-Withdrawals validate the seller's registered withdrawal wallet and protocol limits before transfer.
-
-## 7. Escrow Accounting
-
-The protocol must distinguish:
-
-- Deposited inventory.
-- Locked inventory.
-- Available inventory.
-- Buyer payment held for active orders.
-- Refundable buyer payment.
-- Seller claimable proceeds.
-- Marketplace fee.
-- Treasury-owned balance.
-
-## 8. Dispute
-
-Fields:
-
-- `disputeId`
-- `orderId`
-- `openedBy`
-- `reasonCode`
-- `openedAt`
-- `status`
-- `resolution`
-- `resolvedAt`
-- `resolver`
-
-A dispute must lock conflicting settlement paths.
-
-## 9. Governance / Security Configuration
-
-Configuration must be separated from user balances and include, where applicable:
-
-- Marketplace fee basis points.
-- Timelock references.
-- AccessManager references.
-- Pause state.
-- Emergency mode.
-- Supported payment tokens.
-- Limits and policy parameters.
-- Contract version / migration state.
-
-## 10. Numeric Safety
-
-Use Solidity 0.8+ checked arithmetic and explicit bounds. Fee calculations must be designed to avoid rounding surprises and must define who receives residual units after integer division.
-
-## 11. Storage Principles
-
-- Prefer compact structs and mappings where safe.
-- Avoid storing redundant data that can be derived from immutable identifiers.
-- Never use an off-chain database balance as authorization for a financial transfer.
-- Emit events for every critical state transition.
+The Solidity source is authoritative for exact storage layout.
