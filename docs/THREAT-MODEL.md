@@ -1,235 +1,144 @@
-# UStetu Threat Model v1.0
+# UStetu V1 Threat Model
 
 ## Security Objective
 
-Protect buyer payments, seller token inventory, seller claimable proceeds, and protocol integrity while minimizing privileged trust.
-
-## Assets
-
-1. Seller token inventory.
-2. Buyer USDC/USDT payment.
-3. Seller claimable proceeds.
-4. Marketplace fee / treasury balance.
-5. Order state and recipient.
-6. Governance permissions.
-7. Token and listing configuration.
+Protect seller inventory, buyer payments, seller claimable proceeds, and order integrity while minimizing privileged trust.
 
 ## Trust Boundaries
 
 ```text
 User Wallet
-   │
-   ▼
+    │
+    ▼
 Frontend ───── Backend / Indexer
-   │                 │
-   ▼                 ▼
-Smart Contracts ← Blockchain
-   │
-   ├── Escrow
-   ├── Marketplace
-   ├── Registry
-   └── Governance
+    │                  │
+    ▼                  │
+Base Mainnet Contracts ◄┘
+    │
+    ├── UStetuRegistry
+    ├── UStetuSellerRegistry
+    └── UStetuEscrow
 ```
 
-The frontend and backend are untrusted from a custody perspective. They must never be the authority for balances, ownership, recipient addresses, or settlement state.
+The frontend and backend are untrusted for custody and settlement. Smart contracts are the financial authority.
 
 ## Threat Actors
 
-### 1. Malicious Buyer
+### Malicious Buyer
 
-Potential actions:
+Possible actions:
 
-- Attempt double payment / replay.
-- Attempt unauthorized refund.
-- Manipulate frontend state.
-- Submit malformed token/payment inputs.
-- Attempt reentrancy through malicious token behavior.
-
-Primary controls:
-
-- On-chain state machine.
-- Explicit order identity.
-- Safe token operations.
-- Access control.
-- Accounting invariants.
-
-### 2. Malicious Seller
-
-Potential actions:
-
-- Attempt to withdraw locked inventory.
-- Attempt to redirect proceeds.
-- Attempt to change recipient or order facts.
-- Register malicious/non-compatible token.
-- Attempt double settlement.
-
-Primary controls:
-
-- Escrow custody of locked inventory.
-- Immutable order recipient.
-- Registered withdrawal wallet.
-- Token compatibility policy.
-- State-machine enforcement.
-
-### 3. Compromised Frontend
-
-Potential actions:
-
-- Display incorrect recipient.
-- Display incorrect price.
-- Hide fees.
-- Attempt to call unauthorized functions.
-- Phishing-like UI manipulation.
+- submit repeated transactions
+- provide malformed inputs
+- attempt to fund or complete another user's order
+- attempt reentrancy through token behavior
+- exploit stale frontend/indexer data
 
 Controls:
 
-- User-facing confirmation of critical facts.
-- On-chain validation.
-- Recipient immutability.
-- Contract-level fee/accounting rules.
-- Wallet signature requirements.
+- order-state validation
+- buyer/order binding
+- immutable recipient
+- ReentrancyGuard
+- SafeERC20
+- exact payment accounting
 
-### 4. Compromised Backend / Indexer
+### Malicious Seller
 
-Potential actions:
+Possible actions:
 
-- Modify displayed balances.
-- Modify transaction status in UI.
-- Provide stale or malicious metadata.
-
-Controls:
-
-- Blockchain as source of truth.
-- TX hash verification.
-- Event indexing with reorg handling.
-- UI never authorizes financial transfers from database values.
-
-### 5. Malicious Token Contract
-
-Potential actions:
-
-- Fee-on-transfer.
-- Rebase balance.
-- Revert transfer.
-- Return non-standard values.
-- Callback/reentrancy.
-- Blacklist escrow.
-- Change behavior through upgradeability.
+- attempt to withdraw locked inventory
+- manipulate listing price for future orders
+- attempt to redirect proceeds
+- register a risky token
+- attempt duplicate settlement
 
 Controls:
 
-- Token allowlist/verification policy.
-- Compatibility testing.
-- SafeERC20.
-- Explicit unsupported-token policy.
-- Deposit amount verification.
-- Isolation of risky token types.
+- listing ownership checks
+- inventory locking
+- order facts stored at creation
+- withdrawal-wallet delay
+- exact token-delivery accounting
+- permissionless registration with explicit risk disclosure
 
-### 6. Compromised Privileged Key
+### Malicious Token Contract
 
-Potential actions:
+Possible behavior:
 
-- Attempt configuration takeover.
-- Pause abuse.
-- Role escalation.
-- Governance manipulation.
-
-Controls:
-
-- Multisig.
-- AccessManager.
-- Timelock.
-- Security Council.
-- Least privilege.
-- Event monitoring.
-- Key rotation procedures.
-
-### 7. Malicious Governance Participant
-
-Potential actions:
-
-- Approve harmful configuration.
-- Attempt fee abuse.
-- Attempt migration abuse.
+- fee-on-transfer
+- rebasing
+- blacklist/freeze
+- unusual balance changes
+- reverting transfers
+- upgradeable behavior
 
 Controls:
 
-- Quorum / multisig policy.
-- Timelock delay.
-- Publicly auditable proposals.
-- Migration safeguards.
-- Separation between treasury and user escrow.
+- contract-code check
+- decimals snapshot and bounds
+- exact received-payment/inventory/delivery checks where implemented
+- SafeERC20
+- settlement invariants
 
-## Key Attack Classes
+Important limitation: V1 does not prove that an arbitrary registered ERC-20 is economically safe.
 
-### Reentrancy
+### Compromised Frontend or Indexer
 
-Risk: malicious token or callback causes nested state changes.
+Possible actions:
 
-Mitigation: checks-effects-interactions, SafeERC20, ReentrancyGuard where appropriate, and invariant testing.
+- display incorrect price or inventory
+- hide a listing
+- provide stale state
+- attempt to construct a malicious transaction
 
-### Double Settlement
+Controls:
 
-Risk: same order released twice.
+- on-chain financial state
+- wallet transaction confirmation
+- contract-side authorization and accounting
+- frontend/indexer treated as untrusted
 
-Mitigation: terminal order state + unique order ID + invariant tests.
+### Compromised Seller Withdrawal Wallet
 
-### Double Refund
+Impact is limited by the 24-hour withdrawal-wallet change delay, but a compromised effective wallet can still receive seller proceeds. Users remain responsible for wallet security.
 
-Risk: same payment refunded more than once.
+## Explicitly Absent Threat Surface
 
-Mitigation: terminal state + accounting update before transfer + invariant tests.
+V1 does not contain privileged governance, so there is no V1 admin-key threat involving:
 
-### Recipient Substitution
+- AccessManager
+- Timelock
+- Security Council
+- pause authority
+- fee setter
+- payment-token setter
+- upgrade administrator
+- token verifier
+- dispute resolver
 
-Risk: attacker changes buyer receiving address or seller withdrawal destination.
+These mechanisms may exist in future research only.
 
-Mitigation: immutable order recipient and registered seller withdrawal wallet enforced by contract.
+## Main Security Invariants
 
-### Price Manipulation
-
-Risk: frontend changes price after user review.
-
-Mitigation: order stores immutable execution price; settlement uses order values, not UI state.
-
-### Fee Manipulation
-
-Risk: unexpected marketplace fee.
-
-Mitigation: contract-controlled fee configuration, bounded maximum, governance delay, explicit preview, deterministic accounting.
-
-### Inventory Mismatch
-
-Risk: seller lists one token but deposits another.
-
-Mitigation: listing binds to `chainId + tokenContractAddress`; escrow verifies token identity.
-
-### Unsupported Token Behavior
-
-Risk: accounting breaks because token transfers are non-standard.
-
-Mitigation: token eligibility policy and compatibility checks before listing activation.
-
-### Frontend Phishing / Address Poisoning
-
-Risk: user signs transfer to attacker address.
-
-Mitigation: prominent recipient display, copy/verify UX, no arbitrary recipient field in normal buyer checkout, and contract-level recipient binding.
-
-### Upgrade / Migration Abuse
-
-Risk: new implementation loses or redirects user obligations.
-
-Mitigation: timelocked governance, migration invariants, explicit migration plan, user asset reconciliation, and external review.
-
-## Security Assumptions
-
-- Users control their own wallet keys.
-- Supported payment token contracts behave within the approved compatibility policy.
-- Governance signers protect their keys.
-- Blockchain consensus remains secure.
-- External audits reduce but do not eliminate risk.
+- A completed order cannot complete twice.
+- An expired order cannot later complete.
+- Locked inventory cannot be withdrawn.
+- Order recipient is immutable.
+- Existing order price is immutable.
+- Seller proceeds plus fee equals gross payment.
+- Claimable balances cannot become negative.
+- Unsupported payment assets cannot settle.
+- Financial authorization never depends on an off-chain database.
 
 ## Residual Risks
 
-No smart-contract system can guarantee zero risk. UStetu must communicate remaining risks clearly, maintain monitoring, and require a staged testnet → audit → mainnet process.
+1. Permissionless token registration means registered tokens may be malicious or economically unsafe.
+2. Non-standard ERC-20 behavior can create integration risk despite transfer checks.
+3. The discovery indexer can be unavailable or stale.
+4. Wallet/RPC/hosting compromise remains outside contract control.
+5. Seller-chosen listing IDs can create operational griefing/squatting risk.
+
+## Review Boundary
+
+This threat model describes the implemented V1 architecture. It is not an independent security audit and does not guarantee the safety of third-party tokens or infrastructure.
