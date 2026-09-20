@@ -24,6 +24,9 @@ jobs:
         with:
           version: stable
 
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
       - name: Build
         run: forge build
 
