@@ -36,4 +36,4 @@ jobs:
 
       - name: Simulate deployment
         run: |
-          forge script script/DeployBaseSepolia.s.sol:DeployBaseSepolia             --rpc-url "$BASE_SEPOLIA_RPC_URL"             -vvvv
+          forge script script/DeployBaseSepoliaDryRun.s.sol:DeployBaseSepoliaDryRun             --rpc-url "$BASE_SEPOLIA_RPC_URL"             -vvvv
