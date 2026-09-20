@@ -1,0 +1,59 @@
+name: Prepare UStetu Escrow Verification JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    name: Build verification input
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v4
+        with:
+          ref: testnet/base-sepolia
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Build with build-info
+        run: forge build --build-info
+
+      - name: Extract UStetuEscrow Standard JSON Input
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BUILD_INFO="$(grep -l '"contracts/core/UStetuEscrow.sol"' out/build-info/*.json | head -n 1)"
+
+          if [ -z "$BUILD_INFO" ]; then
+            echo "UStetuEscrow build-info not found."
+            exit 1
+          fi
+
+          jq '.input' "$BUILD_INFO" > UStetuEscrow.standard-input.json
+          jq '{solcVersion, id, contractFile: "contracts/core/UStetuEscrow.sol", contractName: "UStetuEscrow"}' "$BUILD_INFO" > UStetuEscrow.build-info-summary.json
+
+          echo "Build info: $BUILD_INFO"
+          echo "Compiler:"
+          jq -r '.solcVersion' "$BUILD_INFO"
+          echo "EVM version:"
+          jq -r '.input.settings.evmVersion // "not explicitly present"' "$BUILD_INFO"
+          echo "Optimizer:"
+          jq -r '.input.settings.optimizer' "$BUILD_INFO"
+
+      - name: Upload verification files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ustetu-escrow-verification
+          path: |
+            UStetuEscrow.standard-input.json
+            UStetuEscrow.build-info-summary.json
+          if-no-files-found: error
