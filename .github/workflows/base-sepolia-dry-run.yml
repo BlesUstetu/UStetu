@@ -2,6 +2,12 @@ name: Base Sepolia Deployment Dry Run
 
 on:
   workflow_dispatch:
+    inputs:
+      deployer_address:
+        description: "Public deployer address used only for simulation"
+        required: true
+        default: "0x4C415aEAeD847B0f28a7637f784082EA76DeBff1"
+        type: string
 
 jobs:
   simulate:
@@ -10,7 +16,7 @@ jobs:
     env:
       BASE_SEPOLIA_RPC_URL: https://sepolia.base.org
       USTETU_FEE_RECIPIENT: 0x393c8Ab9FA306D0e3631AA9e027B467c61d7Bc29
-      DEPLOYER_PRIVATE_KEY: "1"
+      DEPLOYER_ADDRESS: ${{ inputs.deployer_address }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
