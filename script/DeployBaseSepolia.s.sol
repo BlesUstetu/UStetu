@@ -25,7 +25,8 @@ contract DeployBaseSepolia is Script {
     {
         require(block.chainid == BASE_SEPOLIA_CHAIN_ID, "WRONG_CHAIN");
 
-        address deployer = vm.addr(vm.envUint("DEPLOYER_PRIVATE_KEY"));
+        address deployer = vm.envOr("DEPLOYER_ADDRESS", address(0));
+        require(deployer != address(0), "INVALID_DEPLOYER_ADDRESS");
         address feeRecipient = vm.envAddress("USTETU_FEE_RECIPIENT");
         require(feeRecipient != address(0), "INVALID_FEE_RECIPIENT");
 
