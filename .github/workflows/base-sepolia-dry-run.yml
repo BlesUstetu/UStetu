@@ -2,27 +2,16 @@ name: Base Sepolia Deployment Dry Run
 
 on:
   workflow_dispatch:
-    inputs:
-      deployer_address:
-        description: "Public deployer address used only for simulation"
-        required: true
-        default: "0x4C415aEAeD847B0f28a7637f784082EA76DeBff1"
-        type: string
-  push:
-    branches:
-      - testnet/base-sepolia
-
-permissions:
-  contents: read
 
 jobs:
   simulate:
     name: Simulate UStetu V1 on Base Sepolia
     runs-on: ubuntu-latest
+
     env:
       BASE_SEPOLIA_RPC_URL: https://sepolia.base.org
+      DEPLOYER_ADDRESS: 0x4C415aEAeD847B0f28a7637f784082EA76DeBff1
       USTETU_FEE_RECIPIENT: 0x393c8Ab9FA306D0e3631AA9e027B467c61d7Bc29
-      DEPLOYER_ADDRESS: ${{ inputs.deployer_address || '0x4C415aEAeD847B0f28a7637f784082EA76DeBff1' }}
 
     steps:
       - name: Checkout
@@ -35,15 +24,11 @@ jobs:
         with:
           version: stable
 
-      - name: Verify Foundry
-        run: forge --version
-
-      - name: Build contracts
+      - name: Build
         run: forge build
 
-      - name: Run Solidity tests
+      - name: Test
         run: forge test -vv
 
-      - name: Simulate Base Sepolia deployment
-        run: |
-          forge script script/DeployBaseSepoliaDryRun.s.sol:DeployBaseSepoliaDryRun             --rpc-url "$BASE_SEPOLIA_RPC_URL"             -vvvv
+      - name: Simulate deployment
+        run: forge script script/DeployBaseSepoliaDryRun.s.sol:DeployBaseSepoliaDryRun --rpc-url "$BASE_SEPOLIA_RPC_URL" -vvvv
