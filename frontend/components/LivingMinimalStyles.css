@@ -10,6 +10,9 @@
     radial-gradient(circle at 4% 48%, rgba(26,4,174,.42), transparent 34%),
     radial-gradient(circle at 96% 48%, rgba(26,4,174,.34), transparent 34%),
     linear-gradient(135deg, #181818 0%, #181818 45%, #120b42 100%);
+  background-size: 155% 155%;
+  animation: ustetu-surface-shift 28s ease-in-out infinite alternate;
+  will-change: background-position;
 }
 
 .app-shell::before {
@@ -132,6 +135,7 @@ html[data-theme="light"] .ambient-glow-one { background: #4c91d1; }
 html[data-theme="light"] .ambient-glow-two { background: #6f9fc9; }
 
 @media (prefers-reduced-motion: reduce) {
+  .app-shell,
   .app-shell::before,
   .app-shell::after,
   .ambient-glow-one,
