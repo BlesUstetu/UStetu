@@ -8,6 +8,12 @@ on:
         required: true
         default: "0x4C415aEAeD847B0f28a7637f784082EA76DeBff1"
         type: string
+  push:
+    branches:
+      - testnet/base-sepolia
+
+permissions:
+  contents: read
 
 jobs:
   simulate:
@@ -16,7 +22,8 @@ jobs:
     env:
       BASE_SEPOLIA_RPC_URL: https://sepolia.base.org
       USTETU_FEE_RECIPIENT: 0x393c8Ab9FA306D0e3631AA9e027B467c61d7Bc29
-      DEPLOYER_ADDRESS: ${{ inputs.deployer_address }}
+      DEPLOYER_ADDRESS: ${{ inputs.deployer_address || '0x4C415aEAeD847B0f28a7637f784082EA76DeBff1' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,12 +35,15 @@ jobs:
         with:
           version: stable
 
-      - name: Install forge-std
-        run: forge install foundry-rs/forge-std@v1.9.7
+      - name: Verify Foundry
+        run: forge --version
 
-      - name: Compile
+      - name: Build contracts
         run: forge build
 
-      - name: Simulate deployment
+      - name: Run Solidity tests
+        run: forge test -vv
+
+      - name: Simulate Base Sepolia deployment
         run: |
           forge script script/DeployBaseSepoliaDryRun.s.sol:DeployBaseSepoliaDryRun             --rpc-url "$BASE_SEPOLIA_RPC_URL"             -vvvv
