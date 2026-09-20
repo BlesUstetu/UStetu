@@ -1,0 +1,63 @@
+name: Prepare MockERC20 Verification JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    name: Build MockERC20 verification input
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout exact deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: testnet/base-sepolia
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Build deployment script with build-info
+        run: forge build script/DeployBaseSepolia.s.sol --build-info
+
+      - name: Extract MockERC20 Standard JSON Input
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BUILD_INFO="$(grep -l '"test/mocks/MockERC20.sol"' out/build-info/*.json | head -n 1)"
+          test -n "$BUILD_INFO"
+
+          jq '.input' "$BUILD_INFO" > MockERC20.standard-input.json
+
+          jq '{
+            solcVersion,
+            id,
+            contractFile: "test/mocks/MockERC20.sol",
+            contractName: "MockERC20"
+          }' "$BUILD_INFO" > MockERC20.build-info-summary.json
+
+          echo "Build info: $BUILD_INFO"
+          echo "Compiler:"
+          jq -r '.solcVersion' "$BUILD_INFO"
+          echo "EVM version:"
+          jq -r '.input.settings.evmVersion // "not explicitly present"' "$BUILD_INFO"
+          echo "Optimizer enabled:"
+          jq -r '.input.settings.optimizer.enabled' "$BUILD_INFO"
+          echo "Optimizer runs:"
+          jq -r '.input.settings.optimizer.runs' "$BUILD_INFO"
+
+      - name: Upload verification files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ustetu-mock-erc20-verification
+          path: |
+            MockERC20.standard-input.json
+            MockERC20.build-info-summary.json
+          if-no-files-found: error
