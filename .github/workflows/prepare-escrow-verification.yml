@@ -40,6 +40,7 @@ jobs:
           jq -r '.input.settings.optimizer' "$BUILD_INFO"
 
       - name: Upload verification files
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: ustetu-escrow-verification
@@ -47,3 +48,11 @@ jobs:
             UStetuEscrow.standard-input.json
             UStetuEscrow.build-info-summary.json
           if-no-files-found: error
+
+      - name: Show direct artifact download link
+        run: |
+          echo "### Verification artifact" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Download ustetu-escrow-verification](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload.outputs.artifact-id }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifact ID: ${{ steps.upload.outputs.artifact-id }}" >> "$GITHUB_STEP_SUMMARY"
