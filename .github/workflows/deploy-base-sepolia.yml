@@ -1,0 +1,57 @@
+name: Deploy UStetu V1 Integration to Base Sepolia
+
+on:
+  workflow_dispatch:
+    inputs:
+      fee_recipient:
+        description: "Testnet fee recipient"
+        required: true
+        default: "0x393c8Ab9FA306D0e3631AA9e027B467c61d7Bc29"
+        type: string
+      confirm:
+        description: "Type DEPLOY_BASE_SEPOLIA to authorize the testnet broadcast"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Broadcast UStetu V1 integration deployment
+    runs-on: ubuntu-latest
+    environment: testnet
+    env:
+      BASE_SEPOLIA_RPC_URL: https://sepolia.base.org
+      USTETU_FEE_RECIPIENT: ${{ inputs.fee_recipient }}
+      DEPLOYER_PRIVATE_KEY: ${{ secrets.USTETU_DEPLOYER_PRIVATE_KEY }}
+
+    steps:
+      - name: Verify testnet deployment confirmation
+        run: |
+          if [ "${{ inputs.confirm }}" != "DEPLOY_BASE_SEPOLIA" ]; then
+            echo "Invalid testnet deployment confirmation."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Compile
+        run: forge build
+
+      - name: Check deployer balance
+        run: |
+          test -n "$DEPLOYER_PRIVATE_KEY" || { echo "Missing deployer secret."; exit 1; }
+          cast balance "$(cast wallet address --private-key "$DEPLOYER_PRIVATE_KEY")"             --rpc-url "$BASE_SEPOLIA_RPC_URL"
+
+      - name: Broadcast Base Sepolia integration deployment
+        run: |
+          forge script script/DeployBaseSepolia.s.sol:DeployBaseSepolia             --rpc-url "$BASE_SEPOLIA_RPC_URL"             --private-key "$DEPLOYER_PRIVATE_KEY"             --broadcast             -vvvv
