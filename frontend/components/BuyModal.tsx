@@ -131,7 +131,7 @@ export default function BuyModal(props: Props) {
     } catch (error) { setErr(errorText(error)); setStep("idle"); } finally { flowStartedRef.current = false; }
   };
   const createLink = tx.create ? `${BASESCAN_TX}${tx.create}` : ""; const approveLink = tx.approve ? `${BASESCAN_TX}${tx.approve}` : ""; const fundLink = tx.fund ? `${BASESCAN_TX}${tx.fund}` : ""; const completeLink = tx.complete ? `${BASESCAN_TX}${tx.complete}` : "";
-  const createDone = createConfirmed; const approveDone = approvalReady || step === "success"; const fundDone = fundPhase === "confirmed" || activeOrder?.state === PAID || step === "success"; const completeDone = completePhase === "confirmed" || step === "success";
+  const createDone = createConfirmed || Boolean(activeOrder); const approveDone = approvalReady || step === "success"; const fundDone = fundPhase === "confirmed" || activeOrder?.state === PAID || step === "success"; const completeDone = completePhase === "confirmed" || step === "success";
   const stepLabel = (kind: "create" | "approve" | "fund" | "complete") => {
     if (kind === "create") return createDone ? txAddress(tx.create) ?? "ON-CHAIN" : step === "creating" ? "CONFIRM IN WALLET" : "WAIT";
     if (kind === "approve") return approveDone ? txAddress(tx.approve) ?? "ALLOWANCE OK" : step === "approving" ? "CONFIRM IN WALLET" : "WAIT";
