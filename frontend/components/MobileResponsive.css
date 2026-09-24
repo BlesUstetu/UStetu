@@ -41,20 +41,32 @@ body {
     gap: 3px !important;
   }
 
+  /* Borderless compact theme + language controls on mobile */
   .header-controls .icon-button {
-    width: 30px !important;
-    min-width: 30px !important;
-    height: 30px !important;
+    width: 26px !important;
+    min-width: 26px !important;
+    height: 28px !important;
     padding: 0 !important;
-    border-radius: 9px !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    background: transparent !important;
+    box-shadow: none !important;
     font-size: 12px !important;
   }
 
   .header-controls .language-wrap .icon-button {
-    width: 42px !important;
-    min-width: 42px !important;
-    padding: 0 5px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    padding: 0 3px !important;
+    border: 0 !important;
+    background: transparent !important;
     font-size: 9px !important;
+  }
+
+  .header-controls .icon-button:hover {
+    transform: none !important;
+    border-color: transparent !important;
+    background: rgba(255,255,255,.06) !important;
   }
 
   .topbar-right {
