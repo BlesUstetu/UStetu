@@ -36,6 +36,27 @@ body {
     min-width: 0 !important;
   }
 
+  /* Compact theme + language controls on mobile */
+  .header-controls {
+    gap: 3px !important;
+  }
+
+  .header-controls .icon-button {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    border-radius: 9px !important;
+    font-size: 12px !important;
+  }
+
+  .header-controls .language-wrap .icon-button {
+    width: 42px !important;
+    min-width: 42px !important;
+    padding: 0 5px !important;
+    font-size: 9px !important;
+  }
+
   .topbar-right {
     flex-wrap: nowrap;
   }
