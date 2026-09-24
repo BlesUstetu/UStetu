@@ -144,10 +144,13 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
             grid-row:1;
             display:flex !important;
             align-items:center;
+            justify-content:flex-start;
             gap:6px;
             transform:none !important;
             margin:0 !important;
             min-width:0;
+            width:max-content;
+            max-width:100%;
             visibility:visible !important;
             opacity:1 !important;
             z-index:2;
@@ -166,6 +169,8 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
             overflow:visible;
             gap:7px;
           }
+          .brand-center + .topbar-right{position:relative}
+          .brand-center .brand-copy{flex:0 0 auto}
           .topbar-right > *{max-width:none !important}
           .seller-nav-link{
             min-height:32px;
