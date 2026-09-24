@@ -95,7 +95,6 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .home-nav-link svg,.seller-orders-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
         .seller-nav-control{position:relative;isolation:isolate;display:inline-flex;align-items:center;padding:1px;border-radius:12px;overflow:hidden;background:transparent}
-        .seller-nav-control::before{content:"";position:absolute;inset:-80%;z-index:-1;background:conic-gradient(from 0deg,transparent 0deg,rgba(80,220,255,.15) 65deg,rgba(0,255,180,.95) 120deg,rgba(90,130,255,.9) 180deg,rgba(190,80,255,.75) 235deg,transparent 300deg,transparent 360deg);animation:ustetu-seller-border-spin 2.8s linear infinite;filter:blur(2px)}
         .seller-nav-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:rgba(7,11,20,.96);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
         .seller-nav-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;font-size:11px;font-weight:700;letter-spacing:.04em;text-decoration:none;color:#f4f8ff;padding:0 11px;border:0;border-radius:11px;background:rgba(7,11,20,.96);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
         .seller-nav-link:hover{background:rgba(14,21,34,.98);transform:translateY(-1px);box-shadow:0 0 18px rgba(64,180,255,.12)}
@@ -103,7 +102,6 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         @keyframes ustetu-seller-border-spin{to{transform:rotate(360deg)}}
         .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
         .wallet-connect-control{position:relative;isolation:isolate;display:inline-flex;align-items:center;padding:1px;border-radius:12px;overflow:hidden;background:transparent}
-        .wallet-connect-control::before{content:"";position:absolute;inset:-80%;z-index:-1;background:conic-gradient(from 0deg,transparent 0deg,rgba(80,220,255,.15) 65deg,rgba(0,255,180,.95) 120deg,rgba(90,130,255,.9) 180deg,rgba(190,80,255,.75) 235deg,transparent 300deg,transparent 360deg);animation:ustetu-wallet-border-spin 2.8s linear infinite;filter:blur(2px)}
         .wallet-connect-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:rgba(7,11,20,.96);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
         .ustetu-wallet-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 12px;border:0;border-radius:11px;background:rgba(7,11,20,.96);color:#f4f8ff;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.055em;white-space:nowrap;cursor:pointer;transition:transform .2s ease,background .2s ease,box-shadow .2s ease,color .2s ease}
         .ustetu-wallet-button:hover{background:rgba(14,21,34,.98);transform:translateY(-1px);box-shadow:0 0 18px rgba(64,180,255,.12)}
