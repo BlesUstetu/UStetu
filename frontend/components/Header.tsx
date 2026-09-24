@@ -16,7 +16,6 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         <img className="ustetu-logo" src="/UStetu/ustetu-logo.svg" alt="USTETU" />
         <div className="brand-copy">
           <div className="brand"><span className="brand-ust">UST</span><span className="brand-etu">ETU</span></div>
-          <div className="tagline">Own What’s Next.</div>
         </div>
       </div>
 
