@@ -422,6 +422,18 @@ body {
     flex-shrink: 0;
   }
 
+  /* Keep animated border effects clipped to their own buttons. */
+  .wallet-connect-control,
+  .seller-nav-control {
+    overflow: hidden !important;
+    isolation: isolate;
+  }
+
+  .wallet-connect-control::before,
+  .seller-nav-control::before {
+    inset: -80%;
+  }
+
   .home-nav-link,
   .seller-orders-link {
     width: 32px !important;
