@@ -1050,3 +1050,42 @@ body {
     height: 30px !important;
   }
 }
+
+
+/* Mobile/tablet: keep Home beside the USTETU brand */
+@media (max-width: 760px) {
+  .brand-center .mobile-brand-home {
+    display: inline-flex !important;
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    margin-left: 5px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .brand-center .mobile-brand-home svg {
+    width: 15px !important;
+    height: 15px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  .topbar-right .home-nav-link {
+    display: none !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .brand-center .mobile-brand-home {
+    flex-basis: 30px !important;
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    margin-left: 4px !important;
+  }
+}
