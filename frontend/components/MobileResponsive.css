@@ -832,11 +832,23 @@ body {
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    gap: 6px !important;
+    gap: 7px !important;
     margin: 0 !important;
     min-width: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
     pointer-events: none !important;
     white-space: nowrap !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2 !important;
+  }
+
+  .brand-center .brand-copy,
+  .brand-center .brand {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .ustetu-logo {
