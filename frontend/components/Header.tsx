@@ -48,6 +48,7 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
             {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
               const ready = mounted;
               const connected = ready && account && chain;
+
               return (
                 <div
                   {...(!ready && {
@@ -77,6 +78,7 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
           </ConnectButton.Custom>
         </div>
       </div>
+
       <style jsx global>{`
         .topbar{position:relative !important}
         .brand-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
@@ -99,4 +101,30 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .ustetu-wallet-label{line-height:1}
         .ustetu-wallet-wrong-network{color:#ffd166}
         .ustetu-wallet-wrong-network .ustetu-wallet-icon{color:#ffd166;border-color:rgba(255,209,102,.75)}
-
+        @keyframes ustetu-wallet-border-spin{to{transform:rotate(360deg)}}
+        .topbar-left .system-info-trigger{order:-1}
+        @media(max-width:760px){
+          .brand-center{gap:5px}
+          .ustetu-logo{width:19px;height:32px}
+          .brand{font-size:13px}
+          .tagline{font-size:8px}
+          .seller-nav-link{font-size:11px;padding:7px 9px}
+          .home-nav-link,.seller-orders-link{width:32px;height:32px}
+          .home-nav-link svg,.seller-orders-link svg{width:16px;height:16px}
+          .ustetu-wallet-button{min-height:32px;padding:0 9px;gap:5px;font-size:10px;letter-spacing:.04em}
+          .ustetu-wallet-icon{width:14px;height:14px;font-size:8px}
+        }
+        @media(max-width:430px){
+          .ustetu-wallet-button{padding:0 7px;font-size:9px}
+          .ustetu-wallet-label{max-width:82px;overflow:hidden;text-overflow:ellipsis}
+        }
+        @media(max-width:360px){
+          .ustetu-wallet-label{max-width:64px}
+        }
+        @media(max-width:520px){
+          .topbar-left .system-info-trigger{order:2}
+        }
+      `}</style>
+    </header>
+  );
+}
