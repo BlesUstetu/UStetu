@@ -18,6 +18,18 @@ body {
 
 /* RainbowKit / wallet controls */
 @media (max-width: 760px) {
+  /* Keep the mobile header controls visually clean: disable the large ambient light sources. */
+  .app-shell > .ambient-glow,
+  .app-shell > .ambient-glow-one,
+  .app-shell > .ambient-glow-two {
+    display: none !important;
+  }
+
+  .topbar {
+    isolation: isolate;
+  }
+
+
   [data-rk] button {
     max-width: 100%;
   }
