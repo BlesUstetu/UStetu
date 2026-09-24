@@ -88,6 +88,20 @@ export default function HomePage() {
     query: { enabled: tokenConfigs.length > 0 }
   });
 
+  const listingConfigs = useMemo(
+    () => listings.map((item) => ({
+      address: USTETU_ESCROW_ADDRESS,
+      abi: escrowAbi,
+      functionName: "getListing" as const,
+      args: [BigInt(item.listing_id)] as const
+    })),
+    [listings]
+  );
+
+  const listingQueries = useReadContracts({
+    contracts: listingConfigs as never[],
+    query: { enabled: listingConfigs.length > 0, refetchInterval: 10000 }
+  });
   const paymentSymbolQuery = useReadContract({
     address: paymentTokenAddress,
     abi: erc20MetadataAbi,
@@ -143,20 +157,36 @@ export default function HomePage() {
     if (paymentTokenAddress === undefined || paymentDecimalsQuery.data === undefined) return [];
     const paymentDecimals = Number(paymentDecimalsQuery.data);
     const paymentSymbol = paymentSymbolQuery.data ?? "USDC";
+
     return listings.map((item, index) => {
-      const token = tokenQueries.data?.[index]?.result as readonly [bigint, `0x${string}`, number, `0x${string}`, bigint] | undefined;
-      const tokenAddress = normalizeAddress(item.token_contract);
-      if (!token || !tokenAddress) return null;
+      const token: any = tokenQueries.data?.[index]?.result;
+      const chainListing: any = listingQueries.data?.[index]?.result;
+      if (!token || !chainListing) return null;
+
+      const indexedTokenAddress = normalizeAddress(item.token_contract);
+      const registeredTokenAddress = token[1] as `0x${string}`;
+      if (!indexedTokenAddress || registeredTokenAddress.toLowerCase() !== indexedTokenAddress.toLowerCase()) return null;
+
+      const indexedTokenId = hexTokenId(item.token_id);
+      const chainTokenId = hexTokenId(chainListing.tokenId.toString());
+      if (indexedTokenId.toLowerCase() !== chainTokenId.toLowerCase()) return null;
+      if (chainListing.seller.toLowerCase() !== item.seller.toLowerCase()) return null;
+
+      // The Escrow payment token is authoritative. The indexer is discovery-only.
+      const indexedPaymentToken = normalizeAddress(item.payment_token);
+      if (indexedPaymentToken && indexedPaymentToken.toLowerCase() !== paymentTokenAddress.toLowerCase()) return null;
+
       const tokenDecimals = Number(token[2]);
-      const deposited = BigInt(item.inventory_deposited);
-      const locked = BigInt(item.inventory_locked);
-      const availableRaw = deposited > locked ? deposited - locked : 0n;
+      const availableRaw = chainListing.inventoryDeposited > chainListing.inventoryLocked
+        ? chainListing.inventoryDeposited - chainListing.inventoryLocked
+        : 0n;
       const listingId = BigInt(item.listing_id);
+
       return {
         listingId,
-        seller: item.seller as `0x${string}`,
-        tokenId: hexTokenId(item.token_id),
-        address: tokenAddress,
+        seller: chainListing.seller,
+        tokenId: indexedTokenId,
+        address: registeredTokenAddress,
         tokenName: "Token",
         symbol: "TOKEN",
         tokenDecimals,
@@ -165,16 +195,15 @@ export default function HomePage() {
         paymentDecimals,
         availableRaw,
         available: formatUnits(availableRaw, tokenDecimals),
-        priceRaw: BigInt(item.price),
-        price: formatUnits(BigInt(item.price), paymentDecimals),
-        minOrderAmount: BigInt(item.min_order_amount),
-        maxOrderAmount: BigInt(item.max_order_amount),
+        priceRaw: chainListing.price,
+        price: formatUnits(chainListing.price, paymentDecimals),
+        minOrderAmount: chainListing.minOrderAmount,
+        maxOrderAmount: chainListing.maxOrderAmount,
         chainId: 8453,
-        status: item.status === "ACTIVE" ? LISTING_ACTIVE : item.status === "PAUSED" ? 2 : item.status === "CLOSED" ? 3 : 0
+        status: Number(chainListing.status)
       };
     }).filter((item): item is LiveListing => item !== null);
-  }, [listings, tokenQueries.data, paymentTokenAddress, paymentDecimalsQuery.data, paymentSymbolQuery.data]);
-
+  }, [listings, tokenQueries.data, listingQueries.data, paymentTokenAddress, paymentDecimalsQuery.data, paymentSymbolQuery.data]);
   const metadataConfigs = useMemo(() => liveListings.map((item) => ([
     { address: item.address, abi: erc20MetadataAbi, functionName: "name" as const },
     { address: item.address, abi: erc20MetadataAbi, functionName: "symbol" as const }
@@ -199,7 +228,7 @@ export default function HomePage() {
   }, [enrichedListings, search]);
 
   const selected = selectedId === null ? null : enrichedListings.find((item) => item.listingId === selectedId) ?? null;
-  const isLoading = loading || paymentTokenQuery.isLoading || paymentDecimalsQuery.isLoading || (listings.length > 0 && tokenQueries.isLoading);
+  const isLoading = loading || paymentTokenQuery.isLoading || paymentDecimalsQuery.isLoading || (listings.length > 0 && (tokenQueries.isLoading || listingQueries.isLoading));
   const hasError = Boolean(apiError);
   const refreshMarketplace = async () => { await loadListings(); };
 
