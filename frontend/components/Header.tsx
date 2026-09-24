@@ -133,18 +133,36 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         @media(max-width:520px){
           .topbar-left .system-info-trigger{order:2}
           .topbar{
+            display:grid !important;
             grid-template-columns:minmax(0,1fr) auto;
-            grid-template-rows:1fr;
-            row-gap:0;
+            grid-template-rows:auto auto;
+            row-gap:7px;
           }
-          .brand-center{display:none !important}
-          .topbar-left{grid-column:1;grid-row:1}
-          .topbar-right{
-            grid-column:2;
+          .brand-center{
+            position:static !important;
+            grid-column:1;
             grid-row:1;
-            width:auto;
+            display:flex !important;
+            align-items:center;
+            gap:6px;
+            transform:none !important;
+            margin:0 !important;
+            min-width:0;
+            visibility:visible !important;
+            opacity:1 !important;
+            z-index:2;
+          }
+          .ustetu-logo{width:20px;height:30px}
+          .brand-copy{display:block !important;text-align:left}
+          .brand{display:block !important;font-size:14px;letter-spacing:.1em}
+          .tagline{display:none !important}
+          .topbar-left{grid-column:2;grid-row:1}
+          .topbar-right{
+            grid-column:1 / -1;
+            grid-row:2;
+            width:100%;
             max-width:none !important;
-            justify-content:flex-end;
+            justify-content:center;
             overflow:visible;
             gap:7px;
           }
