@@ -1089,3 +1089,85 @@ body {
     margin-left: 4px !important;
   }
 }
+
+
+/* ==========================================================
+   Header edge alignment — mobile/tablet
+   Brand + utility use the full header width.
+   Navigation row distributes controls edge-to-edge.
+   ========================================================== */
+@media (max-width: 760px) {
+  .topbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 8px 8px !important;
+    gap: 7px !important;
+    justify-items: stretch !important;
+  }
+
+  .brand-center {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    align-self: center !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .topbar-left {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: center !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+
+  .topbar-right {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .topbar-right .seller-nav-control,
+  .topbar-right .wallet-connect-control,
+  .topbar-right .seller-orders-link {
+    flex: 0 0 auto !important;
+  }
+
+  .topbar-right .seller-nav-control {
+    margin-left: 0 !important;
+  }
+
+  .topbar-right .wallet-connect-control {
+    margin-right: 0 !important;
+  }
+
+  .topbar-right .seller-orders-link {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .topbar {
+    padding: 7px 7px !important;
+  }
+
+  .brand-center {
+    gap: 5px !important;
+  }
+
+  .topbar-right {
+    gap: 5px !important;
+  }
+}
