@@ -61,6 +61,22 @@ body {
     flex-wrap: nowrap;
   }
 
+  .topbar-right > * {
+    flex: 0 0 auto !important;
+    align-self: center !important;
+  }
+
+  .seller-nav-control,
+  .wallet-connect-control {
+    flex: 0 0 auto !important;
+    align-self: center !important;
+  }
+
+  .seller-nav-link,
+  .ustetu-wallet-button {
+    white-space: nowrap !important;
+  }
+
   .seller-nav-link {
     white-space: nowrap;
   }
