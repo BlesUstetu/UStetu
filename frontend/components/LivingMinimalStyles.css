@@ -1,145 +1,163 @@
 /* ==========================================================
-   USTETU — Living Minimal
-   Dark charcoal + electric purple ambient motion.
-   Minimal, premium, calm. No decorative motifs.
+   USTETU — Web3 Network Background
+   Dark on-chain / cyber-grid visual language.
+   Static geometry only — no large moving ambient lights.
    ========================================================== */
 
 .app-shell {
   background:
-    radial-gradient(ellipse at 50% 48%, rgba(24,24,24,.96) 0%, rgba(24,24,24,.96) 34%, transparent 66%),
-    radial-gradient(circle at 4% 48%, rgba(26,4,174,.42), transparent 34%),
-    radial-gradient(circle at 96% 48%, rgba(26,4,174,.34), transparent 34%),
-    linear-gradient(135deg, #181818 0%, #181818 45%, #120b42 100%);
-  background-size: 155% 155%;
-  animation: ustetu-surface-shift 28s ease-in-out infinite alternate;
-  will-change: background-position;
+    linear-gradient(rgba(72,168,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(72,168,255,.045) 1px, transparent 1px),
+    linear-gradient(rgba(161,140,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(161,140,255,.018) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(72,168,255,.10), transparent 34%),
+    radial-gradient(circle at 100% 100%, rgba(111,76,255,.12), transparent 30%),
+    linear-gradient(145deg, #050812 0%, #080b16 48%, #0a0719 100%);
+  background-size:
+    44px 44px,
+    44px 44px,
+    176px 176px,
+    176px 176px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-position:center;
 }
 
 .app-shell::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.72;
   background:
-    radial-gradient(ellipse at 8% 24%, rgba(26,4,174,.42), transparent 30%),
-    radial-gradient(ellipse at 92% 76%, rgba(26,4,174,.34), transparent 32%),
-    radial-gradient(ellipse at 50% 100%, rgba(26,4,174,.18), transparent 38%);
-  animation: living-drift 42s ease-in-out infinite alternate;
-  will-change: transform, opacity;
+    linear-gradient(118deg, transparent 0 23%, rgba(72,168,255,.055) 23.1%, transparent 23.35%),
+    linear-gradient(302deg, transparent 0 67%, rgba(161,140,255,.045) 67.1%, transparent 67.35%),
+    radial-gradient(circle at 12% 18%, rgba(72,168,255,.07) 0 1px, transparent 2px),
+    radial-gradient(circle at 12% 18%, rgba(72,168,255,.035) 0 18px, transparent 19px),
+    radial-gradient(circle at 82% 32%, rgba(161,140,255,.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 82% 32%, rgba(161,140,255,.03) 0 20px, transparent 21px),
+    radial-gradient(circle at 72% 78%, rgba(72,168,255,.05) 0 1px, transparent 2px);
+  background-size:100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%;
 }
 
 .app-shell::after {
-  content: "";
-  position: fixed;
-  inset: -16%;
-  pointer-events: none;
-  z-index: 0;
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.34;
   background:
-    radial-gradient(ellipse at 50% 50%, transparent 48%, rgba(0, 8, 20, 0.28) 100%);
-  opacity: 0.82;
-  animation: living-breathe 36s ease-in-out infinite alternate;
-  will-change: opacity, transform;
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 3px,
+      rgba(255,255,255,.012) 4px
+    );
 }
 
-.ambient-glow {
-  z-index: 1;
-  width: 560px;
-  height: 560px;
-  filter: blur(125px);
-  opacity: 0.075;
-  will-change: transform, opacity;
-}
-
-.ambient-glow-one {
-  right: -180px;
-  top: 4%;
-  background: #1A04AE;
-  animation: living-orbit-one 44s ease-in-out infinite alternate;
-}
-
-.ambient-glow-two {
-  left: -180px;
-  bottom: -210px;
-  background: #1A04AE;
-  animation: living-orbit-two 50s ease-in-out infinite alternate;
-}
-
-@keyframes ustetu-surface-shift { from { background-position:0% 50%; } to { background-position:100% 50%; } } @keyframes living-drift {
-  from { opacity: 0.62; transform: translate3d(-1.5%, 0, 0) scale(1); }
-  to { opacity: 0.92; transform: translate3d(1.5%, 1%, 0) scale(1.025); }
-}
-
-@keyframes living-breathe {
-  from { opacity: 0.66; transform: scale(1); }
-  to { opacity: 0.86; transform: scale(1.018); }
-}
-
-@keyframes living-orbit-one {
-  from { transform: translate3d(35px, -15px, 0) scale(0.94); opacity: 0.62; }
-  to { transform: translate3d(-105px, 75px, 0) scale(1.06); opacity: 0.92; }
-}
-
-@keyframes living-orbit-two {
-  from { transform: translate3d(-35px, 25px, 0) scale(0.95); opacity: 0.58; }
-  to { transform: translate3d(110px, -70px, 0) scale(1.05); opacity: 0.88; }
-}
-
-/* Keep glass surfaces dark so the ambient background remains the focus. */
+/* Web3 glass surfaces */
 .topbar,
 .listing-glass,
 .search-glass {
-  background: rgba(24, 24, 24, 0.58);
-  border-color: rgba(130, 105, 255, 0.22);
+  background:rgba(6,10,20,.72);
+  border-color:rgba(72,168,255,.16);
+  box-shadow:
+    0 24px 80px rgba(0,0,0,.42),
+    inset 0 1px rgba(255,255,255,.045),
+    0 0 0 1px rgba(111,76,255,.025);
 }
 
 .topbar {
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255,255,255,.045);
+  box-shadow:
+    0 20px 65px rgba(0,0,0,.48),
+    inset 0 1px rgba(255,255,255,.05),
+    0 0 35px rgba(72,168,255,.035);
 }
 
 .listing-glass {
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255,255,255,.045);
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.46),
+    inset 0 1px rgba(255,255,255,.045);
 }
 
 .eyebrow {
-  color: #70b7ff;
+  color:#70b7ff;
 }
 
 .token-mark {
-  background: linear-gradient(145deg, rgba(42, 103, 172, 0.30), rgba(255, 255, 255, 0.025));
-  color: #d8eaff;
+  background:linear-gradient(145deg,rgba(72,168,255,.20),rgba(111,76,255,.12));
+  color:#d8eaff;
+  box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 20px rgba(72,168,255,.05);
+}
+
+/* Network nodes around the application surface */
+.marketplace-shell::before,
+.marketplace-shell::after {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  z-index:-1;
+}
+
+.marketplace-shell::before {
+  width:5px;
+  height:5px;
+  top:12%;
+  left:-26px;
+  border-radius:50%;
+  background:#48a8ff;
+  box-shadow:
+    0 0 12px rgba(72,168,255,.75),
+    140px 82px 0 -1px #a18cff,
+    140px 82px 12px rgba(161,140,255,.55),
+    640px 30px 0 -1px #48a8ff,
+    640px 30px 12px rgba(72,168,255,.55);
+}
+
+.marketplace-shell::after {
+  top:14%;
+  left:-18px;
+  width:700px;
+  height:1px;
+  opacity:.25;
+  background:linear-gradient(90deg,rgba(72,168,255,.0),rgba(72,168,255,.55),rgba(161,140,255,.0));
+  transform:rotate(-7deg);
+  transform-origin:left center;
 }
 
 html[data-theme="light"] .app-shell {
   background:
-    radial-gradient(ellipse at 50% 48%, #f2f6fa 0%, #eef3f8 38%, transparent 68%),
-    radial-gradient(circle at 5% 42%, rgba(72, 128, 188, 0.18), transparent 34%),
-    radial-gradient(circle at 95% 58%, rgba(64, 119, 184, 0.16), transparent 34%),
-    linear-gradient(135deg, #e8eef5 0%, #f5f8fb 48%, #e7eef5 100%);
+    linear-gradient(rgba(53,110,169,.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(53,110,169,.075) 1px, transparent 1px),
+    linear-gradient(rgba(53,110,169,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(53,110,169,.025) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(53,110,169,.10), transparent 34%),
+    linear-gradient(145deg,#edf3f8 0%,#f6f9fc 52%,#e8eef5 100%);
+  background-size:44px 44px,44px 44px,176px 176px,176px 176px,100% 100%,100% 100%;
 }
 
 html[data-theme="light"] .app-shell::before {
-  background:
-    radial-gradient(ellipse at 8% 24%, rgba(56, 120, 190, 0.12), transparent 30%),
-    radial-gradient(ellipse at 92% 76%, rgba(53, 112, 183, 0.10), transparent 32%),
-    radial-gradient(ellipse at 50% 100%, rgba(55, 103, 155, 0.08), transparent 38%);
+  opacity:.35;
 }
 
 html[data-theme="light"] .app-shell::after {
-  background: radial-gradient(ellipse at 50% 50%, transparent 48%, rgba(55, 82, 110, 0.08) 100%);
+  opacity:.12;
 }
 
 html[data-theme="light"] .topbar,
 html[data-theme="light"] .listing-glass,
 html[data-theme="light"] .search-glass {
-  background: rgba(246, 249, 252, 0.68);
-  border-color: rgba(51, 91, 130, 0.14);
+  background:rgba(246,249,252,.78);
+  border-color:rgba(53,110,169,.16);
 }
-
-html[data-theme="light"] .ambient-glow-one { background: #4c91d1; }
-html[data-theme="light"] .ambient-glow-two { background: #6f9fc9; }
 
 @media (prefers-reduced-motion: reduce) {
   .app-shell,
   .app-shell::before,
-  .app-shell::after,
-  .ambient-glow-one,
-  .ambient-glow-two {
-    animation: none !important;
+  .app-shell::after {
+    animation:none !important;
   }
 }
