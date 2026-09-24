@@ -171,7 +171,7 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
           .brand{display:block !important;font-size:14px;letter-spacing:.1em}
           .tagline{display:none !important}
           .topbar-left{grid-column:2;grid-row:1}
-          .brand-center .mobile-brand-home{display:inline-flex;flex:0 0 30px;width:30px;height:30px;margin-left:5px}
+          .brand-center .mobile-brand-home{display:inline-flex;flex:0 0 30px;width:30px;height:30px;margin-left:5px;pointer-events:auto !important;position:relative;z-index:5;cursor:pointer}
           .home-nav-link{display:none !important}
           .topbar-right{
             grid-column:1 / -1;
