@@ -93,3 +93,96 @@ html[data-theme="light"] .buy-modal { background: rgba(248, 251, 255, 0.97); box
 .buy-modal:has(.escrow-flow > .escrow-step:nth-of-type(2).done) .escrow-timing { display:grid; }
 .buy-modal:has(.escrow-flow > .escrow-step:nth-of-type(2).done) .escrow-flow { display:block; }
 @media (max-width:560px) { .buy-modal-overlay{padding:10px}.buy-modal{top:auto;bottom:10px;max-height:calc(100vh - 20px);transform:translateX(-50%);padding:18px;border-radius:20px}.buy-balance-grid{grid-template-columns:1fr}.buy-order-summary{grid-template-columns:1fr}.buy-order-summary div:last-child{grid-column:auto}.escrow-tx-address{max-width:118px;font-size:8px}.escrow-tx-external{font-size:12px}@keyframes buy-modal-in{from{opacity:0;transform:translate(-50%,10px) scale(.985)}to{opacity:1;transform:translate(-50%,0) scale(1)}} }
+
+/* Recovery mode — make the recovered on-chain state unmistakable. */
+.buy-recovery-note {
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  align-items:start;
+  gap:10px;
+  margin:10px 0;
+  padding:12px 13px;
+  border:1px solid rgba(101,169,255,.30);
+  border-radius:13px;
+  background:linear-gradient(135deg,rgba(101,169,255,.10),rgba(110,200,150,.045));
+  color:var(--muted-strong);
+}
+.buy-recovery-icon {
+  display:grid;
+  width:32px;
+  height:32px;
+  place-items:center;
+  border:1px solid rgba(101,169,255,.35);
+  border-radius:10px;
+  background:rgba(101,169,255,.10);
+  color:var(--accent);
+  font-size:18px;
+  font-weight:800;
+  animation:ustetu-recovery-spin 2.8s ease-in-out infinite;
+}
+.buy-recovery-kicker {
+  display:block;
+  margin-bottom:3px;
+  color:var(--accent);
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.14em;
+}
+.buy-recovery-note strong {
+  display:block;
+  color:var(--text);
+  font-size:11px;
+}
+.buy-recovery-note p {
+  margin:5px 0 0;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.5;
+}
+.buy-recovery-note small {
+  display:block;
+  margin-top:6px;
+  color:#8fc7a2;
+  font-size:9px;
+  line-height:1.4;
+}
+@keyframes ustetu-recovery-spin {
+  0%,100% { transform:rotate(0deg); opacity:.72; }
+  50% { transform:rotate(18deg); opacity:1; }
+}
+
+/* Better transaction-state hierarchy on narrow screens. */
+@media (max-width:600px) {
+  .buy-recovery-note {
+    grid-template-columns:30px minmax(0,1fr);
+    gap:8px;
+    padding:11px;
+  }
+  .buy-recovery-icon {
+    width:29px;
+    height:29px;
+    border-radius:9px;
+    font-size:16px;
+  }
+  .escrow-step {
+    align-items:start;
+    min-height:52px;
+  }
+  .escrow-step > b {
+    justify-self:end;
+    max-width:112px;
+    line-height:1.25;
+  }
+  .escrow-tx-address {
+    max-width:112px !important;
+    overflow:hidden;
+  }
+}
+@media (max-width:430px) {
+  .buy-recovery-note p {
+    font-size:9px;
+  }
+  .buy-recovery-note small {
+    font-size:8px;
+  }
+}
