@@ -177,8 +177,13 @@ export default function HomePage() {
       if (indexedPaymentToken && indexedPaymentToken.toLowerCase() !== paymentTokenAddress.toLowerCase()) return null;
 
       const tokenDecimals = Number(token[2]);
-      const availableRaw = chainListing.inventoryDeposited > chainListing.inventoryLocked
-        ? chainListing.inventoryDeposited - chainListing.inventoryLocked
+      const inventoryDeposited = BigInt(chainListing.inventoryDeposited);
+      const inventoryLocked = BigInt(chainListing.inventoryLocked);
+      const priceRaw = BigInt(chainListing.price);
+      const minOrderAmount = BigInt(chainListing.minOrderAmount);
+      const maxOrderAmount = BigInt(chainListing.maxOrderAmount);
+      const availableRaw = inventoryDeposited > inventoryLocked
+        ? inventoryDeposited - inventoryLocked
         : 0n;
       const listingId = BigInt(item.listing_id);
 
@@ -195,10 +200,10 @@ export default function HomePage() {
         paymentDecimals,
         availableRaw,
         available: formatUnits(availableRaw, tokenDecimals),
-        priceRaw: chainListing.price,
-        price: formatUnits(chainListing.price, paymentDecimals),
-        minOrderAmount: chainListing.minOrderAmount,
-        maxOrderAmount: chainListing.maxOrderAmount,
+        priceRaw,
+        price: formatUnits(priceRaw, paymentDecimals),
+        minOrderAmount,
+        maxOrderAmount,
         chainId: 8453,
         status: Number(chainListing.status)
       };
