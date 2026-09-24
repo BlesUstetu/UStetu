@@ -71,6 +71,16 @@ body {
 
   .topbar-right {
     flex-wrap: nowrap;
+    column-gap: 10px !important;
+  }
+
+  .home-nav-link {
+    flex: 0 0 30px !important;
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    margin-left: 2px !important;
+    margin-right: 2px !important;
   }
 
   .topbar-right > * {
@@ -450,7 +460,7 @@ body {
     min-width: 0 !important;
     justify-content: flex-end !important;
     overflow: visible !important;
-    gap: 5px !important;
+    gap: 8px !important;
     padding: 3px !important;
     border-radius: 13px !important;
     background: rgba(7,11,20,.97) !important;
@@ -478,9 +488,14 @@ body {
 
   .home-nav-link,
   .seller-orders-link {
-    width: 32px !important;
-    min-width: 32px !important;
-    height: 32px !important;
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+  }
+
+  .home-nav-link {
+    margin-left: 1px !important;
+    margin-right: 2px !important;
   }
 
   .seller-nav-link {
