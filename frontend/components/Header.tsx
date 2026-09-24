@@ -135,6 +135,38 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         }
         @media(max-width:520px){
           .topbar-left .system-info-trigger{order:2}
+          .topbar{
+            grid-template-columns:minmax(0,1fr) auto;
+            grid-template-rows:auto auto;
+            row-gap:7px;
+          }
+          .topbar-left{grid-column:1;grid-row:1}
+          .brand-center{grid-column:2;grid-row:1}
+          .topbar-right{
+            grid-column:1 / -1;
+            grid-row:2;
+            width:100%;
+            max-width:none !important;
+            justify-content:flex-end;
+            overflow:visible;
+            gap:7px;
+          }
+          .topbar-right > *{max-width:none !important}
+          .seller-nav-link{
+            min-height:32px;
+            padding:0 11px;
+            font-size:10px;
+            letter-spacing:.035em;
+          }
+          .seller-nav-icon{width:14px;height:14px}
+          .ustetu-wallet-button{
+            min-height:32px;
+            padding:0 11px;
+            font-size:10px;
+            letter-spacing:.035em;
+          }
+          .ustetu-wallet-label{max-width:none !important;overflow:visible;text-overflow:clip}
+          .wallet-connect-control{overflow:visible}
         }
       `}</style>
     </header>
