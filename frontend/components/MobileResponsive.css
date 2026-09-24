@@ -652,3 +652,160 @@ body {
     min-height: 44px;
   }
 }
+
+
+/* ==========================================================
+   USTETU — Mobile / Tablet Header Re-layout
+   Two clear rows: utility controls above, navigation below.
+   This prevents Home / Orders / Seller / Wallet from colliding.
+   ========================================================== */
+@media (max-width: 760px) {
+  .topbar {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto !important;
+    gap: 7px !important;
+    align-items: center !important;
+    padding: 8px !important;
+  }
+
+  .topbar-left {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+  }
+
+  .topbar-right {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 7px !important;
+    overflow: visible !important;
+    flex-wrap: nowrap !important;
+    padding: 2px 0 !important;
+  }
+
+  .brand-center {
+    display: none !important;
+  }
+
+  .topbar-right > * {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    align-self: center !important;
+  }
+
+  .home-nav-link,
+  .seller-orders-link {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    margin: 0 !important;
+  }
+
+  .home-nav-link svg,
+  .seller-orders-link svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  .seller-nav-control,
+  .wallet-connect-control {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    align-self: center !important;
+  }
+
+  .seller-nav-link {
+    min-height: 32px !important;
+    padding: 0 9px !important;
+    font-size: 10px !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+  }
+
+  .seller-nav-icon {
+    width: 13px !important;
+    height: 13px !important;
+    font-size: 8px !important;
+  }
+
+  .ustetu-wallet-button {
+    min-height: 32px !important;
+    padding: 0 9px !important;
+    gap: 5px !important;
+    font-size: 10px !important;
+    letter-spacing: .035em !important;
+    white-space: nowrap !important;
+  }
+
+  .ustetu-wallet-icon {
+    width: 14px !important;
+    height: 14px !important;
+    font-size: 8px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .topbar {
+    gap: 6px !important;
+    padding: 7px !important;
+  }
+
+  .topbar-left {
+    justify-content: flex-start !important;
+  }
+
+  .topbar-right {
+    gap: 6px !important;
+    justify-content: center !important;
+  }
+
+  .home-nav-link,
+  .seller-orders-link {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+  }
+
+  .seller-nav-link {
+    min-height: 30px !important;
+    padding: 0 8px !important;
+    font-size: 9px !important;
+  }
+
+  .ustetu-wallet-button {
+    min-height: 30px !important;
+    padding: 0 8px !important;
+    font-size: 9px !important;
+  }
+
+  .ustetu-wallet-icon {
+    width: 13px !important;
+    height: 13px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .topbar-right {
+    gap: 5px !important;
+  }
+
+  .seller-nav-link {
+    padding: 0 7px !important;
+    font-size: 8px !important;
+  }
+
+  .ustetu-wallet-button {
+    padding: 0 7px !important;
+    font-size: 8px !important;
+  }
+}
