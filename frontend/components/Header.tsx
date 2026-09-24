@@ -17,6 +17,15 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         <div className="brand-copy">
           <div className="brand"><span className="brand-ust">UST</span><span className="brand-etu">ETU</span></div>
         </div>
+        {showHome && (
+          <a href="/UStetu/" className="mobile-brand-home" aria-label="Home" title="Home">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5.5 9.5V21h13V9.5" />
+              <path d="M9.5 21v-6h5v6" />
+            </svg>
+          </a>
+        )}
       </div>
 
       <div className="topbar-right">
@@ -90,7 +99,9 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .brand-copy{text-align:center}
         .brand-ust{color:#48a8ff}
         .brand-etu{color:#ff4b5f}
-        .home-nav-link,.seller-orders-link{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
+        .home-nav-link,.seller-orders-link,.mobile-brand-home{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
+        .mobile-brand-home{display:none}
+        .mobile-brand-home svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link svg,.seller-orders-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
         .seller-nav-control{position:relative;isolation:isolate;display:inline-flex;align-items:center;padding:1px;border-radius:12px;overflow:hidden;background:transparent}
@@ -160,6 +171,8 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
           .brand{display:block !important;font-size:14px;letter-spacing:.1em}
           .tagline{display:none !important}
           .topbar-left{grid-column:2;grid-row:1}
+          .brand-center .mobile-brand-home{display:inline-flex;flex:0 0 30px;width:30px;height:30px;margin-left:5px}
+          .home-nav-link{display:none !important}
           .topbar-right{
             grid-column:1 / -1;
             grid-row:2;
