@@ -7,9 +7,6 @@ button,input { font:inherit; }
 button,a { -webkit-tap-highlight-color:transparent; }
 .app-shell { min-height:100vh; position:relative; overflow:hidden; padding:24px 32px 42px; background:#181818; }
 .app-shell::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:0; background:radial-gradient(circle at 12% 18%,rgba(26,4,174,.78),transparent 30%),radial-gradient(circle at 88% 76%,rgba(26,4,174,.68),transparent 34%),radial-gradient(circle at 62% 42%,rgba(26,4,174,.26),transparent 32%); background-size:145% 145%; animation:ustetu-bg-drift 24s ease-in-out infinite alternate; will-change:transform,background-position,opacity; }
-.ambient-glow { position:fixed; width:420px; height:420px; border-radius:50%; pointer-events:none; filter:blur(80px); opacity:.12; }
-.ambient-glow-one { right:-160px; top:20%; background:#1A04AE; animation:ustetu-glow-one 28s ease-in-out infinite alternate; }
-.ambient-glow-two { left:-220px; bottom:-150px; background:#1A04AE; animation:ustetu-glow-two 32s ease-in-out infinite alternate; }
 .topbar { position:relative; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:24px; max-width:1440px; margin:0 auto; padding:11px 13px 11px 15px; border:1px solid var(--line); border-radius:20px; background:var(--glass); box-shadow:var(--shadow); backdrop-filter:blur(24px) saturate(125%); -webkit-backdrop-filter:blur(24px) saturate(125%); }
 .topbar-left,.topbar-right { display:flex; align-items:center; gap:13px; min-width:0; }
 .brand-block { margin-left:2px; }
