@@ -809,3 +809,232 @@ body {
     font-size: 8px !important;
   }
 }
+
+
+/* ==========================================================
+   USTETU — Final Mobile / Tablet Header Composition
+   Row 1: brand + utility controls
+   Row 2: navigation controls
+   ========================================================== */
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    gap: 7px !important;
+    padding: 8px 9px !important;
+  }
+
+  .brand-center {
+    position: static !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    transform: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+  }
+
+  .ustetu-logo {
+    width: 20px !important;
+    height: 32px !important;
+    flex: 0 0 20px !important;
+  }
+
+  .brand-copy {
+    text-align: left !important;
+    min-width: 0 !important;
+  }
+
+  .brand {
+    font-size: 15px !important;
+    letter-spacing: .12em !important;
+    line-height: 1 !important;
+  }
+
+  .tagline {
+    display: block !important;
+    margin-top: 3px !important;
+    font-size: 7px !important;
+    letter-spacing: .025em !important;
+  }
+
+  .topbar-left {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: auto !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+  }
+
+  .header-controls {
+    gap: 4px !important;
+  }
+
+  .header-controls .icon-button,
+  .header-controls .language-wrap .icon-button {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(255,255,255,.13) !important;
+    border-radius: 10px !important;
+    background: rgba(255,255,255,.035) !important;
+    box-shadow: none !important;
+    font-size: 10px !important;
+  }
+
+  .header-controls .language-wrap .icon-button {
+    width: 42px !important;
+    min-width: 42px !important;
+    padding: 0 5px !important;
+    font-size: 9px !important;
+  }
+
+  .header-controls .icon-button:hover {
+    border-color: rgba(120,175,235,.38) !important;
+    background: rgba(255,255,255,.08) !important;
+  }
+
+  .topbar-left .system-info-trigger {
+    order: 0 !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    font-size: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .system-info-trigger .system-info-icon {
+    font-size: 14px !important;
+  }
+
+  .system-info-trigger > span:last-child {
+    display: none !important;
+  }
+
+  .topbar-right {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    max-width: none !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 1px 0 !important;
+  }
+
+  .home-nav-link,
+  .seller-orders-link {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    border-radius: 10px !important;
+    background: rgba(255,255,255,.035) !important;
+  }
+
+  .home-nav-link svg,
+  .seller-orders-link svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .seller-nav-control,
+  .wallet-connect-control {
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  .seller-nav-link,
+  .ustetu-wallet-button {
+    min-height: 34px !important;
+    border: 1px solid rgba(255,255,255,.1) !important;
+    border-radius: 10px !important;
+  }
+
+  .seller-nav-link {
+    padding: 0 10px !important;
+    font-size: 10px !important;
+  }
+
+  .ustetu-wallet-button {
+    padding: 0 10px !important;
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .topbar {
+    gap: 6px !important;
+    padding: 7px 8px !important;
+  }
+
+  .brand-center {
+    gap: 5px !important;
+  }
+
+  .ustetu-logo {
+    width: 18px !important;
+    height: 29px !important;
+    flex-basis: 18px !important;
+  }
+
+  .brand {
+    font-size: 14px !important;
+  }
+
+  .tagline {
+    font-size: 6px !important;
+  }
+
+  .topbar-right {
+    gap: 6px !important;
+  }
+
+  .home-nav-link,
+  .seller-orders-link,
+  .seller-nav-link,
+  .ustetu-wallet-button {
+    min-height: 32px !important;
+    height: 32px !important;
+  }
+
+  .home-nav-link,
+  .seller-orders-link {
+    width: 32px !important;
+    min-width: 32px !important;
+  }
+
+  .seller-nav-link,
+  .ustetu-wallet-button {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    font-size: 9px !important;
+  }
+
+  .header-controls .icon-button {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+  }
+
+  .header-controls .language-wrap .icon-button {
+    width: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .topbar-left .system-info-trigger {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+  }
+}
