@@ -44,7 +44,37 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
           </a>
         )}
         <div className="wallet-connect-control">
-          <ConnectButton showBalance={false} chainStatus="icon" />
+          <ConnectButton.Custom>
+            {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
+              const ready = mounted;
+              const connected = ready && account && chain;
+              return (
+                <div
+                  {...(!ready && {
+                    "aria-hidden": true,
+                    style: { opacity: 0, pointerEvents: "none", userSelect: "none" },
+                  })}
+                >
+                  {!connected ? (
+                    <button type="button" className="ustetu-wallet-button" onClick={openConnectModal}>
+                      <span className="ustetu-wallet-icon" aria-hidden="true">◉</span>
+                      <span className="ustetu-wallet-label">CONNECT WALLET</span>
+                    </button>
+                  ) : chain.unsupported ? (
+                    <button type="button" className="ustetu-wallet-button ustetu-wallet-wrong-network" onClick={openChainModal}>
+                      <span className="ustetu-wallet-icon" aria-hidden="true">!</span>
+                      <span className="ustetu-wallet-label">WRONG NETWORK</span>
+                    </button>
+                  ) : (
+                    <button type="button" className="ustetu-wallet-button ustetu-wallet-connected" onClick={openAccountModal}>
+                      <span className="ustetu-wallet-icon ustetu-wallet-connected-icon" aria-hidden="true">◉</span>
+                      <span className="ustetu-wallet-label">{account.displayName}</span>
+                    </button>
+                  )}
+                </div>
+              );
+            }}
+          </ConnectButton.Custom>
         </div>
       </div>
       <style jsx global>{`
@@ -61,27 +91,12 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
         .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
         .wallet-connect-control{position:relative;isolation:isolate;display:inline-flex;align-items:center;padding:1px;border-radius:12px;overflow:hidden;background:transparent}
         .wallet-connect-control::before{content:"";position:absolute;inset:-80%;z-index:-1;background:conic-gradient(from 0deg,transparent 0deg,rgba(80,220,255,.15) 65deg,rgba(0,255,180,.95) 120deg,rgba(90,130,255,.9) 180deg,rgba(190,80,255,.75) 235deg,transparent 300deg,transparent 360deg);animation:ustetu-wallet-border-spin 2.8s linear infinite;filter:blur(2px)}
-        .wallet-connect-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-        .wallet-connect-control [data-rk] button{font-size:11px !important;letter-spacing:.01em !important;background:transparent !important;border:0 !important;box-shadow:none !important;color:var(--text) !important}
-        .wallet-connect-control [data-rk] button span{font-size:11px !important}
-        .wallet-connect-control [data-rk] button:hover{background:transparent !important}
-        @keyframes ustetu-wallet-border-spin{to{transform:rotate(360deg)}}
-        .topbar-left .system-info-trigger{order:-1}
-        @media(max-width:760px){
-          .brand-center{gap:5px}
-          .ustetu-logo{width:19px;height:32px}
-          .brand{font-size:13px}
-          .tagline{font-size:8px}
-          .seller-nav-link{font-size:11px;padding:7px 9px}
-          .home-nav-link,.seller-orders-link{width:32px;height:32px}
-          .home-nav-link svg,.seller-orders-link svg{width:16px;height:16px}
-          .wallet-connect-control [data-rk] button{font-size:10px !important}
-          .wallet-connect-control [data-rk] button span{font-size:10px !important}
-        }
-        @media(max-width:520px){
-          .topbar-left .system-info-trigger{order:2}
-        }
-      `}</style>
-    </header>
-  );
-}
+        .wallet-connect-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:rgba(7,11,20,.96);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+        .ustetu-wallet-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 12px;border:0;border-radius:11px;background:rgba(7,11,20,.96);color:#f4f8ff;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.055em;white-space:nowrap;cursor:pointer;transition:transform .2s ease,background .2s ease,box-shadow .2s ease,color .2s ease}
+        .ustetu-wallet-button:hover{background:rgba(14,21,34,.98);transform:translateY(-1px);box-shadow:0 0 18px rgba(64,180,255,.12)}
+        .ustetu-wallet-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid rgba(72,168,255,.7);border-radius:50%;color:#48a8ff;font-size:9px;line-height:1}
+        .ustetu-wallet-connected-icon{color:#45f0a5;border-color:rgba(69,240,165,.7)}
+        .ustetu-wallet-label{line-height:1}
+        .ustetu-wallet-wrong-network{color:#ffd166}
+        .ustetu-wallet-wrong-network .ustetu-wallet-icon{color:#ffd166;border-color:rgba(255,209,102,.75)}
+
