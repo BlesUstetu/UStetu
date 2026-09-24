@@ -137,15 +137,15 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
           .topbar-left .system-info-trigger{order:2}
           .topbar{
             grid-template-columns:minmax(0,1fr) auto;
-            grid-template-rows:auto auto;
-            row-gap:7px;
+            grid-template-rows:1fr;
+            row-gap:0;
           }
+          .brand-center{display:none !important}
           .topbar-left{grid-column:1;grid-row:1}
-          .brand-center{grid-column:2;grid-row:1}
           .topbar-right{
-            grid-column:1 / -1;
-            grid-row:2;
-            width:100%;
+            grid-column:2;
+            grid-row:1;
+            width:auto;
             max-width:none !important;
             justify-content:flex-end;
             overflow:visible;
