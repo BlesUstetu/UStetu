@@ -1,0 +1,60 @@
+name: USTETU Verification JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-verification-json:
+    name: Generate exact Solidity Standard JSON Input
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Build
+        run: forge build
+
+      - name: Generate Standard JSON Input
+        run: |
+          forge verify-contract \
+            0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557 \
+            contracts/token/USTETUToken.sol:USTETUToken \
+            --chain-id 8453 \
+            --show-standard-json-input > USTETU-standard-json-input.json
+
+      - name: Validate JSON
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = Path("USTETU-standard-json-input.json")
+          data = json.loads(p.read_text())
+          assert data["language"] == "Solidity"
+          assert "sources" in data
+          assert "settings" in data
+          assert data["settings"]["optimizer"]["enabled"] is True
+          assert data["settings"]["optimizer"]["runs"] == 200
+          print("Standard JSON Input validated.")
+          print("Sources:", len(data["sources"]))
+          print("Optimizer:", data["settings"]["optimizer"])
+          print("EVM:", data["settings"].get("evmVersion", "default"))
+          PY
+
+      - name: Upload Standard JSON Input
+        uses: actions/upload-artifact@v4
+        with:
+          name: USTETU-Standard-JSON-Input
+          path: USTETU-standard-json-input.json
+          if-no-files-found: error
