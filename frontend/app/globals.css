@@ -69,6 +69,13 @@ html[data-theme="light"] .token-drawer { background:rgba(247,250,253,.78); }
 .detail-grid strong { display:block; color:var(--muted-strong); font-size:12px; font-weight:600; }
 .detail-wide { grid-column:1/-1; }
 .address-value { overflow-wrap:anywhere; color:var(--text)!important; font-size:10px!important; }
+.address-line { display:flex; align-items:center; gap:8px; min-width:0; }
+.address-line .address-value { flex:1; min-width:0; }
+.address-tools { display:flex; align-items:center; gap:5px; flex:0 0 auto; }
+.address-icon-button { display:inline-grid; width:30px; height:30px; place-items:center; padding:0; border:1px solid var(--line); border-radius:9px; background:var(--glass); color:var(--muted-strong); cursor:pointer; text-decoration:none; transition:background 180ms ease,border-color 180ms ease,color 180ms ease,transform 180ms ease; }
+.address-icon-button:hover { background:var(--glass-hover); border-color:rgba(140,190,245,.28); color:var(--text); transform:translateY(-1px); }
+.address-icon-button svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.address-icon-button:active { transform:translateY(0); }
 .approved { color:#8fc7a2!important; }
 .drawer-listing-card { margin-top:16px; padding:18px; border:1px solid var(--line); border-radius:17px; background:rgba(255,255,255,.035); }
 .drawer-listing-title { color:var(--muted); font-size:11px; }
