@@ -95,32 +95,32 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
       <style jsx global>{`
         .topbar{position:relative !important}
         .brand-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
-        .ustetu-logo{width:27px;height:44px;object-fit:contain;display:block;filter:drop-shadow(0 0 8px rgba(255,100,30,.18))}
+        .ustetu-logo{width:27px;height:44px;object-fit:contain;display:block;filter:none}
         .brand-copy{text-align:center}
         .brand-ust{color:#48a8ff}
         .brand-etu{color:#ff4b5f}
-        .home-nav-link,.seller-orders-link,.mobile-brand-home{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035);transition:.2s}
+        .home-nav-link,.seller-orders-link,.mobile-brand-home{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(148,163,184,.12);border-radius:10px;background:rgba(255,255,255,.025);transition:background .18s ease,border-color .18s ease,opacity .18s ease}
         .mobile-brand-home{display:none}
         .mobile-brand-home svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link svg,.seller-orders-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
-        .seller-nav-control{position:relative;isolation:isolate;display:inline-flex;align-items:center;padding:1px;border-radius:12px;overflow:hidden;background:transparent}
-        .seller-nav-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:rgba(7,11,20,.96);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-        .seller-nav-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;font-size:11px;font-weight:700;letter-spacing:.04em;text-decoration:none;color:#f4f8ff;padding:0 11px;border:0;border-radius:11px;background:rgba(7,11,20,.96);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
-        .seller-nav-link:hover{background:rgba(14,21,34,.98);transform:translateY(-1px);box-shadow:0 0 18px rgba(64,180,255,.12)}
+        .seller-nav-control{display:inline-flex;align-items:center}
+        
+        .seller-nav-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;font-size:11px;font-weight:700;letter-spacing:.04em;text-decoration:none;color:#f4f8ff;padding:0 11px;border:1px solid rgba(148,163,184,.12);border-radius:11px;background:rgba(10,15,24,.82);transition:transform .18s ease,background .18s ease,border-color .18s ease}
+        .seller-nav-link:hover{background:rgba(255,255,255,.055);transform:translateY(-1px);border-color:rgba(148,163,184,.22)}
         .seller-nav-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;color:#ff4b5f;font-size:9px;line-height:1;text-shadow:0 0 8px rgba(255,75,95,.55)}
-        @keyframes ustetu-seller-border-spin{to{transform:rotate(360deg)}}
-        .seller-nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
-        .wallet-connect-control{position:relative;isolation:isolate;display:inline-flex;align-items:center;padding:1px;border-radius:12px;overflow:hidden;background:transparent}
-        .wallet-connect-control::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:11px;background:rgba(7,11,20,.96);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+        
+        
+        .wallet-connect-control{display:inline-flex;align-items:center}
+        
         .ustetu-wallet-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 12px;border:0;border-radius:11px;background:rgba(7,11,20,.96);color:#f4f8ff;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.055em;white-space:nowrap;cursor:pointer;transition:transform .2s ease,background .2s ease,box-shadow .2s ease,color .2s ease}
-        .ustetu-wallet-button:hover{background:rgba(14,21,34,.98);transform:translateY(-1px);box-shadow:0 0 18px rgba(64,180,255,.12)}
+        .ustetu-wallet-button:hover{background:rgba(255,255,255,.055);transform:translateY(-1px);border-color:rgba(148,163,184,.22)}
         .ustetu-wallet-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid rgba(72,168,255,.7);border-radius:50%;color:#48a8ff;font-size:9px;line-height:1}
         .ustetu-wallet-connected-icon{color:#45f0a5;border-color:rgba(69,240,165,.7)}
         .ustetu-wallet-label{line-height:1}
         .ustetu-wallet-wrong-network{color:#ffd166}
         .ustetu-wallet-wrong-network .ustetu-wallet-icon{color:#ffd166;border-color:rgba(255,209,102,.75)}
-        @keyframes ustetu-wallet-border-spin{to{transform:rotate(360deg)}}
+        
         .topbar-left .system-info-trigger{order:-1}
         @media(max-width:760px){
           .brand-center{gap:5px}
