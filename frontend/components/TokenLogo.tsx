@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { getAddress, isAddress } from "viem";
+import { USTETU_TOKEN_ADDRESS } from "@/lib/contracts";
 
 type TokenLogoProps = {
   address?: string;
@@ -39,10 +40,18 @@ export default function TokenLogo({ address, chainId, symbol, name, size = 38, c
 
   const logoUrl = useMemo(() => {
     if (!address || !isAddress(address) || !chainId) return "";
+
+    // USTETU has a first-party logo in the deployed frontend.
+    // Use it before third-party token-logo repositories so the official
+    // USTETU logo is available even when Trust Wallet Assets has no entry.
+    if (address.toLowerCase() === USTETU_TOKEN_ADDRESS.toLowerCase() && chainId === 8453) {
+      return "/UStetu/ustetu-logo-32.svg";
+    }
+
     const chain = CHAIN_PATHS[chainId];
     if (!chain) return "";
 
-    // Trust Wallet Assets uses checksum addresses for EVM token logos.
+    // Trust Wallet Assets is used as a fallback for other registered tokens.
     const checksumAddress = getAddress(address);
     return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${chain}/assets/${checksumAddress}/logo.png`;
   }, [address, chainId]);
@@ -69,7 +78,7 @@ export default function TokenLogo({ address, chainId, symbol, name, size = 38, c
       )}
       <style jsx>{`
         .token-logo{flex:0 0 auto;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(145deg,rgba(41,95,164,.35),rgba(10,17,31,.95));border:1px solid rgba(255,255,255,.13);box-shadow:0 4px 18px rgba(0,0,0,.22);font-weight:800;color:#f5f7ff;line-height:1}
-        .token-logo img{width:100%;height:100%;display:block;object-fit:cover}
+        .token-logo img{width:100%;height:100%;display:block;object-fit:contain;padding:8px;box-sizing:border-box}
         .token-logo span{font-size:${Math.max(12, Math.round(size * .38))}px}
       `}</style>
     </div>
