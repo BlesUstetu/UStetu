@@ -94,6 +94,12 @@ export default function Header({ showSellerOrders = false, showHome = true }: { 
 
       <style jsx global>{`
         .topbar{position:relative !important}
+        @media(min-width:761px){
+          .topbar{width:min(1440px,calc(100% - 64px)) !important;box-sizing:border-box;}
+          .topbar-left,.topbar-right{flex:1 1 0;min-width:0;}
+          .topbar-left{justify-content:flex-start;}
+          .topbar-right{justify-content:flex-end;}
+        }
         .brand-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;text-align:left;pointer-events:none;white-space:nowrap}
         .ustetu-logo{width:27px;height:44px;object-fit:contain;display:block;filter:none}
         .brand-copy{text-align:center}
