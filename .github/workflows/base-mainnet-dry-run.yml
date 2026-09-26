@@ -16,8 +16,18 @@ jobs:
     env:
       BASE_RPC_URL: https://mainnet.base.org
       USTETU_FEE_RECIPIENT: ${{ inputs.fee_recipient }}
+      USTETU_DEPLOYER_PRIVATE_KEY: ${{ secrets.USTETU_DEPLOYER_PRIVATE_KEY }}
 
     steps:
+      - name: Verify fee recipient
+        run: |
+          EXPECTED_FEE_RECIPIENT="0x393c8Ab9FA306D0e3631AA9e027B467c61d7Bc29"
+          if [ "${USTETU_FEE_RECIPIENT}" != "${EXPECTED_FEE_RECIPIENT}" ]; then
+            echo "Invalid fee recipient."
+            exit 1
+          fi
+          echo "Fee recipient verified: ${EXPECTED_FEE_RECIPIENT}"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
