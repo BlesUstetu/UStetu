@@ -1,6 +1,9 @@
 /* USTETU — Clean Web3 visual system */
 
 .app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(circle at 50% -10%, rgba(88, 130, 190, .10), transparent 34%),
     linear-gradient(180deg, #070b12 0%, #080c14 52%, #090d16 100%);
@@ -239,7 +242,7 @@ html[data-theme="light"] .listing-row:hover {
   position: relative;
   z-index: 1;
   width: min(1180px, calc(100% - 32px));
-  margin: 26px auto 0;
+  margin: auto auto 0;
   padding: 0 0 24px;
 }
 
