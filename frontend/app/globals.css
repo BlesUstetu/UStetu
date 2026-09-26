@@ -105,3 +105,127 @@ html[data-theme="light"] .token-drawer { background:rgba(247,250,253,.78); }
   .header-controls .language-wrap .icon-button{min-width:45px!important;width:45px!important}
   .system-info-trigger,.icon-button{width:32px;min-width:32px;height:32px}
 }
+
+
+/* USTETU — Live transaction progress */
+
+.escrow-progress {
+  margin: 14px 0 12px;
+  padding: 12px 13px;
+  border: 1px solid rgba(139,183,232,.12);
+  border-radius: 14px;
+  background: rgba(255,255,255,.022);
+}
+
+.escrow-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #7f8da0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.escrow-progress-top strong {
+  color: #b9d4f2;
+  font-size: 11px;
+  letter-spacing: .03em;
+}
+
+.escrow-progress-track {
+  height: 5px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148,163,184,.10);
+}
+
+.escrow-progress-bar {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #557fae, #8bb7e8);
+  box-shadow: 0 0 12px rgba(139,183,232,.28);
+  transition: width 280ms ease;
+}
+
+.escrow-progress p {
+  margin: 8px 0 0;
+  color: #a7b4c5;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.escrow-tx-summary {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(139,183,232,.09);
+  border-radius: 12px;
+  background: rgba(0,0,0,.10);
+}
+
+.escrow-tx-summary > span {
+  margin-bottom: 2px;
+  color: #748297;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.escrow-tx-summary a {
+  display: grid;
+  grid-template-columns: 58px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 6px 7px;
+  border-radius: 8px;
+  color: #a9c8e8;
+  text-decoration: none;
+  font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size: 9px;
+}
+
+.escrow-tx-summary a:hover {
+  background: rgba(139,183,232,.06);
+}
+
+.escrow-tx-summary a b {
+  color: #aab7c7;
+  font-family: ui-sans-serif,system-ui,sans-serif;
+  font-size: 9px;
+}
+
+.escrow-tx-summary a span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html[data-theme="light"] .escrow-progress {
+  border-color: rgba(71,85,105,.12);
+  background: rgba(71,85,105,.025);
+}
+
+html[data-theme="light"] .escrow-progress-track {
+  background: rgba(71,85,105,.10);
+}
+
+html[data-theme="light"] .escrow-progress-bar {
+  background: linear-gradient(90deg, #4e79a8, #6f9ac7);
+}
+
+@media (max-width: 600px) {
+  .escrow-progress {
+    margin-top: 11px;
+    padding: 11px;
+  }
+
+  .escrow-tx-summary a {
+    grid-template-columns: 52px minmax(0,1fr) auto;
+  }
+}
