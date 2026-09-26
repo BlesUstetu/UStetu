@@ -1,163 +1,88 @@
-/* ==========================================================
-   USTETU — Web3 Network Background
-   Dark on-chain / cyber-grid visual language.
-   Static geometry only — no large moving ambient lights.
-   ========================================================== */
+/* USTETU — Clean Web3 visual system */
 
 .app-shell {
   background:
-    linear-gradient(rgba(72,168,255,.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(72,168,255,.045) 1px, transparent 1px),
-    linear-gradient(rgba(161,140,255,.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(161,140,255,.018) 1px, transparent 1px),
-    radial-gradient(circle at 50% 0%, rgba(72,168,255,.10), transparent 34%),
-    radial-gradient(circle at 100% 100%, rgba(111,76,255,.12), transparent 30%),
-    linear-gradient(145deg, #050812 0%, #080b16 48%, #0a0719 100%);
-  background-size:
-    44px 44px,
-    44px 44px,
-    176px 176px,
-    176px 176px,
-    100% 100%,
-    100% 100%,
-    100% 100%;
-  background-position:center;
+    radial-gradient(circle at 50% -10%, rgba(88, 130, 190, .10), transparent 34%),
+    linear-gradient(180deg, #070b12 0%, #080c14 52%, #090d16 100%);
 }
 
 .app-shell::before {
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
-  opacity:.72;
-  background:
-    linear-gradient(118deg, transparent 0 23%, rgba(72,168,255,.055) 23.1%, transparent 23.35%),
-    linear-gradient(302deg, transparent 0 67%, rgba(161,140,255,.045) 67.1%, transparent 67.35%),
-    radial-gradient(circle at 12% 18%, rgba(72,168,255,.07) 0 1px, transparent 2px),
-    radial-gradient(circle at 12% 18%, rgba(72,168,255,.035) 0 18px, transparent 19px),
-    radial-gradient(circle at 82% 32%, rgba(161,140,255,.06) 0 1px, transparent 2px),
-    radial-gradient(circle at 82% 32%, rgba(161,140,255,.03) 0 20px, transparent 21px),
-    radial-gradient(circle at 72% 78%, rgba(72,168,255,.05) 0 1px, transparent 2px);
-  background-size:100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%;
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .42;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, .028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, .028) 1px, transparent 1px);
+  background-size: 56px 56px;
 }
 
 .app-shell::after {
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
-  opacity:.34;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      transparent 0,
-      transparent 3px,
-      rgba(255,255,255,.012) 4px
-    );
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.018), transparent 18%, transparent 82%, rgba(255,255,255,.012));
 }
 
-/* Web3 glass surfaces */
 .topbar,
 .listing-glass,
 .search-glass {
-  background:rgba(6,10,20,.72);
-  border-color:rgba(72,168,255,.16);
+  background: rgba(10, 15, 24, .82);
+  border-color: rgba(148, 163, 184, .10);
   box-shadow:
-    0 24px 80px rgba(0,0,0,.42),
-    inset 0 1px rgba(255,255,255,.045),
-    0 0 0 1px rgba(111,76,255,.025);
+    0 18px 55px rgba(0,0,0,.24),
+    inset 0 1px rgba(255,255,255,.035);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .topbar {
   box-shadow:
-    0 20px 65px rgba(0,0,0,.48),
-    inset 0 1px rgba(255,255,255,.05),
-    0 0 35px rgba(72,168,255,.035);
+    0 14px 42px rgba(0,0,0,.24),
+    inset 0 1px rgba(255,255,255,.035);
 }
 
 .listing-glass {
   box-shadow:
-    0 30px 90px rgba(0,0,0,.46),
-    inset 0 1px rgba(255,255,255,.045);
+    0 24px 70px rgba(0,0,0,.26),
+    inset 0 1px rgba(255,255,255,.035);
 }
 
 .eyebrow {
-  color:#70b7ff;
+  color: #8bb7e8;
 }
 
-.token-mark {
-  background:linear-gradient(145deg,rgba(72,168,255,.20),rgba(111,76,255,.12));
-  color:#d8eaff;
-  box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 20px rgba(72,168,255,.05);
-}
-
-/* Network nodes around the application surface */
-.marketplace-shell::before,
-.marketplace-shell::after {
-  content:"";
-  position:absolute;
-  pointer-events:none;
-  z-index:-1;
-}
-
-.marketplace-shell::before {
-  width:5px;
-  height:5px;
-  top:12%;
-  left:-26px;
-  border-radius:50%;
-  background:#48a8ff;
-  box-shadow:
-    0 0 12px rgba(72,168,255,.75),
-    140px 82px 0 -1px #a18cff,
-    140px 82px 12px rgba(161,140,255,.55),
-    640px 30px 0 -1px #48a8ff,
-    640px 30px 12px rgba(72,168,255,.55);
-}
-
-.marketplace-shell::after {
-  top:14%;
-  left:-18px;
-  width:700px;
-  height:1px;
-  opacity:.25;
-  background:linear-gradient(90deg,rgba(72,168,255,.0),rgba(72,168,255,.55),rgba(161,140,255,.0));
-  transform:rotate(-7deg);
-  transform-origin:left center;
+.network-text {
+  color: #a8b4c4;
 }
 
 html[data-theme="light"] .app-shell {
   background:
-    linear-gradient(rgba(53,110,169,.075) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(53,110,169,.075) 1px, transparent 1px),
-    linear-gradient(rgba(53,110,169,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(53,110,169,.025) 1px, transparent 1px),
-    radial-gradient(circle at 50% 0%, rgba(53,110,169,.10), transparent 34%),
-    linear-gradient(145deg,#edf3f8 0%,#f6f9fc 52%,#e8eef5 100%);
-  background-size:44px 44px,44px 44px,176px 176px,176px 176px,100% 100%,100% 100%;
+    radial-gradient(circle at 50% -10%, rgba(90, 130, 175, .09), transparent 34%),
+    linear-gradient(180deg, #f7f9fc 0%, #f1f4f8 100%);
 }
 
 html[data-theme="light"] .app-shell::before {
-  opacity:.35;
-}
-
-html[data-theme="light"] .app-shell::after {
-  opacity:.12;
+  opacity: .55;
+  background-image:
+    linear-gradient(rgba(71, 85, 105, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(71, 85, 105, .035) 1px, transparent 1px);
 }
 
 html[data-theme="light"] .topbar,
 html[data-theme="light"] .listing-glass,
 html[data-theme="light"] .search-glass {
-  background:rgba(246,249,252,.78);
-  border-color:rgba(53,110,169,.16);
+  background: rgba(255,255,255,.84);
+  border-color: rgba(71,85,105,.10);
+  box-shadow: 0 18px 55px rgba(30,41,59,.08), inset 0 1px rgba(255,255,255,.8);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell,
-  .app-shell::before,
-  .app-shell::after {
-    animation:none !important;
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
   }
 }
