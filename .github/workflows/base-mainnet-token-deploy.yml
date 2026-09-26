@@ -1,0 +1,82 @@
+name: USTETU Token Mainnet Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type DEPLOY_USTETU_MAINNET to authorize the broadcast"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy USTETU token to Base Mainnet
+    runs-on: ubuntu-latest
+
+    env:
+      BASE_RPC_URL: https://mainnet.base.org
+      USTETU_DEPLOYER_PRIVATE_KEY: ${{ secrets.USTETU_DEPLOYER_PRIVATE_KEY }}
+
+    steps:
+      - name: Verify deployment confirmation
+        run: |
+          if [ "${{ inputs.confirmation }}" != "DEPLOY_USTETU_MAINNET" ]; then
+            echo "Invalid confirmation phrase."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Compile
+        run: forge build
+
+      - name: Token test suite
+        run: forge test --match-contract USTETUTokenTest -vv
+
+      - name: Verify deployer
+        run: |
+          EXPECTED="0x52dF1Ff4c9CD41869a691627cb1c903e68a3863b"
+          DEPLOYER=$(cast wallet address --private-key "$USTETU_DEPLOYER_PRIVATE_KEY")
+
+          echo "Derived deployer: $DEPLOYER"
+
+          test "$DEPLOYER" = "$EXPECTED"
+
+      - name: Check Base ETH balance
+        run: |
+          DEPLOYER=$(cast wallet address --private-key "$USTETU_DEPLOYER_PRIVATE_KEY")
+          BALANCE=$(cast balance "$DEPLOYER" \
+            --rpc-url "$BASE_RPC_URL" \
+            --ether)
+
+          echo "Base ETH balance: $BALANCE"
+
+          awk -v b="$BALANCE" 'BEGIN {
+            if (b <= 0) exit 1
+          }'
+
+      - name: Broadcast USTETU deployment
+        run: |
+          forge script \
+            script/DeployUSTETUMainnet.s.sol:DeployUSTETUMainnet \
+            --rpc-url "$BASE_RPC_URL" \
+            --broadcast \
+            --slow \
+            -vvvv
+
+      - name: Deployment artifact
+        if: success()
+        run: |
+          echo "USTETU Mainnet deployment completed."
+          echo "Check broadcast/DeployUSTETUMainnet.s.sol/8453/run-latest.json"
