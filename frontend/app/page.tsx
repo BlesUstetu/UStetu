@@ -191,7 +191,7 @@ export default function HomePage() {
       if (!token || !chainListing) return null;
 
       const indexedTokenAddress = normalizeAddress(item.token_contract);
-      const registeredTokenAddress = token[1] as `0x${string}`;
+      const registeredTokenAddress = token.contractAddress as `0x${string}`;
       if (!indexedTokenAddress || registeredTokenAddress.toLowerCase() !== indexedTokenAddress.toLowerCase()) return null;
 
       const indexedTokenId = hexTokenId(item.token_id);
@@ -203,7 +203,7 @@ export default function HomePage() {
       const indexedPaymentToken = normalizeAddress(item.payment_token);
       if (indexedPaymentToken && indexedPaymentToken.toLowerCase() !== paymentTokenAddress.toLowerCase()) return null;
 
-      const tokenDecimals = Number(token[2]);
+      const tokenDecimals = Number(token.decimalsSnapshot);
       const inventoryDeposited = BigInt(chainListing.inventoryDeposited);
       const inventoryLocked = BigInt(chainListing.inventoryLocked);
       const priceRaw = BigInt(chainListing.price);
