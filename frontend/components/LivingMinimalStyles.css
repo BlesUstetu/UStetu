@@ -267,9 +267,8 @@ html[data-theme="light"] .listing-row:hover {
 .site-footer-email {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   color: #a8b4c4;
-  font-size: 12px;
   text-decoration: none;
   transition: color 160ms ease, border-color 160ms ease;
 }
