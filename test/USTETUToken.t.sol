@@ -20,7 +20,7 @@ contract USTETUTokenTest is Test {
 
     function testMetadataIsFixed() public view {
         assertEq(token.name(), "USTETU");
-        assertEq(token.symbol(), "USTETU");
+        assertEq(token.symbol(), "UST");
         assertEq(token.decimals(), 18);
         assertEq(token.TOTAL_SUPPLY(), TOTAL_SUPPLY);
     }
