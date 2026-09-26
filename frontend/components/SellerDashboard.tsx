@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { encodeAbiParameters, formatUnits, isAddress, keccak256, parseUnits } from "viem";
-import { useAccount, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
+import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
+import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
 import {
   BASE_MAINNET_CHAIN_ID,
@@ -38,6 +38,12 @@ export default function SellerDashboard() {
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
 
+  const baseBalanceQuery = useBalance({
+    address,
+    chainId: base.id,
+    query: { enabled: !!address }
+  });
+
   const [listingIdInput, setListingIdInput] = useState("");
   const [activeListingId, setActiveListingId] = useState<bigint | null>(null);
   const [listingTokenAddress, setListingTokenAddress] = useState("");
@@ -53,6 +59,8 @@ export default function SellerDashboard() {
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [registerGasCost, setRegisterGasCost] = useState<bigint | null>(null);
+  const [registerGasLoading, setRegisterGasLoading] = useState(false);
 
   const registeredQuery = useReadContract({
     address: USTETU_SELLER_REGISTRY_ADDRESS,
@@ -162,6 +170,40 @@ export default function SellerDashboard() {
     }
   }, [seller?.withdrawalWallet, listing, paymentDecimals, tokenDecimals]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkRegisterGas = async () => {
+      if (!address || !publicClient || registeredQuery.data) {
+        setRegisterGasCost(null);
+        setRegisterGasLoading(false);
+        return;
+      }
+
+      setRegisterGasLoading(true);
+      try {
+        const gas = await publicClient.estimateContractGas({
+          address: USTETU_SELLER_REGISTRY_ADDRESS,
+          abi: sellerRegistryAbi,
+          functionName: "registerSeller",
+          args: [address],
+          account: address
+        });
+        const gasPrice = await publicClient.getGasPrice();
+        const estimatedCost = (gas * gasPrice * 120n) / 100n;
+
+        if (!cancelled) setRegisterGasCost(estimatedCost);
+      } catch {
+        if (!cancelled) setRegisterGasCost(null);
+      } finally {
+        if (!cancelled) setRegisterGasLoading(false);
+      }
+    };
+
+    void checkRegisterGas();
+    return () => { cancelled = true; };
+  }, [address, publicClient, registeredQuery.data]);
+
   const refresh = () => {
     void listingQuery.refetch();
     void sellerQuery.refetch();
@@ -206,6 +248,15 @@ export default function SellerDashboard() {
     try {
       await ensureBase();
       if (!address) return;
+
+      const balance = baseBalanceQuery.data?.value ?? 0n;
+      if (registerGasCost !== null && balance < registerGasCost) {
+        throw new Error("Saldo ETH di Base tidak cukup untuk biaya gas Register Seller.");
+      }
+      if (registerGasCost === null) {
+        throw new Error("Estimasi biaya gas belum tersedia. Tunggu sebentar lalu coba lagi.");
+      }
+
       await transact("Register seller", () => writeContractAsync({
         address: USTETU_SELLER_REGISTRY_ADDRESS,
         abi: sellerRegistryAbi,
@@ -412,14 +463,27 @@ export default function SellerDashboard() {
         .seller-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:24px}.seller-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.65}.seller-head h1{margin:7px 0 5px;font-size:34px}.seller-head p{margin:0;opacity:.62}.seller-wallet{font-family:ui-monospace,monospace;font-size:11px;opacity:.7}
         .seller-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}.seller-card{border:1px solid rgba(255,255,255,.1);background:rgba(10,14,25,.72);backdrop-filter:blur(14px);border-radius:18px;padding:18px;box-shadow:0 10px 35px rgba(0,0,0,.18)}.seller-card label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.12em;opacity:.55}.seller-value{font-size:24px;font-weight:750;margin-top:8px}.seller-sub{font-size:12px;opacity:.55;margin-top:4px}.seller-ok{color:#75f7ae}.seller-warn{color:#ffd166}
         .seller-two{display:grid;grid-template-columns:1.35fr .65fr;gap:16px}.seller-section{margin-bottom:16px}.seller-section h2{font-size:15px;margin:0 0 12px}.seller-listing-top{display:flex;justify-content:space-between;gap:16px;align-items:center}.seller-token{display:flex;align-items:center;gap:12px}.seller-token-mark{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:900;font-size:20px;background:linear-gradient(135deg,#1e2745,#7c5cff)}.seller-status{font-size:11px;border:1px solid rgba(117,247,174,.28);padding:7px 10px;border-radius:999px;color:#75f7ae}.seller-status.paused{border-color:rgba(255,209,102,.3);color:#ffd166}.seller-status.closed{border-color:rgba(255,100,100,.3);color:#ff7b8a}.seller-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}.seller-stat{background:rgba(255,255,255,.035);border-radius:12px;padding:12px}.seller-stat span{display:block;font-size:10px;opacity:.5;text-transform:uppercase}.seller-stat strong{display:block;margin-top:5px}.seller-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.seller-actions button,.seller-form button,.seller-card>button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:inherit;border-radius:10px;padding:10px 13px;cursor:pointer}.seller-actions button:hover,.seller-form button:hover,.seller-card>button:hover{background:rgba(255,255,255,.1)}.seller-actions button:disabled,.seller-form button:disabled,.seller-card>button:disabled{opacity:.45;cursor:not-allowed}.danger{border-color:rgba(255,100,100,.3)!important}.primary{border-color:rgba(117,247,174,.3)!important}
-        .seller-form{display:grid;gap:9px}.seller-form label{font-size:11px;opacity:.55}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.18);color:inherit;border-radius:10px;padding:11px 12px;outline:none}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-note{font-size:11px;line-height:1.55;opacity:.52}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.08);border:1px solid rgba(117,247,174,.18);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.08);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-divider{height:1px;background:rgba(255,255,255,.08);margin:14px 0}
+        .seller-form{display:grid;gap:9px}.seller-form label{font-size:11px;opacity:.55}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.18);color:inherit;border-radius:10px;padding:11px 12px;outline:none}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-note{font-size:11px;line-height:1.55;opacity:.52}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.08);border:1px solid rgba(117,247,174,.18);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.08);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{opacity:.58}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.16);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.07);border-color:rgba(117,247,174,.16);color:#75f7ae}
+.seller-divider{height:1px;background:rgba(255,255,255,.08);margin:14px 0}
         @media(max-width:850px){.seller-grid,.seller-two{grid-template-columns:1fr}.seller-stats{grid-template-columns:repeat(2,1fr)}.seller-head{align-items:flex-start;flex-direction:column}}
       `}</style>
 
       {!isConnected ? (
         <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect wallet untuk membuka Seller Center.</p></div>
       ) : !registeredQuery.data ? (
-        <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">Wallet ini belum terdaftar. Seller registration bersifat permissionless.</p><button onClick={() => void register()} disabled={disabled || chainId !== base.id}>{busy || "Register Seller"}</button>{error && <div className="seller-error">{error}</div>}</div>
+        <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">Wallet ini belum terdaftar. Seller registration bersifat permissionless dan membutuhkan sedikit ETH di Base untuk gas.</p>
+          <div className="seller-gas-status">
+            <div className="seller-gas-row"><span>Base ETH Balance</span><strong>{baseBalanceQuery.isLoading ? "Checking…" : formatEther(baseBalanceQuery.data?.value ?? 0n) + " ETH"}</strong></div>
+            <div className="seller-gas-row"><span>Estimated Register Gas</span><strong>{registerGasLoading ? "Estimating…" : registerGasCost !== null ? "~" + formatEther(registerGasCost) + " ETH" : "Unavailable"}</strong></div>
+            <div className={"seller-gas-state " + (registerGasCost !== null && (baseBalanceQuery.data?.value ?? 0n) >= registerGasCost ? "ready" : "warning")}>
+              {registerGasLoading ? "Checking Base gas balance…" :
+                registerGasCost === null ? "Gas estimate belum tersedia. Coba lagi sebentar." :
+                (baseBalanceQuery.data?.value ?? 0n) >= registerGasCost ? "✓ Ready — saldo Base cukup untuk registrasi." :
+                "⚠ Saldo ETH Base tidak cukup untuk registrasi."}
+            </div>
+          </div>
+          <button onClick={() => void register()} disabled={disabled || chainId !== base.id || registerGasLoading || registerGasCost === null || (baseBalanceQuery.data?.value ?? 0n) < registerGasCost}>{busy || "Register Seller"}</button>
+          {error && <div className="seller-error">{error}</div>}</div>
       ) : (
         <>
           <div className="seller-head">
