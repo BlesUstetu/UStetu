@@ -19,7 +19,8 @@ import {
   USTETU_TOKEN_ADDRESS,
 } from "@/lib/contracts";
 
-const LISTING_ACTIVE = 1;
+// UStetuTypes.ListingStatus: ACTIVE = 0, PAUSED = 1, CLOSED = 2.
+const LISTING_ACTIVE = 0;
 const INDEXER_API_URL = process.env.NEXT_PUBLIC_USTETU_INDEXER_API_URL ?? "";
 
 type ApiListing = {
@@ -88,6 +89,7 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState("");
+  const [copiedAddress, setCopiedAddress] = useState(false);
 
   const paymentTokenQuery = useReadContract({
     address: USTETU_ESCROW_ADDRESS,
@@ -314,7 +316,7 @@ export default function HomePage() {
             </div>
             <div className="drawer-listing-card"><div className="drawer-listing-title">Listing #{selected.listingId.toString()}</div><div className="drawer-price"><strong>{selected.price}</strong> <span>{selected.paymentSymbol} / {selected.symbol}</span></div><div className="drawer-available">{t("available")} <strong>{selected.available} {selected.symbol}</strong></div></div>
             <div className="drawer-actions">
-              <button className="secondary-glass" type="button" onClick={() => navigator.clipboard?.writeText(selected.address)}>{t("copyAddress")}</button>
+              <button className="secondary-glass" type="button" onClick={async () => { try { await navigator.clipboard?.writeText(selected.address); setCopiedAddress(true); window.setTimeout(() => setCopiedAddress(false), 1600); } catch {} }}>{copiedAddress ? "Copied ✓" : t("copyAddress")}</button>
               <a className="secondary-glass" href={`https://basescan.org/token/${selected.address}`} target="_blank" rel="noreferrer">{t("baseScan")}</a>
               <button className="primary-glass" type="button" disabled={selected.status !== LISTING_ACTIVE || selected.availableRaw < selected.minOrderAmount} onClick={() => setBuyOpen(true)}>{selected.status === LISTING_ACTIVE && selected.availableRaw >= selected.minOrderAmount ? `${t("buy")} ${selected.symbol}` : "Buy unavailable"}</button>
             </div>
