@@ -7,7 +7,17 @@ import Header from "@/components/Header";
 import BuyModalFlow from "@/components/BuyModalFlow";
 import TokenLogo from "@/components/TokenLogo";
 import { useLanguage } from "@/lib/LanguageContext";
-import { erc20MetadataAbi, escrowAbi, registryAbi, USTETU_ESCROW_ADDRESS, USTETU_REGISTRY_ADDRESS } from "@/lib/contracts";
+import {
+  erc20MetadataAbi,
+  escrowAbi,
+  registryAbi,
+  USTETU_BOOTSTRAP_LISTING_ID,
+  USTETU_BOOTSTRAP_SELLER,
+  USTETU_ESCROW_ADDRESS,
+  USTETU_REGISTRY_ADDRESS,
+  USTETU_TOKEN_ID,
+  USTETU_TOKEN_ADDRESS,
+} from "@/lib/contracts";
 
 const LISTING_ACTIVE = 1;
 const INDEXER_API_URL = process.env.NEXT_PUBLIC_USTETU_INDEXER_API_URL ?? "";
@@ -24,6 +34,20 @@ type ApiListing = {
   min_order_amount: string;
   max_order_amount: string;
   status: "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED";
+};
+
+const BOOTSTRAP_LISTING: ApiListing = {
+  listing_id: USTETU_BOOTSTRAP_LISTING_ID.toString(),
+  seller: USTETU_BOOTSTRAP_SELLER,
+  token_id: USTETU_TOKEN_ID,
+  token_contract: USTETU_TOKEN_ADDRESS,
+  payment_token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  price: "200000",
+  inventory_deposited: "10000000000000000000000000",
+  inventory_locked: "0",
+  min_order_amount: "1000000000000000000",
+  max_order_amount: "10000000000000000000000000",
+  status: "ACTIVE",
 };
 
 type LiveListing = {
@@ -117,8 +141,11 @@ export default function HomePage() {
 
   const loadListings = async () => {
     if (!INDEXER_API_URL) {
-      setApiError("Marketplace indexer belum dikonfigurasi.");
-      setListings([]);
+      // Production bootstrap: keep marketplace usable directly from the
+      // verified on-chain Listing #1 while the discovery indexer is optional.
+      // Escrow/Registry reads below remain authoritative for all transaction data.
+      setApiError("");
+      setListings([BOOTSTRAP_LISTING]);
       setLoading(false);
       return;
     }
