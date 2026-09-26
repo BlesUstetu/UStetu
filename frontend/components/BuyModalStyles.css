@@ -35,6 +35,10 @@ html[data-theme="light"] .buy-modal { background: rgba(248, 251, 255, 0.97); box
 .buy-input-wrap:focus-within { border-color:rgba(101,169,255,.55); box-shadow:0 0 0 3px rgba(101,169,255,.08); }
 .buy-input-wrap input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--text); font-size:17px; font-weight:700; }
 .buy-input-wrap span { color:var(--accent); font-size:10px; font-weight:800; }
+.buy-max-button { flex:0 0 auto; padding:5px 8px; border:1px solid rgba(140,193,255,.24); border-radius:7px; background:rgba(101,169,255,.07); color:var(--accent); font-size:9px; font-weight:850; letter-spacing:.05em; cursor:pointer; transition:background 160ms ease,border-color 160ms ease,transform 160ms ease; }
+.buy-max-button:hover:not(:disabled) { background:rgba(101,169,255,.14); border-color:rgba(140,193,255,.42); transform:translateY(-1px); }
+.buy-max-button:active:not(:disabled) { transform:translateY(0); }
+.buy-max-button:disabled { opacity:.42; cursor:not-allowed; }
 .buy-balance-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:15px; }
 .buy-balance-grid>div { padding:11px 13px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.028); }
 .escrow-flow { padding:14px; border:1px solid rgba(101,169,255,.18); border-radius:16px; background:linear-gradient(145deg,rgba(101,169,255,.065),rgba(255,255,255,.025)); }
