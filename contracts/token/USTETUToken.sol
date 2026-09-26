@@ -12,7 +12,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract USTETUToken is ERC20 {
     uint256 public constant TOTAL_SUPPLY = 88_000_000 ether;
 
-    constructor() ERC20("USTETU", "USTETU") {
+    constructor() ERC20("USTETU", "UST") {
         _mint(msg.sender, TOTAL_SUPPLY);
     }
 }
