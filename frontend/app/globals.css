@@ -266,7 +266,7 @@ html[data-theme="light"] .escrow-progress-bar {
 ) {
   position: relative;
   isolation: isolate;
-  border-color: transparent !important;
+  border-color: var(--line) !important;
 }
 
 :is(
