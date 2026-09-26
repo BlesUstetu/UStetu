@@ -16,9 +16,12 @@ contract DeployUSTETUMainnet is Script {
 
     function run() external returns (USTETUToken token) {
         require(block.chainid == BASE_MAINNET_CHAIN_ID, "WRONG_CHAIN");
-        require(msg.sender == EXPECTED_DEPLOYER, "WRONG_DEPLOYER");
 
-        vm.startBroadcast();
+        uint256 deployerPrivateKey = vm.envUint("USTETU_DEPLOYER_PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey);
+        require(deployer == EXPECTED_DEPLOYER, "WRONG_DEPLOYER");
+
+        vm.startBroadcast(deployerPrivateKey);
 
         token = new USTETUToken();
 
@@ -26,7 +29,7 @@ contract DeployUSTETUMainnet is Script {
 
         console2.log("USTETU Base Mainnet token deployment");
         console2.log("chainId:", BASE_MAINNET_CHAIN_ID);
-        console2.log("deployer:", EXPECTED_DEPLOYER);
+        console2.log("deployer:", deployer);
         console2.log("token:", address(token));
         console2.log("name:", token.name());
         console2.log("symbol:", token.symbol());
