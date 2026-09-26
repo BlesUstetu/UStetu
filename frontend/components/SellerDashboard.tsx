@@ -35,6 +35,7 @@ export default function SellerDashboard() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient();
+  const basePublicClient = usePublicClient({ chainId: base.id });
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
 
@@ -174,7 +175,7 @@ export default function SellerDashboard() {
     let cancelled = false;
 
     const checkRegisterGas = async () => {
-      if (!address || !publicClient || registeredQuery.data) {
+      if (!address || !basePublicClient || registeredQuery.data) {
         setRegisterGasCost(null);
         setRegisterGasLoading(false);
         return;
@@ -182,14 +183,14 @@ export default function SellerDashboard() {
 
       setRegisterGasLoading(true);
       try {
-        const gas = await publicClient.estimateContractGas({
+        const gas = await basePublicClient.estimateContractGas({
           address: USTETU_SELLER_REGISTRY_ADDRESS,
           abi: sellerRegistryAbi,
           functionName: "registerSeller",
           args: [address],
           account: address
         });
-        const gasPrice = await publicClient.getGasPrice();
+        const gasPrice = await basePublicClient.getGasPrice();
         const estimatedCost = (gas * gasPrice * 120n) / 100n;
 
         if (!cancelled) setRegisterGasCost(estimatedCost);
@@ -202,7 +203,7 @@ export default function SellerDashboard() {
 
     void checkRegisterGas();
     return () => { cancelled = true; };
-  }, [address, publicClient, registeredQuery.data]);
+  }, [address, basePublicClient, registeredQuery.data]);
 
   const refresh = () => {
     void listingQuery.refetch();
