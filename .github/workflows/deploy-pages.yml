@@ -22,6 +22,7 @@ concurrency:
 env:
   NODE_VERSION: 22
   SITE_DIR: frontend/out
+  NEXT_DEPLOYMENT_ID: ${{ github.sha }}
 
 jobs:
   build:
