@@ -311,13 +311,10 @@ export default function HomePage() {
           )}
         </>
       )}
-      <footer className="site-footer">
-        <div className="site-footer-inner">
-          <span className="site-footer-brand">USTETU</span>
-          <a className="site-footer-email" href="mailto:lionustetu@gmail.com" aria-label="Email USTETU" title="Email USTETU">
-            <span className="site-footer-email-icon" aria-hidden="true">✉</span>
-          </a>
-        </div>
+      <footer className="site-footer" aria-label="Contact">
+        <a className="site-footer-email" href="mailto:lionustetu@gmail.com" aria-label="Email USTETU" title="Email USTETU">
+          <span className="site-footer-email-icon" aria-hidden="true">✉</span>
+        </a>
       </footer>
 
     </main>
