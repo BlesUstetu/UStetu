@@ -7,7 +7,7 @@ import {USTETUToken} from "../contracts/token/USTETUToken.sol";
 contract USTETUTokenTest is Test {
     USTETUToken internal token;
 
-    address internal deployer = address(0xD3P10);
+    address internal deployer = address(0xD310);
     address internal alice = address(0xA11CE);
     address internal bob = address(0xB0B);
 
