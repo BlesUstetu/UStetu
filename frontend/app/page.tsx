@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatUnits } from "viem";
+import { formatUnits, getAddress } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 import Header from "@/components/Header";
 import BuyModalFlow from "@/components/BuyModalFlow";
@@ -90,6 +90,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState("");
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [trustWalletLogoReady, setTrustWalletLogoReady] = useState<Set<string>>(new Set());
+  const [logoChecking, setLogoChecking] = useState(false);
 
   const paymentTokenQuery = useReadContract({
     address: USTETU_ESCROW_ADDRESS,
@@ -247,21 +249,62 @@ export default function HomePage() {
     query: { enabled: metadataConfigs.length > 0 }
   });
 
+  const trustWalletLogoUrl = (address: string, chainId: number) => {
+    const chains: Record<number, string> = { 8453: "base", 1: "ethereum", 56: "smartchain", 137: "polygon", 10: "optimism", 42161: "arbitrum", 43114: "avalanchec", 250: "fantom", 42220: "celo", 59144: "linea", 324: "zksync", 534352: "scroll", 81457: "blast", 5000: "mantle", 204: "opbnb", 100: "xdai" };
+    const chain = chains[chainId];
+    if (!chain) return "";
+    try {
+      return `https://assets-cdn.trustwallet.com/blockchains/${chain}/assets/${getAddress(address)}/logo.png`;
+    } catch {
+      return "";
+    }
+  };
+
   const enrichedListings = useMemo(() => liveListings.map((item, index) => ({
     ...item,
     tokenName: String(metadataQueries.data?.[index * 2]?.result ?? "Token"),
     symbol: String(metadataQueries.data?.[index * 2 + 1]?.result ?? "TOKEN")
   })), [liveListings, metadataQueries.data]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const candidates = enrichedListings.filter((item) => item.address.toLowerCase() !== USTETU_TOKEN_ADDRESS.toLowerCase());
+    if (candidates.length === 0) {
+      setTrustWalletLogoReady(new Set([USTETU_TOKEN_ADDRESS.toLowerCase()]));
+      setLogoChecking(false);
+      return;
+    }
+    setLogoChecking(true);
+    Promise.all(candidates.map((item) => new Promise<[string, boolean]>((resolve) => {
+      const url = trustWalletLogoUrl(item.address, item.chainId);
+      if (!url) return resolve([item.address.toLowerCase(), false]);
+      const image = new Image();
+      image.onload = () => resolve([item.address.toLowerCase(), true]);
+      image.onerror = () => resolve([item.address.toLowerCase(), false]);
+      image.src = url;
+    }))).then((results) => {
+      if (cancelled) return;
+      const ready = new Set<string>([USTETU_TOKEN_ADDRESS.toLowerCase()]);
+      results.forEach(([address, ok]) => { if (ok) ready.add(address); });
+      setTrustWalletLogoReady(ready);
+    }).finally(() => { if (!cancelled) setLogoChecking(false); });
+    return () => { cancelled = true; };
+  }, [enrichedListings]);
+
+  const logoVerifiedListings = useMemo(
+    () => enrichedListings.filter((item) => item.address.toLowerCase() === USTETU_TOKEN_ADDRESS.toLowerCase() || trustWalletLogoReady.has(item.address.toLowerCase())),
+    [enrichedListings, trustWalletLogoReady]
+  );
+
   const filteredListings = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return enrichedListings;
-    return enrichedListings.filter((item) =>
+    if (!q) return logoVerifiedListings;
+    return logoVerifiedListings.filter((item) =>
       [item.address, item.tokenName, item.symbol, item.seller].some((value) => value.toLowerCase().includes(q))
     );
-  }, [enrichedListings, search]);
+  }, [logoVerifiedListings, search]);
 
-  const selected = selectedId === null ? null : enrichedListings.find((item) => item.listingId === selectedId) ?? null;
+  const selected = selectedId === null ? null : logoVerifiedListings.find((item) => item.listingId === selectedId) ?? null;
   const isLoading = loading || paymentTokenQuery.isLoading || paymentDecimalsQuery.isLoading || (listings.length > 0 && (tokenQueries.isLoading || listingQueries.isLoading));
   const hasError = Boolean(apiError);
   const refreshMarketplace = async () => { await loadListings(); };
@@ -280,7 +323,7 @@ export default function HomePage() {
 
         <div className="listing-glass">
           <div className="listing-toolbar">
-            <span className="listing-count">{isLoading ? t("loading") : `${filteredListings.length} ${filteredListings.length === 1 ? t("listing") : t("listings")}`}</span>
+            <span className="listing-count">{isLoading || logoChecking ? "Checking Trust Wallet logos…" : `${filteredListings.length} ${filteredListings.length === 1 ? t("listing") : t("listings")}`}</span>
             <span className="status-dot"><i /> {t("live")}</span>
           </div>
           <div className="listing-table-wrap">
