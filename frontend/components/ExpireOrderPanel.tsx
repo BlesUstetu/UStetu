@@ -84,7 +84,7 @@ export default function ExpireOrderPanel() {
 
   return (
     <section className="expire-order-panel" style={{ margin: "0 auto 24px", maxWidth: 1180, padding: "0 22px" }}>
-      <div className="expire-order-card" style={{ border: "1px solid rgba(255,100,100,.25)", background: "rgba(35,12,18,.78)", borderRadius: 18, padding: 20 }}>
+      <div className="expire-order-card" style={{ border: "1px solid rgba(255,100,100,.25)", background: "#230c12", borderRadius: 18, padding: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: 11, letterSpacing: ".16em", opacity: .65 }}>ORDER RECOVERY</div>
