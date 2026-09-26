@@ -1,0 +1,38 @@
+name: USTETU Token Mainnet Dry Run
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    name: Simulate USTETU token deployment
+    runs-on: ubuntu-latest
+    env:
+      BASE_RPC_URL: https://mainnet.base.org
+      USTETU_DEPLOYER_PRIVATE_KEY: ${{ secrets.USTETU_DEPLOYER_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Compile
+        run: forge build
+
+      - name: Token test suite
+        run: forge test --match-contract USTETUTokenTest -vv
+
+      - name: Dry-run USTETU deployment against Base Mainnet
+        run: |
+          forge script script/DeployUSTETUMainnet.s.sol:DeployUSTETUMainnet \
+            --rpc-url "$BASE_RPC_URL" \
+            -vvvv
