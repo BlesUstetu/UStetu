@@ -1,12 +1,17 @@
 export const BASE_MAINNET_CHAIN_ID = 8453 as const;
 export const BASE_MAINNET_USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 
-// Mainnet deployment addresses are intentionally environment-driven until the verified deployment exists.
-export const USTETU_REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_USTETU_REGISTRY_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
-export const USTETU_SELLER_REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_USTETU_SELLER_REGISTRY_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
-export const USTETU_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_USTETU_ESCROW_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
-export const USTETU_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_USTETU_TOKEN_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
-export const USTETU_TOKEN_ID = (process.env.NEXT_PUBLIC_USTETU_TOKEN_ID ?? "0x0000000000000000000000000000000000000000000000000000000000000000") as `0x${string}`;
+// VERIFIED USTETU BASE MAINNET V1 DEPLOYMENT — DO NOT OVERRIDE.
+export const USTETU_REGISTRY_ADDRESS = "0x237023EC6A39e59CEbd1D231777308c354ba542F" as const;
+export const USTETU_SELLER_REGISTRY_ADDRESS = "0x2e8512a3c9953E5B2f061a4FF694637f78740468" as const;
+export const USTETU_ESCROW_ADDRESS = "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae" as const;
+export const USTETU_TOKEN_ADDRESS = "0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557" as const;
+export const USTETU_TOKEN_ID = "0xfb1118b849730343ccf4b6788efa54f47c8693399be5911efcd39d65dd290715" as const;
+
+// Current production bootstrap listing. Discovery can be replaced by the indexer
+// without changing any escrow transaction flow.
+export const USTETU_BOOTSTRAP_LISTING_ID = 1n;
+export const USTETU_BOOTSTRAP_SELLER = "0x52dF1Ff4c9CD41869a691627cb1c903e68a3863b" as const;
 
 export const escrowAbi = [
   { type:"function", name:"paymentToken", stateMutability:"view", inputs:[], outputs:[{name:"",type:"address"}] },
