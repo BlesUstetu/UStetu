@@ -190,3 +190,102 @@ html[data-theme="light"] .buy-modal { background: rgba(248, 251, 255, 0.97); box
     font-size:8px;
   }
 }
+
+
+/* USTETU — Premium Buyer / Order Panel */
+.buy-modal {
+  border:1px solid rgba(128,157,205,.20);
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 92% 0%,rgba(91,107,255,.13),transparent 32%),
+    linear-gradient(145deg,#0d1424 0%,#090e1a 58%,#080c16 100%);
+  box-shadow:
+    0 32px 100px rgba(0,0,0,.56),
+    0 18px 45px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.055);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.buy-modal::before {
+  content:"";
+  position:absolute;
+  top:0;
+  left:14%;
+  right:14%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(154,181,255,.5),transparent);
+  pointer-events:none;
+}
+html[data-theme="light"] .buy-modal {
+  background:linear-gradient(145deg,#f8fbff,#edf3fa);
+  border-color:rgba(82,116,160,.18);
+}
+.buy-modal-header h2 {
+  color:#f1f5fb;
+  font-weight:760;
+}
+.buy-modal-header p { color:#78879d; }
+.buy-modal-kicker,.buy-section-kicker { color:#8fa9ff; }
+.buy-modal-close {
+  background:linear-gradient(145deg,#18243a,#0c1320);
+  border-color:rgba(132,160,205,.18);
+  color:#aebbd0;
+  box-shadow:inset 0 1px rgba(255,255,255,.045);
+}
+.buy-order-summary {
+  border-color:rgba(128,157,205,.12);
+  background:#080d17;
+  box-shadow:inset 0 1px rgba(255,255,255,.025);
+}
+.buy-order-summary div { background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015)); }
+.buy-order-summary div:last-child {
+  background:linear-gradient(145deg,rgba(91,107,255,.11),rgba(42,70,130,.035));
+}
+.buy-order-summary strong,.buy-balance-grid strong { color:#dce6f5; }
+.buy-input-wrap {
+  border-color:rgba(127,153,196,.16);
+  background:linear-gradient(145deg,#070c16,#090f1a);
+  box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.02);
+}
+.buy-input-wrap:focus-within {
+  border-color:rgba(111,151,232,.46);
+  box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);
+}
+.buy-input-wrap span { color:#91a9ff; }
+.buy-max-button {
+  border-color:rgba(133,171,239,.24);
+  background:rgba(91,120,196,.08);
+  color:#9fb5ff;
+}
+.buy-balance-grid>div {
+  border-color:rgba(128,157,205,.10);
+  background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
+}
+.escrow-flow {
+  border-color:rgba(101,145,225,.20);
+  background:linear-gradient(145deg,rgba(75,103,170,.09),rgba(255,255,255,.018));
+  box-shadow:inset 0 1px rgba(255,255,255,.035);
+}
+.escrow-network {
+  border-color:rgba(128,157,205,.14);
+  background:rgba(8,13,23,.5);
+}
+.buy-submit {
+  border-color:rgba(143,174,232,.34);
+  border-radius:12px;
+  background:linear-gradient(145deg,#263d68 0%,#162946 48%,#0d182a 100%);
+  color:#e9f1ff;
+  box-shadow:inset 0 1px rgba(255,255,255,.10),0 12px 30px rgba(25,58,110,.22);
+}
+.buy-submit:hover:not(:disabled) {
+  background:linear-gradient(145deg,#304b7c 0%,#1a3153 48%,#0f1d31 100%);
+  filter:none;
+}
+.buy-status {
+  border-color:rgba(101,145,225,.20);
+  background:rgba(75,103,170,.07);
+}
+.buy-warning {
+  border-color:rgba(255,209,102,.20);
+  background:rgba(255,209,102,.045);
+}
