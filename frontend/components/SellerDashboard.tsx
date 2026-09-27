@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
+import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseAbiItem, parseUnits } from "viem";
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
 import {
@@ -18,6 +18,10 @@ import {
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 const LISTING_STATUS = { ACTIVE: 0, PAUSED: 1, CLOSED: 2 } as const;
+const LISTING_SCAN_CHUNK = 50_000n;
+const inventoryDepositedEvent = parseAbiItem(
+  "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)"
+);
 const tokenApprovalAbi = [
   { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "value", type: "uint256" }], outputs: [{ name: "", type: "bool" }] },
   { type: "function", name: "allowance", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
@@ -62,9 +66,12 @@ export default function SellerDashboard() {
     query: { enabled: !!address }
   });
 
-  const [loadListingIdInput, setLoadListingIdInput] = useState("");
   const [activeListingId, setActiveListingId] = useState<bigint | null>(null);
   const [generatedListingId, setGeneratedListingId] = useState<bigint | null>(null);
+  const [myListings, setMyListings] = useState<Array<{ id: bigint; seller: string; price: bigint; inventoryDeposited: bigint; inventoryLocked: bigint; minOrderAmount: bigint; maxOrderAmount: bigint; status: number; createdAt: bigint }>>([]);
+  const [myListingsLoading, setMyListingsLoading] = useState(false);
+  const [myListingsError, setMyListingsError] = useState("");
+  const [myListingsScan, setMyListingsScan] = useState("");
   const [listingTokenAddress, setListingTokenAddress] = useState("");
   const [listingPrice, setListingPrice] = useState("");
   const [listingInventory, setListingInventory] = useState("");
@@ -219,6 +226,95 @@ export default function SellerDashboard() {
   useEffect(() => {
     let cancelled = false;
 
+    const loadMyListings = async () => {
+      if (!address || !basePublicClient) {
+        setMyListings([]);
+        setMyListingsError("");
+        setMyListingsScan("");
+        setMyListingsLoading(false);
+        return;
+      }
+
+      setMyListingsLoading(true);
+      setMyListingsError("");
+
+      try {
+        const latest = await basePublicClient.getBlockNumber();
+        const listingIds = new Set<string>();
+
+        for (let start = 0n; start <= latest; start += LISTING_SCAN_CHUNK) {
+          if (cancelled) return;
+          const end = start + LISTING_SCAN_CHUNK - 1n > latest
+            ? latest
+            : start + LISTING_SCAN_CHUNK - 1n;
+
+          const logs = await basePublicClient.getLogs({
+            address: USTETU_ESCROW_ADDRESS,
+            event: inventoryDepositedEvent,
+            args: { seller: address },
+            fromBlock: start,
+            toBlock: end
+          });
+
+          for (const log of logs) {
+            if (log.args.listingId !== undefined) {
+              listingIds.add(log.args.listingId.toString());
+            }
+          }
+        }
+
+        const discovered = [];
+        for (const idText of listingIds) {
+          if (cancelled) return;
+          const id = BigInt(idText);
+          const item = await basePublicClient.readContract({
+            address: USTETU_ESCROW_ADDRESS,
+            abi: escrowAbi,
+            functionName: "getListing",
+            args: [id]
+          });
+
+          if (item.seller.toLowerCase() !== address.toLowerCase()) continue;
+
+          discovered.push({
+            id,
+            seller: item.seller,
+            price: item.price,
+            inventoryDeposited: item.inventoryDeposited,
+            inventoryLocked: item.inventoryLocked,
+            minOrderAmount: item.minOrderAmount,
+            maxOrderAmount: item.maxOrderAmount,
+            status: Number(item.status),
+            createdAt: item.createdAt
+          });
+        }
+
+        discovered.sort((a, b) => (a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0));
+
+        if (!cancelled) {
+          setMyListings(discovered);
+          setMyListingsScan(`Blocks 0 → ${latest.toString()}`);
+          if (activeListingId === null && discovered.length > 0) {
+            setActiveListingId(discovered[0].id);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setMyListingsError(e instanceof Error ? e.message : String(e));
+          setMyListings([]);
+        }
+      } finally {
+        if (!cancelled) setMyListingsLoading(false);
+      }
+    };
+
+    void loadMyListings();
+    return () => { cancelled = true; };
+  }, [address, basePublicClient, activeListingId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
     const checkRegisterGas = async () => {
       if (!address || !basePublicClient || registeredQuery.data) {
         setRegisterGasCost(null);
@@ -310,16 +406,6 @@ export default function SellerDashboard() {
         args: [address]
       }));
     } catch {}
-  };
-
-  const loadListing = async () => {
-    setError(""); setMessage("");
-    try {
-      const value = BigInt(loadListingIdInput.trim());
-      if (value <= 0n) throw new Error("Listing ID harus lebih besar dari 0.");
-      setActiveListingId(value);
-      setMessage(`Memuat Listing #${value}…`);
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   };
 
   const createListing = async () => {
@@ -540,7 +626,7 @@ export default function SellerDashboard() {
 
         .seller-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.seller-actions button,.seller-form button,.seller-card>button{border:1px solid rgba(133,160,210,.16);background:linear-gradient(145deg,rgba(28,40,65,.88),rgba(13,19,32,.96));color:#dce6f5;border-radius:10px;padding:10px 13px;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.045),0 6px 18px rgba(0,0,0,.16);transition:transform 160ms ease,border-color 160ms ease,background 160ms ease,box-shadow 160ms ease}.seller-actions button:hover,.seller-form button:hover,.seller-card>button:hover{background:linear-gradient(145deg,rgba(40,57,91,.95),rgba(16,24,40,.98));border-color:rgba(143,174,232,.32);transform:translateY(-1px);box-shadow:inset 0 1px rgba(255,255,255,.06),0 9px 24px rgba(0,0,0,.22)}.seller-actions button:disabled,.seller-form button:disabled,.seller-card>button:disabled{opacity:.42;cursor:not-allowed;transform:none}.danger{border-color:rgba(255,100,100,.28)!important;color:#ff9aa4!important}.primary{border-color:rgba(117,247,174,.28)!important;color:#a8ffd0!important;background:linear-gradient(145deg,rgba(22,70,54,.62),rgba(12,29,27,.96))!important}
 
-        .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-auto-id{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border:1px solid rgba(117,247,174,.15);border-radius:12px;background:linear-gradient(145deg,rgba(117,247,174,.055),rgba(255,255,255,.018))}.seller-auto-id span{display:block;font-size:9px;color:#71819b;text-transform:uppercase;letter-spacing:.14em}.seller-auto-id strong{display:block;margin-top:4px;color:#8ff6ba;font-size:12px;letter-spacing:.08em}.seller-auto-id small{display:block;margin-top:4px;color:#65738a;font-size:10px;line-height:1.45}.seller-auto-id-value{font:11px ui-monospace,SFMono-Regular,monospace;color:#cfeedd;white-space:nowrap}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(127,153,196,.14);background:#070c16;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{border-color:rgba(122,157,229,.42);background:#090f1b;box-shadow:0 0 0 3px rgba(91,120,196,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
+        .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-auto-id{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border:1px solid rgba(117,247,174,.15);border-radius:12px;background:linear-gradient(145deg,rgba(117,247,174,.055),rgba(255,255,255,.018))}.seller-auto-id span{display:block;font-size:9px;color:#71819b;text-transform:uppercase;letter-spacing:.14em}.seller-auto-id strong{display:block;margin-top:4px;color:#8ff6ba;font-size:12px;letter-spacing:.08em}.seller-auto-id small{display:block;margin-top:4px;color:#65738a;font-size:10px;line-height:1.45}.seller-auto-id-value{font:11px ui-monospace,SFMono-Regular,monospace;color:#cfeedd;white-space:nowrap}.seller-my-listings{display:grid;gap:8px;margin-top:14px}.seller-my-listing{width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;text-align:left;padding:12px 14px;border:1px solid rgba(127,153,196,.12);border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));color:#dce6f5;cursor:pointer;transition:transform 160ms ease,border-color 160ms ease,background 160ms ease}.seller-my-listing:hover{transform:translateY(-1px);border-color:rgba(143,174,232,.30);background:linear-gradient(145deg,rgba(35,51,82,.65),rgba(12,18,30,.92))}.seller-my-listing.selected{border-color:rgba(117,247,174,.30);background:linear-gradient(145deg,rgba(117,247,174,.065),rgba(12,22,25,.94))}.seller-my-listing>div:first-child{display:grid;gap:3px}.seller-my-listing-label{font-size:8px;letter-spacing:.12em;color:#75f7ae}.seller-my-listing strong{font-size:12px}.seller-my-listing small{font-size:10px;color:#6f7e95}.seller-my-listing-value{text-align:right}.seller-my-listing-value strong{display:block;font:12px ui-monospace,SFMono-Regular,monospace}.seller-my-listing-value small{display:block;margin-top:2px}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(127,153,196,.14);background:#070c16;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{border-color:rgba(122,157,229,.42);background:#090f1b;box-shadow:0 0 0 3px rgba(91,120,196,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
         .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
         .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}
@@ -608,12 +694,50 @@ export default function SellerDashboard() {
           </div>
 
           <div className="seller-card seller-section">
-            <h2>Load Existing Listing</h2>
-            <div className="seller-inline">
-              <input value={loadListingIdInput} onChange={e => setLoadListingIdInput(e.target.value)} placeholder="Listing ID untuk listing lama" inputMode="numeric" />
-              <button disabled={disabled} onClick={() => void loadListing()}>Load Listing</button>
+            <div className="seller-listing-top">
+              <div>
+                <h2>My Listings</h2>
+                <p className="seller-note">USTETU otomatis menemukan semua listing milik wallet ini dari aktivitas blockchain. Anda tidak perlu mengetahui atau memasukkan Listing ID.</p>
+              </div>
+              <button disabled={disabled || myListingsLoading} onClick={() => {
+                setMyListingsError("");
+                setActiveListingId(null);
+                setMyListings([]);
+                setMyListingsScan("");
+                setMessage("Memuat My Listings…");
+              }}>{myListingsLoading ? "Scanning…" : "Refresh"}</button>
             </div>
-            <p className="seller-note">ID tidak diperlukan saat membuat listing baru. Field ini hanya untuk membuka kembali listing lama yang belum sedang terbuka di dashboard.</p>
+
+            {myListingsError && <div className="seller-error">{myListingsError}</div>}
+            {myListingsLoading && <div className="seller-note">Scanning blockchain untuk menemukan listing Anda…</div>}
+            {!myListingsLoading && !myListings.length && !myListingsError && <div className="seller-note">Belum ada listing yang ditemukan untuk wallet ini.</div>}
+
+            {myListings.length > 0 && <div className="seller-my-listings">
+              {myListings.map((item) => {
+                const availableAmount = item.inventoryDeposited - item.inventoryLocked;
+                const statusText = item.status === LISTING_STATUS.ACTIVE ? "ACTIVE" : item.status === LISTING_STATUS.PAUSED ? "PAUSED" : "CLOSED";
+                const selected = activeListingId === item.id;
+                return (
+                  <button
+                    key={item.id.toString()}
+                    className={`seller-my-listing ${selected ? "selected" : ""}`}
+                    onClick={() => setActiveListingId(item.id)}
+                  >
+                    <div>
+                      <span className="seller-my-listing-label">{statusText}</span>
+                      <strong>Listing</strong>
+                      <small>{item.price === 0n ? "—" : formatUnits(item.price, paymentDecimals)} {paymentSymbol} / token</small>
+                    </div>
+                    <div className="seller-my-listing-value">
+                      <strong>{formatUnits(availableAmount, 18)}</strong>
+                      <small>available</small>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>}
+
+            {myListingsScan && <p className="seller-note">On-chain discovery: {myListingsScan}</p>}
           </div>
 
           {activeListingId !== null && listing && (
