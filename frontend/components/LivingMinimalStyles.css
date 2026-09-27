@@ -5,8 +5,8 @@
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 50% -10%, rgba(88, 130, 190, .10), transparent 34%),
-    linear-gradient(180deg, #070b12 0%, #080c14 52%, #090d16 100%);
+    radial-gradient(circle at 50% -10%, rgba(48, 110, 190, .045), transparent 34%),
+    linear-gradient(180deg, #000000 0%, #010204 52%, #000000 100%);
 }
 
 .app-shell::before {
@@ -34,11 +34,12 @@
 .topbar,
 .listing-glass,
 .search-glass {
-  background: rgba(10, 15, 24, .82);
-  border-color: rgba(148, 163, 184, .10);
+  background: linear-gradient(145deg, rgba(7,14,29,.96), rgba(8,12,25,.97));
+  border-color: transparent;
   box-shadow:
-    0 18px 55px rgba(0,0,0,.24),
-    inset 0 1px rgba(255,255,255,.035);
+    0 18px 55px rgba(0,0,0,.30),
+    0 0 26px rgba(54,130,255,.06),
+    inset 0 1px rgba(255,255,255,.07);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
@@ -75,11 +76,11 @@
 }
 
 .listing-toolbar {
-  background: rgba(255,255,255,.012);
+  background: linear-gradient(90deg, rgba(72,210,255,.035), transparent 45%, rgba(105,92,255,.045));
 }
 
 .listing-table thead tr {
-  background: rgba(255,255,255,.008);
+  background: rgba(72,210,255,.018);
 }
 
 .listing-table th {
@@ -311,4 +312,47 @@ html[data-theme="light"] .site-footer-email {
   .site-footer {
     padding-bottom: 14px;
   }
+}
+
+
+/* USTETU — Black Void foundation + holographic glass final layer.
+   This file is loaded after globals.css, so these values intentionally
+   establish the final visual foundation for the dark Web3 theme. */
+html[data-theme="dark"] body,
+html[data-theme="dark"] .app-shell {
+  background: #000000 !important;
+}
+
+html[data-theme="dark"] .app-shell::before {
+  opacity: .34;
+  background-image:
+    radial-gradient(circle at 14% 16%, rgba(42,150,220,.075), transparent 28%),
+    radial-gradient(circle at 86% 76%, rgba(105,70,220,.065), transparent 30%),
+    linear-gradient(rgba(148,163,184,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.018) 1px, transparent 1px);
+  background-size: 145% 145%, 145% 145%, 56px 56px, 56px 56px;
+}
+
+html[data-theme="dark"] .app-shell::after {
+  background: linear-gradient(180deg, rgba(255,255,255,.008), transparent 18%, transparent 82%, rgba(255,255,255,.006));
+}
+
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .listing-glass,
+html[data-theme="dark"] .search-glass {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(145deg, rgba(7,14,29,.96), rgba(8,12,25,.98)) padding-box,
+    linear-gradient(115deg, rgba(48,190,255,.34), rgba(105,92,255,.32), rgba(235,86,255,.20), rgba(48,190,255,.26)) border-box;
+  box-shadow:
+    0 18px 55px rgba(0,0,0,.32),
+    0 0 28px rgba(54,130,255,.06),
+    inset 0 1px rgba(255,255,255,.07);
+}
+
+html[data-theme="dark"] .listing-glass {
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.38),
+    0 0 32px rgba(54,130,255,.07),
+    inset 0 1px rgba(255,255,255,.07);
 }
