@@ -617,12 +617,19 @@ export default function SellerDashboard() {
                 </div>
 
                 {isListingOwner && <div className="seller-card seller-section">
-                  <h2>Inventory</h2>
+                  <h2>Inventory Management</h2>
+                  <div className="seller-stats">
+                    <div className="seller-stat"><span>Available to Withdraw</span><strong>{formatUnits(available, tokenDecimals)} {tokenSymbol}</strong></div>
+                    <div className="seller-stat"><span>Locked in Orders</span><strong>{formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</strong></div>
+                  </div>
                   <div className="seller-form">
                     <label>Amount {tokenSymbol}</label>
-                    <input value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal" />
-                    <div className="seller-actions"><button disabled={disabled} onClick={() => void addInventory()}>Add Inventory</button><button disabled={disabled} onClick={() => void withdrawInventory()}>Withdraw Available</button></div>
-                    <div className="seller-note">Wallet balance: {formatUnits(tokenBalance, tokenDecimals)} {tokenSymbol}. Withdraw hanya dari inventory yang tidak locked.</div>
+                    <input value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal" placeholder="Enter amount" />
+                    <div className="seller-actions">
+                      <button disabled={disabled} onClick={() => void addInventory()}>Add Inventory</button>
+                      <button className="primary" disabled={disabled || available === 0n} onClick={() => void withdrawInventory()}>Withdraw Inventory</button>
+                    </div>
+                    <div className="seller-note">Wallet balance: {formatUnits(tokenBalance, tokenDecimals)} {tokenSymbol}. Only inventory that is not locked in an order can be withdrawn.</div>
                   </div>
                 </div>}
               </div>
@@ -642,9 +649,9 @@ export default function SellerDashboard() {
                 <div className="seller-card seller-section seller-earnings">
                   <h2>Seller Earnings</h2>
                   <div className="seller-value">{formatUnits(claimable, paymentDecimals)} USDC</div>
-                  <p className="seller-note">USDC yang sudah menjadi claimable setelah settlement dan siap dicairkan.</p>
+                  <p className="seller-note">Claimable USDC from completed settlements, ready to withdraw.</p>
                   <div className="seller-earnings-meta"><span>Withdrawal destination</span><strong>{short(seller?.withdrawalWallet)}</strong></div>
-                  <button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC"}</button>
+                  <button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC to Wallet"}</button>
                 </div>
 
                 <div className="seller-card seller-section">
