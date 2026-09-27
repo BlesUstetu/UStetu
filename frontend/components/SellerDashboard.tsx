@@ -709,14 +709,6 @@ export default function SellerDashboard() {
             <h2>Create Listing</h2>
             <p className="seller-note">Masukkan token contract yang sudah terdaftar di USTETU Registry. Registration hanya mencatat token untuk marketplace dan bukan merupakan endorsement atau verifikasi terhadap token.</p>
             <div className="seller-form">
-              <div className="seller-auto-id">
-                <div>
-                  <span>Listing ID</span>
-                  <strong>AUTOMATIC</strong>
-                  <small>USTETU akan membuat ID unik secara otomatis dan mengeceknya ke blockchain sebelum transaksi.</small>
-                </div>
-                {generatedListingId !== null && <div className="seller-auto-id-value">Last created: #{generatedListingId.toString()}</div>}
-              </div>
               <div className="seller-form">
                 <label>Token Contract</label>
                 <input value={listingTokenAddress} onChange={e => setListingTokenAddress(e.target.value)} placeholder="0x..." />
