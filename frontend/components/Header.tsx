@@ -38,12 +38,14 @@ export default function Header({ showSellerOrders = false, showHome = true, show
             </svg>
           </a>
         )}
-        <div className="seller-nav-control">
-          <a href="/UStetu/seller/" className="seller-nav-link">
-            <span className="seller-nav-icon" aria-hidden="true">◆</span>
-            <span>Seller Center</span>
-          </a>
-        </div>
+        {showSellerCenter && (
+          <div className="seller-nav-control">
+            <a href="/UStetu/seller/" className="seller-nav-link">
+              <span className="seller-nav-icon" aria-hidden="true">◆</span>
+              <span>Seller Center</span>
+            </a>
+          </div>
+        )}
         {showSellerOrders && (
           <a href="/UStetu/seller/orders/" className="seller-orders-link" aria-label="Orders" title="Orders">
             <svg viewBox="0 0 24 24" aria-hidden="true">
