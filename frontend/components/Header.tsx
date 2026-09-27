@@ -107,23 +107,23 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         .brand-copy{text-align:center}
         .brand-ust{color:#48a8ff}
         .brand-etu{color:#ff4b5f}
-        .home-nav-link,.seller-orders-link,.mobile-brand-home{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:inherit;text-decoration:none;opacity:.82;border:1px solid rgba(148,163,184,.12);border-radius:10px;background:rgba(255,255,255,.025);transition:background .18s ease,border-color .18s ease,opacity .18s ease}
+        .home-nav-link,.seller-orders-link,.mobile-brand-home{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:#dff7ff;text-decoration:none;opacity:.92;border:1px solid transparent;border-radius:10px;background:linear-gradient(145deg,rgba(10,20,38,.92),rgba(8,12,25,.96)) padding-box,linear-gradient(135deg,rgba(72,210,255,.34),rgba(105,92,255,.34),rgba(235,86,255,.22)) border-box;box-shadow:0 0 14px rgba(72,168,255,.06),inset 0 1px 0 rgba(255,255,255,.06);transition:background .18s ease,border-color .18s ease,opacity .18s ease,box-shadow .18s ease,transform .18s ease}
         .mobile-brand-home{display:none}
         .mobile-brand-home svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .home-nav-link svg,.seller-orders-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-        .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:rgba(255,255,255,.08);transform:translateY(-1px)}
+        .home-nav-link:hover,.seller-orders-link:hover{opacity:1;background:linear-gradient(145deg,rgba(12,25,48,.98),rgba(10,14,31,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.72),rgba(105,92,255,.62),rgba(235,86,255,.48)) border-box;box-shadow:0 0 20px rgba(72,168,255,.13),inset 0 1px 0 rgba(255,255,255,.08);transform:translateY(-1px)}
         .seller-nav-control{display:inline-flex;align-items:center}
         
-        .seller-nav-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;font-size:11px;font-weight:700;letter-spacing:.04em;text-decoration:none;color:#f4f8ff;padding:0 11px;border:1px solid rgba(148,163,184,.12);border-radius:11px;background:rgba(10,15,24,.82);transition:transform .18s ease,background .18s ease,border-color .18s ease}
-        .seller-nav-link:hover{background:rgba(255,255,255,.055);transform:translateY(-1px);border-color:rgba(148,163,184,.22)}
-        .seller-nav-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;color:#ff4b5f;font-size:9px;line-height:1;text-shadow:0 0 8px rgba(255,75,95,.55)}
+        .seller-nav-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;font-size:11px;font-weight:700;letter-spacing:.04em;text-decoration:none;color:#f4f8ff;padding:0 11px;border:1px solid transparent;border-radius:11px;background:linear-gradient(145deg,rgba(10,20,38,.92),rgba(8,12,25,.96)) padding-box,linear-gradient(135deg,rgba(72,210,255,.30),rgba(105,92,255,.34),rgba(235,86,255,.20)) border-box;box-shadow:0 0 14px rgba(72,168,255,.05),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease}
+        .seller-nav-link:hover{background:linear-gradient(145deg,rgba(12,25,48,.98),rgba(10,14,31,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.68),rgba(105,92,255,.58),rgba(235,86,255,.42)) border-box;transform:translateY(-1px);box-shadow:0 0 20px rgba(72,168,255,.12),inset 0 1px 0 rgba(255,255,255,.08)}
+        .seller-nav-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;color:#8ff6ff;font-size:9px;line-height:1;text-shadow:0 0 8px rgba(72,210,255,.65),0 0 14px rgba(105,92,255,.28)}
         
         
         .wallet-connect-control{display:inline-flex;align-items:center}
         
-        .ustetu-wallet-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 12px;border:0;border-radius:11px;background:rgba(7,11,20,.96);color:#f4f8ff;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.055em;white-space:nowrap;cursor:pointer;transition:transform .2s ease,background .2s ease,box-shadow .2s ease,color .2s ease}
-        .ustetu-wallet-button:hover{background:rgba(255,255,255,.055);transform:translateY(-1px);border-color:rgba(148,163,184,.22)}
-        .ustetu-wallet-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid rgba(72,168,255,.7);border-radius:50%;color:#48a8ff;font-size:9px;line-height:1}
+        .ustetu-wallet-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 12px;border:1px solid transparent;border-radius:11px;background:linear-gradient(145deg,rgba(10,20,38,.96),rgba(8,12,25,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.72),rgba(105,92,255,.64),rgba(235,86,255,.50)) border-box;color:#f4f8ff;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.055em;white-space:nowrap;cursor:pointer;box-shadow:0 0 18px rgba(72,168,255,.10),inset 0 1px 0 rgba(255,255,255,.08);transition:transform .2s ease,background .2s ease,box-shadow .2s ease,color .2s ease}
+        .ustetu-wallet-button:hover{background:linear-gradient(145deg,rgba(12,25,48,.98),rgba(10,14,31,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.90),rgba(105,92,255,.78),rgba(235,86,255,.64)) border-box;transform:translateY(-1px);box-shadow:0 0 24px rgba(72,168,255,.16),0 0 36px rgba(105,92,255,.08),inset 0 1px 0 rgba(255,255,255,.10)}
+        .ustetu-wallet-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid rgba(72,210,255,.72);border-radius:50%;color:#8ff6ff;font-size:9px;line-height:1;text-shadow:0 0 8px rgba(72,210,255,.60)}
         .ustetu-wallet-connected-icon{color:#45f0a5;border-color:rgba(69,240,165,.7)}
         .ustetu-wallet-label{line-height:1}
         .ustetu-wallet-wrong-network{color:#ffd166}
