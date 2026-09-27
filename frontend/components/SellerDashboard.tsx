@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SellerOrders from "@/components/SellerOrders";
 import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
@@ -99,7 +100,7 @@ export default function SellerDashboard() {
     id: bigint; buyer: string; tokenAmount: bigint; state: number; expiresAt: bigint; tokenSymbol: string; tokenDecimals: number;
   }>>([]);
   const [lockedOrdersLoading, setLockedOrdersLoading] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<"create" | "inventory" | "settings" | "earnings" | "wallet">("create");
+  const [activeMenu, setActiveMenu] = useState<"create" | "inventory" | "settings" | "orders" | "earnings" | "wallet">("create");
 
   const registeredQuery = useReadContract({
     address: USTETU_SELLER_REGISTRY_ADDRESS,
@@ -782,12 +783,16 @@ export default function SellerDashboard() {
             )}
           </div>
           <nav className="seller-menu" aria-label="Seller menu">
-            {([["create","Create Listing"],["inventory","Inventory"],["settings","Listing Settings"],["earnings","Earnings"],["wallet","Withdrawal Wallet"]] as const).map(([key,label]) => (
+            {([["create","Create Listing"],["inventory","Inventory"],["settings","Listing Settings"],["orders","Orders"],["earnings","Earnings"],["wallet","Withdrawal Wallet"]] as const).map(([key,label]) => (
               <button key={key} className={activeMenu === key ? "active" : ""} onClick={() => setActiveMenu(key)}>{label}</button>
             ))}
           </nav>
 
           <div className="seller-page">
+
+          {activeMenu === "orders" && (
+            <SellerOrders />
+          )}
 
           {activeMenu === "create" && (
           <div className="seller-card seller-section">
