@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
@@ -628,8 +628,6 @@ export default function SellerDashboard() {
   };
 
   const disabled = !!busy;
-  const listingTokenId = useMemo(() => listing ? `0x${listing.tokenId.toString(16).padStart(64, "0")}` : "", [listing]);
-
   return (
     <section className="seller-dashboard">
       <style jsx global>{`
