@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
+import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseAbiItem, parseUnits } from "viem";
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
 import {
@@ -20,6 +20,25 @@ import {
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 const LISTING_STATUS = { ACTIVE: 0, PAUSED: 1, CLOSED: 2 } as const;
+const RPC_LOG_CHUNK = 40_000n;
+const ORDER_SCAN_BLOCKS = 100_000n;
+const orderCreatedEvent = parseAbiItem(
+  "event OrderCreated(uint256 indexed orderId,uint256 indexed listingId,address indexed buyer,address seller,address recipient,uint256 tokenAmount,uint256 unitPrice,uint256 grossPayment,address paymentToken)"
+);
+const orderLookupAbi = [{
+  type: "function", name: "getOrder", stateMutability: "view", inputs: [{ name: "orderId", type: "uint256" }],
+  outputs: [{ name: "order", type: "tuple", components: [
+    { name: "listingId", type: "uint256" }, { name: "buyer", type: "address" }, { name: "seller", type: "address" },
+    { name: "recipient", type: "address" }, { name: "token", type: "address" }, { name: "paymentToken", type: "address" },
+    { name: "tokenAmount", type: "uint256" }, { name: "unitPrice", type: "uint256" }, { name: "grossPayment", type: "uint256" },
+    { name: "marketplaceFee", type: "uint256" }, { name: "sellerProceeds", type: "uint256" }, { name: "state", type: "uint8" },
+    { name: "createdAt", type: "uint64" }, { name: "paidAt", type: "uint64" }, { name: "completedAt", type: "uint64" }, { name: "expiresAt", type: "uint64" }
+  ] }]
+}] as const;
+const tokenMetadataLookupAbi = [
+  { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
+] as const;
 const tokenApprovalAbi = [
   { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "value", type: "uint256" }], outputs: [{ name: "", type: "bool" }] },
   { type: "function", name: "allowance", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
@@ -81,6 +100,10 @@ export default function SellerDashboard() {
   const [error, setError] = useState("");
   const [registerGasCost, setRegisterGasCost] = useState<bigint | null>(null);
   const [registerGasLoading, setRegisterGasLoading] = useState(false);
+  const [lockedOrders, setLockedOrders] = useState<Array<{
+    id: bigint; buyer: string; tokenAmount: bigint; state: number; expiresAt: bigint; tokenSymbol: string; tokenDecimals: number;
+  }>>([]);
+  const [lockedOrdersLoading, setLockedOrdersLoading] = useState(false);
 
   const registeredQuery = useReadContract({
     address: USTETU_SELLER_REGISTRY_ADDRESS,
@@ -279,6 +302,52 @@ export default function SellerDashboard() {
   const ensureSeller = async () => {
     await ensureBase();
     if (!registeredQuery.data) throw new Error("Wallet belum terdaftar sebagai seller.");
+  };
+
+  const loadLockedOrders = async () => {
+    try {
+      await ensureSeller();
+      if (!publicClient || !activeListingId || !listing || !isListingOwner) throw new Error("Listing USTETU belum tersedia untuk wallet ini.");
+      setLockedOrdersLoading(true);
+      setError("");
+      const latest = await publicClient.getBlockNumber();
+      const fromBlock = latest > ORDER_SCAN_BLOCKS ? latest - ORDER_SCAN_BLOCKS : 0n;
+      const matches: typeof lockedOrders = [];
+      for (let start = fromBlock; start <= latest; start += RPC_LOG_CHUNK) {
+        const end = start + RPC_LOG_CHUNK - 1n > latest ? latest : start + RPC_LOG_CHUNK - 1n;
+        const logs = await publicClient.getLogs({
+          address: USTETU_ESCROW_ADDRESS,
+          event: orderCreatedEvent,
+          fromBlock: start,
+          toBlock: end,
+        });
+        for (const log of logs) {
+          if (!log.args.orderId || !log.args.listingId || log.args.listingId !== activeListingId) continue;
+          const order = await publicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: orderLookupAbi, functionName: "getOrder", args: [log.args.orderId] });
+          if (order.seller.toLowerCase() !== address!.toLowerCase()) continue;
+          if (order.state === 2 || order.state === 3) continue;
+          let tokenSymbol = "UST";
+          let tokenDecimals = 18;
+          try {
+            const [symbol, decimals] = await Promise.all([
+              publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "symbol" }),
+              publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "decimals" })
+            ]);
+            tokenSymbol = symbol || tokenSymbol;
+            tokenDecimals = Number(decimals);
+          } catch {}
+          matches.push({ id: log.args.orderId, buyer: order.buyer, tokenAmount: order.tokenAmount, state: Number(order.state), expiresAt: order.expiresAt, tokenSymbol, tokenDecimals });
+        }
+      }
+      matches.sort((a, b) => (a.id > b.id ? -1 : a.id < b.id ? 1 : 0));
+      setLockedOrders(matches);
+      if (!matches.length) setMessage("Belum ditemukan order aktif yang mengunci inventory pada listing USTETU dalam 100.000 block terakhir.");
+    } catch (e) {
+      const text = e instanceof Error ? e.message : String(e);
+      setError(text.length > 300 ? `${text.slice(0, 300)}…` : text);
+    } finally {
+      setLockedOrdersLoading(false);
+    }
   };
 
   const transact = async (label: string, fn: () => Promise<`0x${string}`>) => {
@@ -543,7 +612,7 @@ export default function SellerDashboard() {
         .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-auto-id{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border:1px solid rgba(117,247,174,.15);border-radius:12px;background:linear-gradient(145deg,rgba(117,247,174,.055),rgba(255,255,255,.018))}.seller-auto-id span{display:block;font-size:9px;color:#71819b;text-transform:uppercase;letter-spacing:.14em}.seller-auto-id strong{display:block;margin-top:4px;color:#8ff6ba;font-size:12px;letter-spacing:.08em}.seller-auto-id small{display:block;margin-top:4px;color:#65738a;font-size:10px;line-height:1.45}.seller-auto-id-value{font:11px ui-monospace,SFMono-Regular,monospace;color:#cfeedd;white-space:nowrap}.seller-my-listings{display:grid;gap:8px;margin-top:14px}.seller-my-listing{width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;text-align:left;padding:12px 14px;border:1px solid rgba(127,153,196,.12);border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));color:#dce6f5;cursor:pointer;transition:transform 160ms ease,border-color 160ms ease,background 160ms ease}.seller-my-listing:hover{transform:translateY(-1px);border-color:rgba(143,174,232,.30);background:linear-gradient(145deg,rgba(35,51,82,.65),rgba(12,18,30,.92))}.seller-my-listing.selected{border-color:rgba(117,247,174,.30);background:linear-gradient(145deg,rgba(117,247,174,.065),rgba(12,22,25,.94))}.seller-my-listing>div:first-child{display:grid;gap:3px}.seller-my-listing-label{font-size:8px;letter-spacing:.12em;color:#75f7ae}.seller-my-listing strong{font-size:12px}.seller-my-listing small{font-size:10px;color:#6f7e95}.seller-my-listing-value{text-align:right}.seller-my-listing-value strong{display:block;font:12px ui-monospace,SFMono-Regular,monospace}.seller-my-listing-value small{display:block;margin-top:2px}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(127,153,196,.14);background:#070c16;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{border-color:rgba(122,157,229,.42);background:#090f1b;box-shadow:0 0 0 3px rgba(91,120,196,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
         .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
-        .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}
+        .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}.seller-locked-orders{margin-top:13px;padding:12px;border:1px solid rgba(139,163,205,.10);border-radius:12px;background:rgba(255,255,255,.018)}.seller-locked-orders-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.seller-locked-orders-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-locked-order{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:9px}.seller-locked-order strong{font-size:11px}.seller-locked-order small{display:block;color:#68768d;font-size:9px;margin-top:3px}.seller-locked-state{font-size:9px;color:#ffd166;border:1px solid rgba(255,209,102,.22);border-radius:999px;padding:4px 7px}.seller-view-orders{border:1px solid rgba(112,151,226,.24)!important;background:linear-gradient(145deg,#182744,#0a111e)!important;color:#dce7f7;border-radius:9px;padding:7px 9px;font-size:10px;cursor:pointer}.seller-view-orders:disabled{opacity:.45;cursor:not-allowed}
         @media(max-width:850px){.seller-grid,.seller-two{grid-template-columns:1fr}.seller-stats{grid-template-columns:repeat(2,1fr)}.seller-head{align-items:flex-start;flex-direction:column}}
       `}</style>
 
@@ -643,6 +712,11 @@ export default function SellerDashboard() {
                       <button className="primary" disabled={disabled || available === 0n} onClick={() => void withdrawInventory()}>Withdraw USTETU</button>
                     </div>
                     <div className="seller-note">Wallet balance: {formatUnits(tokenBalance, tokenDecimals)} {tokenSymbol}. Available: {formatUnits(available, tokenDecimals)} {tokenSymbol}. Locked: {formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}.</div>
+                    <div className="seller-locked-orders">
+                      <div className="seller-locked-orders-head"><span className="seller-locked-orders-title">Orders locking inventory</span><button className="seller-view-orders" disabled={disabled || lockedOrdersLoading} onClick={() => void loadLockedOrders()}>{lockedOrdersLoading ? "Checking…" : "View Locked Orders"}</button></div>
+                      {lockedOrders.map((order) => <div className="seller-locked-order" key={order.id.toString()}><div><strong>Order #{order.id.toString()}</strong><small>Buyer {short(order.buyer)}</small></div><div><strong>{formatUnits(order.tokenAmount, order.tokenDecimals)} {order.tokenSymbol}</strong><small>{order.expiresAt ? `Expires ${new Date(Number(order.expiresAt) * 1000).toLocaleString("id-ID")}` : "No expiry shown"}</small></div><span className="seller-locked-state">{order.state === 0 ? "PAYMENT PENDING" : "PAID"}</span></div>)}
+                      {lockedOrders.length === 0 && !lockedOrdersLoading && <div className="seller-note" style={{marginTop:9}}>Klik View Locked Orders untuk mencari order yang sedang mengunci inventory.</div>}
+                    </div>
                   </div>
                 </div>}
               </div>
