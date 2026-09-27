@@ -49,10 +49,10 @@ export default function SellerDashboard() {
   const [listingIdInput, setListingIdInput] = useState("");
   const [activeListingId, setActiveListingId] = useState<bigint | null>(null);
   const [listingTokenAddress, setListingTokenAddress] = useState("");
-  const [listingPrice, setListingPrice] = useState("1");
-  const [listingInventory, setListingInventory] = useState("1");
-  const [listingMin, setListingMin] = useState("1");
-  const [listingMax, setListingMax] = useState("5");
+  const [listingPrice, setListingPrice] = useState("");
+  const [listingInventory, setListingInventory] = useState("");
+  const [listingMin, setListingMin] = useState("");
+  const [listingMax, setListingMax] = useState("");
   const [amount, setAmount] = useState("1");
   const [newPrice, setNewPrice] = useState("");
   const [minOrder, setMinOrder] = useState("");
