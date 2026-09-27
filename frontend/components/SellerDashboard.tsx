@@ -354,6 +354,7 @@ export default function SellerDashboard() {
     void tokenBalanceQuery.refetch();
     void tokenAllowanceQuery.refetch();
     void pendingWalletQuery.refetch();
+    setListingScanNonce((value) => value + 1);
   };
 
   const ensureBase = async () => {
