@@ -99,7 +99,7 @@ export default function SellerDashboard() {
     id: bigint; buyer: string; tokenAmount: bigint; state: number; expiresAt: bigint; tokenSymbol: string; tokenDecimals: number;
   }>>([]);
   const [lockedOrdersLoading, setLockedOrdersLoading] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<"create" | "inventory" | "settings" | "earnings" | "wallet">("inventory");
+  const [activeMenu, setActiveMenu] = useState<"create" | "inventory" | "settings" | "earnings" | "wallet">("create");
 
   const registeredQuery = useReadContract({
     address: USTETU_SELLER_REGISTRY_ADDRESS,
