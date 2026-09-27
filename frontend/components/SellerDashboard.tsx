@@ -634,7 +634,7 @@ export default function SellerDashboard() {
         .seller-dashboard{max-width:1180px;margin:0 auto;padding:34px 22px 70px;color:#f4f7ff}
         .seller-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:26px}.seller-eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#8fa5c4;opacity:.9}.seller-head h1{margin:7px 0 6px;font-size:36px;line-height:1.05;letter-spacing:-.035em;font-weight:760;background:linear-gradient(135deg,#fff 20%,#cddcff 55%,#91a9ff);-webkit-background-clip:text;background-clip:text;color:transparent}.seller-head p{margin:0;color:#8290a7;font-size:13px}.seller-wallet{font-family:ui-monospace,SFMono-Regular,monospace;font-size:10px;color:#71809a;padding:7px 10px;border:1px solid rgba(132,160,205,.14);border-radius:9px;background:#0b1120}
 
-        .seller-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:12px}.seller-grid .seller-card{padding:12px 14px;border-radius:14px}.seller-grid .seller-card label{font-size:8px;letter-spacing:.14em}.seller-grid .seller-value{font-size:18px;margin-top:5px}.seller-grid .seller-sub{font-size:9px;margin-top:3px}
+        .seller-overview-shell{position:relative;overflow:hidden;border:1px solid rgba(128,157,205,.16);background:radial-gradient(circle at 85% 0%,rgba(91,107,255,.08),transparent 34%),linear-gradient(145deg,#0d1424 0%,#090e1a 58%,#080c16 100%);border-radius:18px;padding:10px 14px 14px;margin-bottom:12px;box-shadow:0 18px 45px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.045)}.seller-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0 0 10px;border-bottom:1px solid rgba(127,153,196,.10)}.seller-summary-item{min-width:0;padding:8px 10px}.seller-summary-item label{display:block;font-size:7px;text-transform:uppercase;letter-spacing:.14em;color:#7888a2}.seller-summary-item .seller-value{font-size:17px;margin-top:4px}.seller-summary-item .seller-sub{font-size:8px;margin-top:2px}.seller-overview{padding:10px 2px 0}.seller-overview-head{display:flex;justify-content:space-between;align-items:center;gap:14px}.seller-overview-head h2{margin:0;font-size:14px}.seller-overview-head>div>span{display:block;margin-top:3px;color:#68768d;font-size:8px}.seller-overview-listing{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.seller-overview-item{padding:9px 10px;border:1px solid rgba(127,153,196,.11);border-radius:10px;background:rgba(255,255,255,.018)}.seller-overview-item span{display:block;font-size:7px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:3px;font-size:11px}.seller-overview-item small{display:block;margin-top:2px;color:#68768d;font-size:7px}
         .seller-card{position:relative;overflow:hidden;border:1px solid rgba(128,157,205,.16);background:radial-gradient(circle at 85% 0%,rgba(91,107,255,.10),transparent 34%),linear-gradient(145deg,#0d1424 0%,#090e1a 58%,#080c16 100%);border-radius:18px;padding:19px;box-shadow:0 18px 45px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.045);transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease}
         .seller-card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(154,181,255,.42),transparent);opacity:.7;pointer-events:none}
         .seller-card:hover{transform:translateY(-2px);border-color:rgba(132,164,228,.28);box-shadow:0 22px 55px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.06)}
@@ -650,7 +650,7 @@ export default function SellerDashboard() {
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
         .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
         .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-menu{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 14px;padding:6px;border:1px solid rgba(127,153,196,.12);border-radius:14px;background:linear-gradient(145deg,rgba(14,20,34,.92),rgba(7,11,19,.96));box-shadow:0 10px 28px rgba(0,0,0,.14)}.seller-menu button{flex:1 1 110px;min-height:38px;border:1px solid transparent;border-radius:10px;background:transparent;color:#7f8da4;font-size:11px;font-weight:650;cursor:pointer;transition:.18s}.seller-menu button:hover{color:#dce6f5;background:rgba(255,255,255,.035)}.seller-menu button.active{color:#a8ffd0;border-color:rgba(117,247,174,.18);background:linear-gradient(145deg,rgba(117,247,174,.09),rgba(20,35,32,.7));box-shadow:inset 0 1px rgba(255,255,255,.04)}.seller-page{min-height:180px}.seller-overview{padding:15px 17px}.seller-overview-head{display:flex;justify-content:space-between;align-items:center;gap:14px}.seller-overview-head h2{margin:0}.seller-overview-head>div>span{display:block;margin-top:4px;color:#68768d;font-size:9px}.seller-overview-listing{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.seller-overview-item{padding:10px 11px;border:1px solid rgba(127,153,196,.11);border-radius:10px;background:rgba(255,255,255,.018)}.seller-overview-item span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:4px;font-size:12px}.seller-overview-item small{display:block;margin-top:2px;color:#68768d;font-size:8px}.seller-overview-item span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:5px;font-size:13px}.seller-overview-item small{display:block;margin-top:3px;color:#68768d;font-size:9px}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}.seller-locked-orders{margin-top:13px;padding:12px;border:1px solid rgba(139,163,205,.10);border-radius:12px;background:rgba(255,255,255,.018)}.seller-locked-orders-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.seller-locked-orders-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-locked-order{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:9px}.seller-locked-order strong{font-size:11px}.seller-locked-order small{display:block;color:#68768d;font-size:9px;margin-top:3px}.seller-locked-state{font-size:9px;color:#ffd166;border:1px solid rgba(255,209,102,.22);border-radius:999px;padding:4px 7px}.seller-view-orders{border:1px solid rgba(112,151,226,.24)!important;background:linear-gradient(145deg,#182744,#0a111e)!important;color:#dce7f7;border-radius:9px;padding:7px 9px;font-size:10px;cursor:pointer}.seller-view-orders:disabled{opacity:.45;cursor:not-allowed}
-        @media(max-width:850px){.seller-grid,.seller-two{grid-template-columns:1fr}.seller-stats{grid-template-columns:repeat(2,1fr)}.seller-head{align-items:flex-start;flex-direction:column}.seller-overview-listing{grid-template-columns:repeat(2,1fr)}.seller-grid .seller-card{padding:11px 12px}.seller-menu{overflow-x:auto;flex-wrap:nowrap}.seller-menu button{flex:0 0 auto;padding:0 13px}}
+        @media(max-width:850px){.seller-grid,.seller-two{grid-template-columns:1fr}.seller-stats{grid-template-columns:repeat(2,1fr)}.seller-head{align-items:flex-start;flex-direction:column}.seller-overview-listing{grid-template-columns:repeat(2,1fr)}.seller-grid{grid-template-columns:1fr}.seller-summary-item{padding:7px 9px}.seller-menu{overflow-x:auto;flex-wrap:nowrap}.seller-menu button{flex:0 0 auto;padding:0 13px}}
       `}</style>
 
       {!isConnected ? (
@@ -676,10 +676,26 @@ export default function SellerDashboard() {
             <div className="seller-wallet">{short(address)}</div>
           </div>
 
-          <div className="seller-grid">
-            <div className="seller-card"><label>Seller</label><div className="seller-value seller-ok">REGISTERED</div><div className="seller-sub">Permissionless Seller Registry</div></div>
-            <div className="seller-card"><label>Claimable USDC</label><div className="seller-value">{formatUnits(claimable, paymentDecimals)} USDC</div><div className="seller-sub">Available proceeds after settlement</div></div>
-            <div className="seller-card"><label>Network</label><div className="seller-value">BASE</div><div className="seller-sub">Chain ID {BASE_MAINNET_CHAIN_ID}</div></div>
+          <div className="seller-overview-shell">
+            <div className="seller-grid">
+              <div className="seller-summary-item"><label>Seller</label><div className="seller-value seller-ok">REGISTERED</div><div className="seller-sub">Permissionless Seller Registry</div></div>
+              <div className="seller-summary-item"><label>Claimable USDC</label><div className="seller-value">{formatUnits(claimable, paymentDecimals)} USDC</div><div className="seller-sub">Available proceeds after settlement</div></div>
+              <div className="seller-summary-item"><label>Network</label><div className="seller-value">BASE</div><div className="seller-sub">Chain ID {BASE_MAINNET_CHAIN_ID}</div></div>
+            </div>
+            {activeListingId !== null && listing && (
+              <div className="seller-overview">
+                <div className="seller-overview-head">
+                  <div><h2>{tokenSymbol} / PAYMENT</h2><span>Listing #{activeListingId.toString()} · Base Mainnet</span></div>
+                  <span className={`seller-status ${status === LISTING_STATUS.PAUSED ? "paused" : status === LISTING_STATUS.CLOSED ? "closed" : ""}`}>● {statusLabel}</span>
+                </div>
+                <div className="seller-overview-listing">
+                  <div className="seller-overview-item"><span>Price</span><strong>{formatUnits(listing.price, paymentDecimals)}</strong><small>{paymentSymbol} / {tokenSymbol}</small></div>
+                  <div className="seller-overview-item"><span>Deposited</span><strong>{formatUnits(listing.inventoryDeposited, tokenDecimals)}</strong><small>{tokenSymbol}</small></div>
+                  <div className="seller-overview-item"><span>Available</span><strong>{formatUnits(available, tokenDecimals)}</strong><small>Can withdraw</small></div>
+                  <div className="seller-overview-item"><span>Locked</span><strong>{formatUnits(listing.inventoryLocked, tokenDecimals)}</strong><small>Active orders</small></div>
+                </div>
+              </div>
+            )}
           </div>
           <nav className="seller-menu" aria-label="Seller menu">
             {([["create","Create Listing"],["inventory","Inventory"],["settings","Listing Settings"],["earnings","Earnings"],["wallet","Withdrawal Wallet"]] as const).map(([key,label]) => (
@@ -725,19 +741,6 @@ export default function SellerDashboard() {
 
           {activeListingId !== null && listing && (
             <>
-              <div className="seller-card seller-section seller-overview">
-                <div className="seller-overview-head">
-                  <div><h2>{tokenSymbol} / PAYMENT</h2><span>Listing #{activeListingId.toString()} · Base Mainnet</span></div>
-                  <span className={`seller-status ${status === LISTING_STATUS.PAUSED ? "paused" : status === LISTING_STATUS.CLOSED ? "closed" : ""}`}>● {statusLabel}</span>
-                </div>
-                <div className="seller-overview-listing">
-                  <div className="seller-overview-item"><span>Price</span><strong>{formatUnits(listing.price, paymentDecimals)}</strong><small>{paymentSymbol} / {tokenSymbol}</small></div>
-                  <div className="seller-overview-item"><span>Deposited</span><strong>{formatUnits(listing.inventoryDeposited, tokenDecimals)}</strong><small>{tokenSymbol}</small></div>
-                  <div className="seller-overview-item"><span>Available</span><strong>{formatUnits(available, tokenDecimals)}</strong><small>Can withdraw</small></div>
-                  <div className="seller-overview-item"><span>Locked</span><strong>{formatUnits(listing.inventoryLocked, tokenDecimals)}</strong><small>Active orders</small></div>
-                </div>
-              </div>
-
               {activeMenu === "inventory" && (
                 <div className="seller-card seller-section">
                   <div className="seller-listing-top">
