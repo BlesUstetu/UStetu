@@ -791,6 +791,7 @@ export default function SellerDashboard() {
 
           {message && <div className="seller-message">{message}</div>}
           {error && <div className="seller-error">{error}</div>}
+          </div>
         </>
       )}
     </section>
