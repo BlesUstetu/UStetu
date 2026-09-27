@@ -32,6 +32,22 @@ function tokenIdFor(address: `0x${string}`) {
   ));
 }
 
+function generateListingId(): bigint {
+  if (typeof crypto === "undefined" || !crypto.getRandomValues) {
+    throw new Error("Secure random generator tidak tersedia di browser.");
+  }
+
+  const words = new Uint32Array(4);
+  crypto.getRandomValues(words);
+
+  let id = 0n;
+  for (const word of words) {
+    id = (id << 32n) | BigInt(word);
+  }
+
+  return id === 0n ? 1n : id;
+}
+
 export default function SellerDashboard() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -46,8 +62,9 @@ export default function SellerDashboard() {
     query: { enabled: !!address }
   });
 
-  const [listingIdInput, setListingIdInput] = useState("");
+  const [loadListingIdInput, setLoadListingIdInput] = useState("");
   const [activeListingId, setActiveListingId] = useState<bigint | null>(null);
+  const [generatedListingId, setGeneratedListingId] = useState<bigint | null>(null);
   const [listingTokenAddress, setListingTokenAddress] = useState("");
   const [listingPrice, setListingPrice] = useState("");
   const [listingInventory, setListingInventory] = useState("");
@@ -298,7 +315,7 @@ export default function SellerDashboard() {
   const loadListing = async () => {
     setError(""); setMessage("");
     try {
-      const value = BigInt(listingIdInput.trim());
+      const value = BigInt(loadListingIdInput.trim());
       if (value <= 0n) throw new Error("Listing ID harus lebih besar dari 0.");
       setActiveListingId(value);
       setMessage(`Memuat Listing #${value}…`);
@@ -310,9 +327,29 @@ export default function SellerDashboard() {
       await ensureSeller();
       if (!isAddress(listingTokenAddress)) throw new Error("Token contract address tidak valid.");
       const token = listingTokenAddress as `0x${string}`;
-      const id = BigInt(listingIdInput.trim());
-      if (id <= 0n) throw new Error("Listing ID harus lebih besar dari 0.");
       if (!publicClient) throw new Error("RPC client belum tersedia.");
+
+      let id: bigint | null = null;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const candidate = generateListingId();
+        const existing = await publicClient.readContract({
+          address: USTETU_ESCROW_ADDRESS,
+          abi: escrowAbi,
+          functionName: "getListing",
+          args: [candidate]
+        });
+
+        if (!existing.seller || existing.seller.toLowerCase() === ZERO.toLowerCase()) {
+          id = candidate;
+          break;
+        }
+      }
+
+      if (id === null) {
+        throw new Error("Gagal mendapatkan Listing ID unik. Silakan coba lagi.");
+      }
+
+      setGeneratedListingId(id);
       const price = parseUnits(listingPrice || "0", paymentDecimals);
 
       const tokenId = tokenIdFor(token);
@@ -503,7 +540,7 @@ export default function SellerDashboard() {
 
         .seller-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.seller-actions button,.seller-form button,.seller-card>button{border:1px solid rgba(133,160,210,.16);background:linear-gradient(145deg,rgba(28,40,65,.88),rgba(13,19,32,.96));color:#dce6f5;border-radius:10px;padding:10px 13px;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.045),0 6px 18px rgba(0,0,0,.16);transition:transform 160ms ease,border-color 160ms ease,background 160ms ease,box-shadow 160ms ease}.seller-actions button:hover,.seller-form button:hover,.seller-card>button:hover{background:linear-gradient(145deg,rgba(40,57,91,.95),rgba(16,24,40,.98));border-color:rgba(143,174,232,.32);transform:translateY(-1px);box-shadow:inset 0 1px rgba(255,255,255,.06),0 9px 24px rgba(0,0,0,.22)}.seller-actions button:disabled,.seller-form button:disabled,.seller-card>button:disabled{opacity:.42;cursor:not-allowed;transform:none}.danger{border-color:rgba(255,100,100,.28)!important;color:#ff9aa4!important}.primary{border-color:rgba(117,247,174,.28)!important;color:#a8ffd0!important;background:linear-gradient(145deg,rgba(22,70,54,.62),rgba(12,29,27,.96))!important}
 
-        .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(127,153,196,.14);background:#070c16;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{border-color:rgba(122,157,229,.42);background:#090f1b;box-shadow:0 0 0 3px rgba(91,120,196,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
+        .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-auto-id{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border:1px solid rgba(117,247,174,.15);border-radius:12px;background:linear-gradient(145deg,rgba(117,247,174,.055),rgba(255,255,255,.018))}.seller-auto-id span{display:block;font-size:9px;color:#71819b;text-transform:uppercase;letter-spacing:.14em}.seller-auto-id strong{display:block;margin-top:4px;color:#8ff6ba;font-size:12px;letter-spacing:.08em}.seller-auto-id small{display:block;margin-top:4px;color:#65738a;font-size:10px;line-height:1.45}.seller-auto-id-value{font:11px ui-monospace,SFMono-Regular,monospace;color:#cfeedd;white-space:nowrap}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(127,153,196,.14);background:#070c16;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{border-color:rgba(122,157,229,.42);background:#090f1b;box-shadow:0 0 0 3px rgba(91,120,196,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
         .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
         .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}
@@ -543,9 +580,17 @@ export default function SellerDashboard() {
             <h2>Create Listing</h2>
             <p className="seller-note">Masukkan token contract yang sudah terdaftar di USTETU Registry. Registration hanya mencatat token untuk marketplace dan bukan merupakan endorsement atau verifikasi terhadap token.</p>
             <div className="seller-form">
-              <div className="seller-inline">
-                <div><label>Listing ID</label><input value={listingIdInput} onChange={e => setListingIdInput(e.target.value)} placeholder="Contoh: 1001" inputMode="numeric" /></div>
-                <div><label>Token Contract</label><input value={listingTokenAddress} onChange={e => setListingTokenAddress(e.target.value)} placeholder="0x..." /></div>
+              <div className="seller-auto-id">
+                <div>
+                  <span>Listing ID</span>
+                  <strong>AUTOMATIC</strong>
+                  <small>USTETU akan membuat ID unik secara otomatis dan mengeceknya ke blockchain sebelum transaksi.</small>
+                </div>
+                {generatedListingId !== null && <div className="seller-auto-id-value">Last created: #{generatedListingId.toString()}</div>}
+              </div>
+              <div className="seller-form">
+                <label>Token Contract</label>
+                <input value={listingTokenAddress} onChange={e => setListingTokenAddress(e.target.value)} placeholder="0x..." />
               </div>
               <div className="seller-inline">
                 <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" /></div>
@@ -565,10 +610,10 @@ export default function SellerDashboard() {
           <div className="seller-card seller-section">
             <h2>Load Existing Listing</h2>
             <div className="seller-inline">
-              <input value={listingIdInput} onChange={e => setListingIdInput(e.target.value)} placeholder="Listing ID" inputMode="numeric" />
+              <input value={loadListingIdInput} onChange={e => setLoadListingIdInput(e.target.value)} placeholder="Listing ID untuk listing lama" inputMode="numeric" />
               <button disabled={disabled} onClick={() => void loadListing()}>Load Listing</button>
             </div>
-            <p className="seller-note">Dashboard akan membaca token, decimals snapshot, price, inventory, dan status langsung dari Escrow + Registry.</p>
+            <p className="seller-note">ID tidak diperlukan saat membuat listing baru. Field ini hanya untuk membuka kembali listing lama yang belum sedang terbuka di dashboard.</p>
           </div>
 
           {activeListingId !== null && listing && (
