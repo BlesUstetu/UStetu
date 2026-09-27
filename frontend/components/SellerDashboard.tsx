@@ -13,12 +13,15 @@ import {
   erc20MetadataAbi,
   USTETU_ESCROW_ADDRESS,
   USTETU_REGISTRY_ADDRESS,
-  USTETU_SELLER_REGISTRY_ADDRESS
+  USTETU_SELLER_REGISTRY_ADDRESS,
+  USTETU_BOOTSTRAP_LISTING_ID,
+  USTETU_BOOTSTRAP_SELLER
 } from "@/lib/contracts";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 const LISTING_STATUS = { ACTIVE: 0, PAUSED: 1, CLOSED: 2 } as const;
-const LISTING_SCAN_CHUNK = 50_000n;
+const LISTING_SCAN_WINDOW = 100_000n;
+const LISTING_SCAN_CHUNK = 5_000n;
 const inventoryDepositedEvent = parseAbiItem(
   "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)"
 );
@@ -241,26 +244,31 @@ export default function SellerDashboard() {
 
       try {
         const latest = await basePublicClient.getBlockNumber();
+        const scanFrom = latest > LISTING_SCAN_WINDOW
+          ? latest - LISTING_SCAN_WINDOW
+          : 1n;
         const listingIds = new Set<string>();
 
-        for (let start = 0n; start <= latest; start += LISTING_SCAN_CHUNK) {
+        // Bootstrap listing is known from the verified production deployment.
+        // It avoids requiring archive RPC access for the initial production listing.
+        if (address.toLowerCase() === USTETU_BOOTSTRAP_SELLER.toLowerCase()) {
+          listingIds.add(USTETU_BOOTSTRAP_LISTING_ID.toString());
+        }
+
+        // Public Base RPCs are not guaranteed to expose archive eth_getLogs.
+        // Scan only the recent window in small chunks, then verify ownership
+        // with getListing(). Newly created listings are therefore discovered
+        // without requiring an archive provider or API key.
+        for (let start = scanFrom; start <= latest; start += LISTING_SCAN_CHUNK) {
           if (cancelled) return;
           const end = start + LISTING_SCAN_CHUNK - 1n > latest
             ? latest
             : start + LISTING_SCAN_CHUNK - 1n;
 
-          // viem treats bigint(0) as falsy while building the RPC filter,
-          // which can become fromBlock: null for eth_getLogs on some providers.
-          const scanFromBlock = start === 0n ? 1n : start;
-          // Do not pass args:{ seller } here. InventoryDeposited has three
-          // indexed parameters (listingId, seller, token); filtering only the
-          // middle topic makes some public RPC providers emit null wildcards
-          // and reject the eth_getLogs request. Fetch the event signature only,
-          // then filter seller locally from decoded logs.
           const logs = await basePublicClient.getLogs({
             address: USTETU_ESCROW_ADDRESS,
             event: inventoryDepositedEvent,
-            fromBlock: scanFromBlock,
+            fromBlock: start,
             toBlock: end
           });
 
@@ -314,7 +322,7 @@ export default function SellerDashboard() {
 
         if (!cancelled) {
           setMyListings(discovered);
-          setMyListingsScan(`Blocks 0 → ${latest.toString()}`);
+          setMyListingsScan(`Recent blocks ${scanFrom.toString()} → ${latest.toString()}`);
           setActiveListingId((current) => current ?? (discovered.length > 0 ? discovered[0].id : null));
         }
       } catch (e) {
