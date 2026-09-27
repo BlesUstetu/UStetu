@@ -72,6 +72,7 @@ export default function SellerDashboard() {
   const [myListingsLoading, setMyListingsLoading] = useState(false);
   const [myListingsError, setMyListingsError] = useState("");
   const [myListingsScan, setMyListingsScan] = useState("");
+  const [listingScanNonce, setListingScanNonce] = useState(0);
   const [listingTokenAddress, setListingTokenAddress] = useState("");
   const [listingPrice, setListingPrice] = useState("");
   const [listingInventory, setListingInventory] = useState("");
@@ -294,9 +295,7 @@ export default function SellerDashboard() {
         if (!cancelled) {
           setMyListings(discovered);
           setMyListingsScan(`Blocks 0 → ${latest.toString()}`);
-          if (activeListingId === null && discovered.length > 0) {
-            setActiveListingId(discovered[0].id);
-          }
+          setActiveListingId((current) => current ?? (discovered.length > 0 ? discovered[0].id : null));
         }
       } catch (e) {
         if (!cancelled) {
@@ -310,7 +309,7 @@ export default function SellerDashboard() {
 
     void loadMyListings();
     return () => { cancelled = true; };
-  }, [address, basePublicClient, activeListingId]);
+  }, [address, basePublicClient, listingScanNonce]);
 
   useEffect(() => {
     let cancelled = false;
@@ -705,6 +704,7 @@ export default function SellerDashboard() {
                 setMyListings([]);
                 setMyListingsScan("");
                 setMessage("Memuat My Listings…");
+                setListingScanNonce((value) => value + 1);
               }}>{myListingsLoading ? "Scanning…" : "Refresh"}</button>
             </div>
 
@@ -714,7 +714,6 @@ export default function SellerDashboard() {
 
             {myListings.length > 0 && <div className="seller-my-listings">
               {myListings.map((item) => {
-                const availableAmount = item.inventoryDeposited - item.inventoryLocked;
                 const statusText = item.status === LISTING_STATUS.ACTIVE ? "ACTIVE" : item.status === LISTING_STATUS.PAUSED ? "PAUSED" : "CLOSED";
                 const selected = activeListingId === item.id;
                 return (
@@ -729,8 +728,8 @@ export default function SellerDashboard() {
                       <small>{item.price === 0n ? "—" : formatUnits(item.price, paymentDecimals)} {paymentSymbol} / token</small>
                     </div>
                     <div className="seller-my-listing-value">
-                      <strong>{formatUnits(availableAmount, 18)}</strong>
-                      <small>available</small>
+                      <strong>Open</strong>
+                      <small>Manage listing</small>
                     </div>
                   </button>
                 );
