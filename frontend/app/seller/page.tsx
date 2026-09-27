@@ -7,7 +7,7 @@ import ExpireOrderPanel from "@/components/ExpireOrderPanel";
 export default function SellerPage() {
   return (
     <main className="app-shell">
-      <Header showSellerOrders />
+      <Header showSellerOrders showSellerCenter={false} />
       <div className="ambient-glow ambient-glow-one" aria-hidden="true" />
       <div className="ambient-glow ambient-glow-two" aria-hidden="true" />
       <SellerDashboard />
