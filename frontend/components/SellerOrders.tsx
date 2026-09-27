@@ -1,22 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatUnits, parseAbiItem } from "viem";
+import { formatUnits } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
 import { USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 
 const USDC_DECIMALS = 6;
-const ORDER_SCAN_BLOCKS = 100_000n;
-const RPC_LOG_CHUNK = 40_000n;
+const MAX_ORDER_ID_SCAN = 1000;
+const ORDER_BATCH_SIZE = 50;
 
 const tokenMetadataAbi = [
   { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
   { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
 ] as const;
-
-const orderCreatedEvent = parseAbiItem(
-  "event OrderCreated(uint256 indexed orderId,uint256 indexed listingId,address indexed buyer,address seller,address recipient,uint256 tokenAmount,uint256 unitPrice,uint256 grossPayment,address paymentToken)"
-);
 
 const short = (v?: string) => (v ? `${v.slice(0, 6)}…${v.slice(-4)}` : "—");
 
@@ -81,25 +77,67 @@ export default function SellerOrders() {
       setLoading(true);
       setError("");
       try {
-        const latest = await publicClient.getBlockNumber();
-        const fromBlock = latest > ORDER_SCAN_BLOCKS ? latest - ORDER_SCAN_BLOCKS : 0n;
-        const allLogs = [] as Awaited<ReturnType<typeof publicClient.getLogs<typeof orderCreatedEvent>>>;
+        const sellerOrders: SellerOrder[] = [];
 
-        // Base Mainnet RPC limits eth_getLogs to the provider range limit.
-        // Keep a lower safety margin and scan the same 100k window in chunks.
-        for (let start = fromBlock; start <= latest; start += RPC_LOG_CHUNK) {
+        // Avoid eth_getLogs: some Base RPC endpoints require an archive token
+        // for historical log scans. Read order state directly in multicall batches.
+        for (let startId = 1; startId <= MAX_ORDER_ID_SCAN; startId += ORDER_BATCH_SIZE) {
           if (cancelled) return;
-          const end = start + RPC_LOG_CHUNK - 1n > latest ? latest : start + RPC_LOG_CHUNK - 1n;
-          const chunkLogs = await publicClient.getLogs({
-            address: USTETU_ESCROW_ADDRESS,
-            event: orderCreatedEvent,
-            fromBlock: start,
-            toBlock: end,
+
+          const ids = Array.from(
+            { length: Math.min(ORDER_BATCH_SIZE, MAX_ORDER_ID_SCAN - startId + 1) },
+            (_, index) => BigInt(startId + index)
+          );
+
+          const results = await publicClient.multicall({
+            contracts: ids.map((orderId) => ({
+              address: USTETU_ESCROW_ADDRESS,
+              abi: orderAbi,
+              functionName: "getOrder" as const,
+              args: [orderId],
+            })),
+            allowFailure: true,
           });
-          allLogs.push(...chunkLogs);
+
+          for (let index = 0; index < results.length; index += 1) {
+            const result = results[index];
+            if (result.status !== "success" || !result.result) continue;
+
+            const order = result.result;
+            if (order.seller.toLowerCase() !== address.toLowerCase() || order.tokenAmount === 0n) continue;
+
+            let tokenSymbol = "TOKEN";
+            let tokenDecimals = 18;
+            try {
+              const [symbol, decimals] = await Promise.all([
+                publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "symbol" }),
+                publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "decimals" }),
+              ]);
+              tokenSymbol = symbol || tokenSymbol;
+              tokenDecimals = Number(decimals);
+            } catch {
+              // Keep a safe fallback for non-standard ERC-20 metadata.
+            }
+
+            sellerOrders.push({
+              id: ids[index],
+              listingId: order.listingId,
+              buyer: order.buyer,
+              tokenAmount: order.tokenAmount,
+              grossPayment: order.grossPayment,
+              sellerProceeds: order.sellerProceeds,
+              marketplaceFee: order.marketplaceFee,
+              state: Number(order.state),
+              createdAt: order.createdAt,
+              paidAt: order.paidAt,
+              completedAt: order.completedAt,
+              expiresAt: order.expiresAt,
+              tokenSymbol,
+              tokenDecimals,
+            });
+          }
         }
 
-        const sellerOrders: SellerOrder[] = [];
         for (const log of allLogs) {
           if (!log.args.orderId) continue;
           const order = await publicClient.readContract({
@@ -145,7 +183,7 @@ export default function SellerOrders() {
         sellerOrders.sort((a, b) => (a.id > b.id ? -1 : a.id < b.id ? 1 : 0));
         if (!cancelled) {
           setOrders(sellerOrders);
-          setLastScan(`Block ${fromBlock.toString()} → ${latest.toString()}`);
+          setLastScan(`Order #1 → #${MAX_ORDER_ID_SCAN}`);
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
