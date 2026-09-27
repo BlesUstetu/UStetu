@@ -252,16 +252,23 @@ export default function SellerDashboard() {
           // viem treats bigint(0) as falsy while building the RPC filter,
           // which can become fromBlock: null for eth_getLogs on some providers.
           const scanFromBlock = start === 0n ? 1n : start;
+          // Do not pass args:{ seller } here. InventoryDeposited has three
+          // indexed parameters (listingId, seller, token); filtering only the
+          // middle topic makes some public RPC providers emit null wildcards
+          // and reject the eth_getLogs request. Fetch the event signature only,
+          // then filter seller locally from decoded logs.
           const logs = await basePublicClient.getLogs({
             address: USTETU_ESCROW_ADDRESS,
             event: inventoryDepositedEvent,
-            args: { seller: address },
             fromBlock: scanFromBlock,
             toBlock: end
           });
 
           for (const log of logs) {
-            if (log.args.listingId !== undefined) {
+            if (
+              log.args.seller?.toLowerCase() === address.toLowerCase() &&
+              log.args.listingId !== undefined
+            ) {
               listingIds.add(log.args.listingId.toString());
             }
           }
