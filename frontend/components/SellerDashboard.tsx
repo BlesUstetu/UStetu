@@ -241,7 +241,7 @@ export default function SellerDashboard() {
       setMinOrder(formatUnits(listing.minOrderAmount, tokenDecimals));
       setMaxOrder(formatUnits(listing.maxOrderAmount, tokenDecimals));
     }
-  }, [seller?.withdrawalWallet, listing, paymentDecimals, tokenDecimals]);
+  }, [listing, paymentDecimals, tokenDecimals]);
 
 
   useEffect(() => {
