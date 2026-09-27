@@ -249,11 +249,14 @@ export default function SellerDashboard() {
             ? latest
             : start + LISTING_SCAN_CHUNK - 1n;
 
+          // viem treats bigint(0) as falsy while building the RPC filter,
+          // which can become fromBlock: null for eth_getLogs on some providers.
+          const scanFromBlock = start === 0n ? 1n : start;
           const logs = await basePublicClient.getLogs({
             address: USTETU_ESCROW_ADDRESS,
             event: inventoryDepositedEvent,
             args: { seller: address },
-            fromBlock: start,
+            fromBlock: scanFromBlock,
             toBlock: end
           });
 
