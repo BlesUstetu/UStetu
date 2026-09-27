@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseAbiItem, parseUnits } from "viem";
+import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
 import {
@@ -20,11 +20,6 @@ import {
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 const LISTING_STATUS = { ACTIVE: 0, PAUSED: 1, CLOSED: 2 } as const;
-const RPC_LOG_CHUNK = 40_000n;
-const ORDER_SCAN_BLOCKS = 100_000n;
-const orderCreatedEvent = parseAbiItem(
-  "event OrderCreated(uint256 indexed orderId,uint256 indexed listingId,address indexed buyer,address seller,address recipient,uint256 tokenAmount,uint256 unitPrice,uint256 grossPayment,address paymentToken)"
-);
 const orderLookupAbi = [{
   type: "function", name: "getOrder", stateMutability: "view", inputs: [{ name: "orderId", type: "uint256" }],
   outputs: [{ name: "order", type: "tuple", components: [
@@ -219,7 +214,6 @@ export default function SellerDashboard() {
   const createTokenSymbol = createTokenSymbolQuery.data ?? "TOKEN";
   const createTokenDecimals = Number(createTokenInfoQuery.data?.decimalsSnapshot ?? createTokenDecimalsQuery.data ?? 18);
   const createTokenMetadataReady = !!createTokenAddress && !!createTokenSymbolQuery.data && createTokenDecimalsQuery.data !== undefined;
-  const tokenMetadataReady = createTokenMetadataReady;
   const available = listing ? listing.inventoryDeposited - listing.inventoryLocked : 0n;
   const claimable = claimableQuery.data ?? 0n;
   const tokenBalance = tokenBalanceQuery.data ?? 0n;
