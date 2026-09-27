@@ -723,7 +723,6 @@ export default function SellerDashboard() {
               {createTokenMetadataReady && <div className="seller-token-info"><span>Token</span><strong>{createTokenSymbol}</strong><span>Decimals</span><strong>{createTokenDecimals}</strong><span className="seller-token-address">{short(listingTokenAddress)}</span>{createTokenRegistered && <span className="seller-token-registered">✓ Registered</span>}</div>}
               {createTokenAddress && !createTokenRegistered && <div className="seller-note">Token address belum cocok dengan token yang terdaftar di USTETU Registry.</div>}
               <div className="seller-actions"><button className="primary" disabled={disabled || chainId !== base.id} onClick={() => void createListing()}>Create Listing</button></div>
-              <p className="seller-note">Token approval diberikan ke Escrow hanya sebesar inventory yang akan didepositkan.</p>
             </div>
           </div>
 
