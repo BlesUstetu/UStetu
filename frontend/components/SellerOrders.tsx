@@ -234,11 +234,6 @@ export default function SellerOrders() {
         @media(max-width:800px){.orders-summary{grid-template-columns:1fr}.orders-head{display:block}.orders-wallet{margin-top:10px}.orders-toolbar{align-items:flex-start}.orders-toolbar-info{flex:1}.orders-toolbar-scan{max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.orders-panel{overflow:auto}.orders-table{min-width:760px}}
       `}</style>
 
-      <div className="orders-head">
-        <div><div className="orders-eyebrow">Seller Center / Orders</div><h1>My Orders</h1><p>Riwayat order yang masuk ke listing milik wallet seller ini.</p></div>
-        <div className="orders-wallet">Seller: {short(address)}</div>
-      </div>
-
       <div className="orders-summary">
         <div className="orders-card"><label>Completed Orders</label><strong>{completed.length}</strong><small>Order selesai</small></div>
         <div className="orders-card"><label>Gross Sales</label><strong>{formatUnits(gross, USDC_DECIMALS)} USDC</strong><small>Total pembayaran order completed</small></div>
