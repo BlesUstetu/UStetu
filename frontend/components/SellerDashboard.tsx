@@ -672,7 +672,7 @@ export default function SellerDashboard() {
       ) : (
         <>
           <div className="seller-head">
-            <div><div className="seller-eyebrow">USTETU Seller Center</div><h1>Seller Dashboard</h1><p>Create dan kelola listing tanpa admin.</p></div>
+            <div><h1>Seller Dashboard</h1></div>
             <div className="seller-wallet">{short(address)}</div>
           </div>
 
