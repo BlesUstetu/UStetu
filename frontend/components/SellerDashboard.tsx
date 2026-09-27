@@ -13,18 +13,11 @@ import {
   erc20MetadataAbi,
   USTETU_ESCROW_ADDRESS,
   USTETU_REGISTRY_ADDRESS,
-  USTETU_SELLER_REGISTRY_ADDRESS,
-  USTETU_BOOTSTRAP_LISTING_ID,
-  USTETU_BOOTSTRAP_SELLER
+  USTETU_SELLER_REGISTRY_ADDRESS
 } from "@/lib/contracts";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 const LISTING_STATUS = { ACTIVE: 0, PAUSED: 1, CLOSED: 2 } as const;
-const LISTING_SCAN_WINDOW = 100_000n;
-const LISTING_SCAN_CHUNK = 5_000n;
-const inventoryDepositedEvent = parseAbiItem(
-  "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)"
-);
 const tokenApprovalAbi = [
   { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "value", type: "uint256" }], outputs: [{ name: "", type: "bool" }] },
   { type: "function", name: "allowance", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
@@ -71,11 +64,6 @@ export default function SellerDashboard() {
 
   const [activeListingId, setActiveListingId] = useState<bigint | null>(null);
   const [generatedListingId, setGeneratedListingId] = useState<bigint | null>(null);
-  const [myListings, setMyListings] = useState<Array<{ id: bigint; seller: string; price: bigint; inventoryDeposited: bigint; inventoryLocked: bigint; minOrderAmount: bigint; maxOrderAmount: bigint; status: number; createdAt: bigint }>>([]);
-  const [myListingsLoading, setMyListingsLoading] = useState(false);
-  const [myListingsError, setMyListingsError] = useState("");
-  const [myListingsScan, setMyListingsScan] = useState("");
-  const [listingScanNonce, setListingScanNonce] = useState(0);
   const [listingTokenAddress, setListingTokenAddress] = useState("");
   const [listingPrice, setListingPrice] = useState("");
   const [listingInventory, setListingInventory] = useState("");
@@ -227,117 +215,6 @@ export default function SellerDashboard() {
     }
   }, [seller?.withdrawalWallet, listing, paymentDecimals, tokenDecimals]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadMyListings = async () => {
-      if (!address || !basePublicClient) {
-        setMyListings([]);
-        setMyListingsError("");
-        setMyListingsScan("");
-        setMyListingsLoading(false);
-        return;
-      }
-
-      setMyListingsLoading(true);
-      setMyListingsError("");
-
-      try {
-        const latest = await basePublicClient.getBlockNumber();
-        const scanFrom = latest > LISTING_SCAN_WINDOW
-          ? latest - LISTING_SCAN_WINDOW
-          : 1n;
-        const listingIds = new Set<string>();
-
-        // Bootstrap listing is known from the verified production deployment.
-        // It avoids requiring archive RPC access for the initial production listing.
-        if (address.toLowerCase() === USTETU_BOOTSTRAP_SELLER.toLowerCase()) {
-          listingIds.add(USTETU_BOOTSTRAP_LISTING_ID.toString());
-        }
-
-        // Public Base RPCs are not guaranteed to expose archive eth_getLogs.
-        // Scan only the recent window in small chunks, then verify ownership
-        // with getListing(). Newly created listings are therefore discovered
-        // without requiring an archive provider or API key.
-        for (let start = scanFrom; start <= latest; start += LISTING_SCAN_CHUNK) {
-          if (cancelled) return;
-          const end = start + LISTING_SCAN_CHUNK - 1n > latest
-            ? latest
-            : start + LISTING_SCAN_CHUNK - 1n;
-
-          const logs = await basePublicClient.getLogs({
-            address: USTETU_ESCROW_ADDRESS,
-            event: inventoryDepositedEvent,
-            fromBlock: start,
-            toBlock: end
-          });
-
-          for (const log of logs) {
-            if (
-              log.args.seller?.toLowerCase() === address.toLowerCase() &&
-              log.args.listingId !== undefined
-            ) {
-              listingIds.add(log.args.listingId.toString());
-            }
-          }
-        }
-
-        const discovered: Array<{
-          id: bigint;
-          seller: string;
-          price: bigint;
-          inventoryDeposited: bigint;
-          inventoryLocked: bigint;
-          minOrderAmount: bigint;
-          maxOrderAmount: bigint;
-          status: number;
-          createdAt: bigint;
-        }> = [];
-        for (const idText of listingIds) {
-          if (cancelled) return;
-          const id = BigInt(idText);
-          const item = await basePublicClient.readContract({
-            address: USTETU_ESCROW_ADDRESS,
-            abi: escrowAbi,
-            functionName: "getListing",
-            args: [id]
-          });
-
-          if (item.seller.toLowerCase() !== address.toLowerCase()) continue;
-
-          discovered.push({
-            id,
-            seller: item.seller,
-            price: item.price,
-            inventoryDeposited: item.inventoryDeposited,
-            inventoryLocked: item.inventoryLocked,
-            minOrderAmount: item.minOrderAmount,
-            maxOrderAmount: item.maxOrderAmount,
-            status: Number(item.status),
-            createdAt: item.createdAt
-          });
-        }
-
-        discovered.sort((a, b) => (a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0));
-
-        if (!cancelled) {
-          setMyListings(discovered);
-          setMyListingsScan(`Recent blocks ${scanFrom.toString()} → ${latest.toString()}`);
-          setActiveListingId((current) => current ?? (discovered.length > 0 ? discovered[0].id : null));
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setMyListingsError(e instanceof Error ? e.message : String(e));
-          setMyListings([]);
-        }
-      } finally {
-        if (!cancelled) setMyListingsLoading(false);
-      }
-    };
-
-    void loadMyListings();
-    return () => { cancelled = true; };
-  }, [address, basePublicClient, listingScanNonce]);
 
   useEffect(() => {
     let cancelled = false;
@@ -382,7 +259,6 @@ export default function SellerDashboard() {
     void tokenBalanceQuery.refetch();
     void tokenAllowanceQuery.refetch();
     void pendingWalletQuery.refetch();
-    setListingScanNonce((value) => value + 1);
   };
 
   const ensureBase = async () => {
@@ -719,53 +595,6 @@ export default function SellerDashboard() {
               <div className="seller-actions"><button className="primary" disabled={disabled || chainId !== base.id} onClick={() => void createListing()}>Create Listing + Deposit</button></div>
               <p className="seller-note">Token approval diberikan ke Escrow hanya sebesar inventory yang akan didepositkan.</p>
             </div>
-          </div>
-
-          <div className="seller-card seller-section">
-            <div className="seller-listing-top">
-              <div>
-                <h2>My Listings</h2>
-                <p className="seller-note">USTETU otomatis menemukan semua listing milik wallet ini dari aktivitas blockchain. Anda tidak perlu mengetahui atau memasukkan Listing ID.</p>
-              </div>
-              <button disabled={disabled || myListingsLoading} onClick={() => {
-                setMyListingsError("");
-                setActiveListingId(null);
-                setMyListings([]);
-                setMyListingsScan("");
-                setMessage("Memuat My Listings…");
-                setListingScanNonce((value) => value + 1);
-              }}>{myListingsLoading ? "Scanning…" : "Refresh"}</button>
-            </div>
-
-            {myListingsError && <div className="seller-error">{myListingsError}</div>}
-            {myListingsLoading && <div className="seller-note">Scanning blockchain untuk menemukan listing Anda…</div>}
-            {!myListingsLoading && !myListings.length && !myListingsError && <div className="seller-note">Belum ada listing yang ditemukan untuk wallet ini.</div>}
-
-            {myListings.length > 0 && <div className="seller-my-listings">
-              {myListings.map((item) => {
-                const statusText = item.status === LISTING_STATUS.ACTIVE ? "ACTIVE" : item.status === LISTING_STATUS.PAUSED ? "PAUSED" : "CLOSED";
-                const selected = activeListingId === item.id;
-                return (
-                  <button
-                    key={item.id.toString()}
-                    className={`seller-my-listing ${selected ? "selected" : ""}`}
-                    onClick={() => setActiveListingId(item.id)}
-                  >
-                    <div>
-                      <span className="seller-my-listing-label">{statusText}</span>
-                      <strong>Listing</strong>
-                      <small>{item.price === 0n ? "—" : formatUnits(item.price, paymentDecimals)} {paymentSymbol} / token</small>
-                    </div>
-                    <div className="seller-my-listing-value">
-                      <strong>Open</strong>
-                      <small>Manage listing</small>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>}
-
-            {myListingsScan && <p className="seller-note">On-chain discovery: {myListingsScan}</p>}
           </div>
 
           {activeListingId !== null && listing && (
