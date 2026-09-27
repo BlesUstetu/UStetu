@@ -783,7 +783,7 @@ export default function SellerDashboard() {
             )}
           </div>
           <nav className="seller-menu" aria-label="Seller menu">
-            {([["create","Create Listing"],["inventory","Inventory"],["settings","Listing Settings"],["orders","Orders"],["earnings","Earnings"],["wallet","Withdrawal Wallet"]] as const).map(([key,label]) => (
+            {([["create","Create Listing"],["inventory","Inventory"],["settings","Listing Settings"],["orders","Orders"],["earnings","Earnings"],["wallet","Payout Wallet"]] as const).map(([key,label]) => (
               <button key={key} className={activeMenu === key ? "active" : ""} onClick={() => setActiveMenu(key)}>{label}</button>
             ))}
           </nav>
