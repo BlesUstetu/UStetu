@@ -307,41 +307,85 @@ export default function SellerDashboard() {
   const loadLockedOrders = async () => {
     try {
       await ensureSeller();
-      if (!publicClient || !activeListingId || !listing || !isListingOwner) throw new Error("Listing USTETU belum tersedia untuk wallet ini.");
+      if (!publicClient || activeListingId === null || !listing || !isListingOwner) {
+        throw new Error("Listing USTETU belum tersedia untuk wallet ini.");
+      }
+
       setLockedOrdersLoading(true);
       setError("");
-      const latest = await publicClient.getBlockNumber();
-      const fromBlock = latest > ORDER_SCAN_BLOCKS ? latest - ORDER_SCAN_BLOCKS : 0n;
       const matches: typeof lockedOrders = [];
-      for (let start = fromBlock; start <= latest; start += RPC_LOG_CHUNK) {
-        const end = start + RPC_LOG_CHUNK - 1n > latest ? latest : start + RPC_LOG_CHUNK - 1n;
-        const logs = await publicClient.getLogs({
-          address: USTETU_ESCROW_ADDRESS,
-          event: orderCreatedEvent,
-          fromBlock: start,
-          toBlock: end,
+
+      // PublicNode/Base RPC dapat menolak eth_getLogs untuk event filters.
+      // Untuk lookup ini kita baca order state langsung agar tidak bergantung pada archive/log indexing.
+      const MAX_ORDER_ID_SCAN = 200;
+      const BATCH_SIZE = 50;
+
+      for (let startId = 1; startId <= MAX_ORDER_ID_SCAN; startId += BATCH_SIZE) {
+        const ids = Array.from(
+          { length: Math.min(BATCH_SIZE, MAX_ORDER_ID_SCAN - startId + 1) },
+          (_, i) => BigInt(startId + i)
+        );
+
+        const results = await publicClient.multicall({
+          contracts: ids.map((orderId) => ({
+            address: USTETU_ESCROW_ADDRESS,
+            abi: orderLookupAbi,
+            functionName: "getOrder" as const,
+            args: [orderId]
+          })),
+          allowFailure: true
         });
-        for (const log of logs) {
-          if (!log.args.orderId || !log.args.listingId || log.args.listingId !== activeListingId) continue;
-          const order = await publicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: orderLookupAbi, functionName: "getOrder", args: [log.args.orderId] });
-          if (order.seller.toLowerCase() !== address!.toLowerCase()) continue;
-          if (order.state === 2 || order.state === 3) continue;
+
+        for (let i = 0; i < results.length; i += 1) {
+          const result = results[i];
+          if (result.status !== "success" || !result.result) continue;
+
+          const order = result.result;
+          if (
+            order.listingId !== activeListingId ||
+            order.seller.toLowerCase() !== address!.toLowerCase() ||
+            order.tokenAmount === 0n ||
+            order.state === 2 ||
+            order.state === 3
+          ) continue;
+
           let tokenSymbol = "UST";
           let tokenDecimals = 18;
           try {
             const [symbol, decimals] = await Promise.all([
-              publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "symbol" }),
-              publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "decimals" })
+              publicClient.readContract({
+                address: order.token,
+                abi: tokenMetadataLookupAbi,
+                functionName: "symbol"
+              }),
+              publicClient.readContract({
+                address: order.token,
+                abi: tokenMetadataLookupAbi,
+                functionName: "decimals"
+              })
             ]);
             tokenSymbol = symbol || tokenSymbol;
             tokenDecimals = Number(decimals);
           } catch {}
-          matches.push({ id: log.args.orderId, buyer: order.buyer, tokenAmount: order.tokenAmount, state: Number(order.state), expiresAt: order.expiresAt, tokenSymbol, tokenDecimals });
+
+          matches.push({
+            id: ids[i],
+            buyer: order.buyer,
+            tokenAmount: order.tokenAmount,
+            state: Number(order.state),
+            expiresAt: order.expiresAt,
+            tokenSymbol,
+            tokenDecimals
+          });
         }
       }
+
       matches.sort((a, b) => (a.id > b.id ? -1 : a.id < b.id ? 1 : 0));
       setLockedOrders(matches);
-      if (!matches.length) setMessage("Belum ditemukan order aktif yang mengunci inventory pada listing USTETU dalam 100.000 block terakhir.");
+
+      if (!matches.length) {
+        setMessage("Tidak ditemukan order aktif untuk listing USTETU pada 200 Order ID pertama.");
+      }
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
       setError(text.length > 300 ? `${text.slice(0, 300)}…` : text);
