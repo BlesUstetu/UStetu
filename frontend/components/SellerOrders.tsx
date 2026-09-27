@@ -138,48 +138,6 @@ export default function SellerOrders() {
           }
         }
 
-        for (const log of allLogs) {
-          if (!log.args.orderId) continue;
-          const order = await publicClient.readContract({
-            address: USTETU_ESCROW_ADDRESS,
-            abi: orderAbi,
-            functionName: "getOrder",
-            args: [log.args.orderId],
-          });
-
-          if (order.seller.toLowerCase() !== address.toLowerCase()) continue;
-
-          let tokenSymbol = "TOKEN";
-          let tokenDecimals = 18;
-          try {
-            const [symbol, decimals] = await Promise.all([
-              publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "symbol" }),
-              publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "decimals" }),
-            ]);
-            tokenSymbol = symbol || tokenSymbol;
-            tokenDecimals = Number(decimals);
-          } catch {
-            // Keep a safe fallback for non-standard ERC-20 metadata.
-          }
-
-          sellerOrders.push({
-            id: log.args.orderId,
-            listingId: order.listingId,
-            buyer: order.buyer,
-            tokenAmount: order.tokenAmount,
-            grossPayment: order.grossPayment,
-            sellerProceeds: order.sellerProceeds,
-            marketplaceFee: order.marketplaceFee,
-            state: Number(order.state),
-            createdAt: order.createdAt,
-            paidAt: order.paidAt,
-            completedAt: order.completedAt,
-            expiresAt: order.expiresAt,
-            tokenSymbol,
-            tokenDecimals,
-          });
-        }
-
         sellerOrders.sort((a, b) => (a.id > b.id ? -1 : a.id < b.id ? 1 : 0));
         if (!cancelled) {
           setOrders(sellerOrders);
