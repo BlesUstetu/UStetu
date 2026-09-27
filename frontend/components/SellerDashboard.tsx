@@ -13,7 +13,9 @@ import {
   erc20MetadataAbi,
   USTETU_ESCROW_ADDRESS,
   USTETU_REGISTRY_ADDRESS,
-  USTETU_SELLER_REGISTRY_ADDRESS
+  USTETU_SELLER_REGISTRY_ADDRESS,
+  USTETU_BOOTSTRAP_LISTING_ID,
+  USTETU_TOKEN_ID
 } from "@/lib/contracts";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -205,6 +207,14 @@ export default function SellerDashboard() {
   const pendingActive = !!pendingWallet && pendingWallet !== ZERO;
   const canActivate = pendingActive && effectiveAt > 0 && Date.now() >= effectiveAt * 1000;
   const isListingOwner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
+  const isUstetuListing = !!listing && 
+    `0x${listing.tokenId.toString(16).padStart(64, "0")}`.toLowerCase() === USTETU_TOKEN_ID.toLowerCase();
+
+  useEffect(() => {
+    if (registeredQuery.data && activeListingId === null) {
+      setActiveListingId(USTETU_BOOTSTRAP_LISTING_ID);
+    }
+  }, [registeredQuery.data, activeListingId]);
 
   useEffect(() => {
     if (seller?.withdrawalWallet) setWithdrawalWallet(seller.withdrawalWallet);
@@ -612,12 +622,14 @@ export default function SellerDashboard() {
                     <div className="seller-stat"><span>Available</span><strong>{formatUnits(available, tokenDecimals)}</strong></div>
                   </div>
                   <div className="seller-note">Locked: {formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol} · Decimals snapshot: {tokenDecimals} · Token ID: {listingTokenId}</div>
+                  {!isUstetuListing && <div className="seller-error">Listing otomatis yang ditemukan bukan listing USTETU. Tidak ada aksi inventory yang tersedia.</div>}
                   {!isListingOwner && <div className="seller-error">Listing ini bukan milik wallet yang sedang terhubung. Read-only mode.</div>}
                   {isListingOwner && <div className="seller-actions"><button className="primary" disabled={disabled || status !== LISTING_STATUS.ACTIVE} onClick={() => void listingAction("pauseListing")}>Pause</button><button disabled={disabled || status !== LISTING_STATUS.PAUSED} onClick={() => void listingAction("resumeListing")}>Resume</button><button className="danger" disabled={disabled || status === LISTING_STATUS.CLOSED} onClick={() => void listingAction("closeListing")}>Close</button></div>}
                 </div>
 
-                {isListingOwner && <div className="seller-card seller-section">
-                  <h2>Inventory Management</h2>
+                {isListingOwner && isUstetuListing && <div className="seller-card seller-section">
+                  <h2>USTETU Inventory Management</h2>
+                  <p className="seller-note">Listing USTETU dimuat otomatis. Anda tidak perlu memasukkan Listing ID. Hanya inventory yang belum terkunci oleh order yang dapat ditarik.</p>
                   <div className="seller-stats">
                     <div className="seller-stat"><span>Available to Withdraw</span><strong>{formatUnits(available, tokenDecimals)} {tokenSymbol}</strong></div>
                     <div className="seller-stat"><span>Locked in Orders</span><strong>{formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</strong></div>
@@ -626,10 +638,11 @@ export default function SellerDashboard() {
                     <label>Amount {tokenSymbol}</label>
                     <input value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal" placeholder="Enter amount" />
                     <div className="seller-actions">
+                      <button disabled={disabled || available === 0n} onClick={() => setAmount(formatUnits(available, tokenDecimals))}>Use Max</button>
                       <button disabled={disabled} onClick={() => void addInventory()}>Add Inventory</button>
-                      <button className="primary" disabled={disabled || available === 0n} onClick={() => void withdrawInventory()}>Withdraw Inventory</button>
+                      <button className="primary" disabled={disabled || available === 0n} onClick={() => void withdrawInventory()}>Withdraw USTETU</button>
                     </div>
-                    <div className="seller-note">Wallet balance: {formatUnits(tokenBalance, tokenDecimals)} {tokenSymbol}. Only inventory that is not locked in an order can be withdrawn.</div>
+                    <div className="seller-note">Wallet balance: {formatUnits(tokenBalance, tokenDecimals)} {tokenSymbol}. Available: {formatUnits(available, tokenDecimals)} {tokenSymbol}. Locked: {formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}.</div>
                   </div>
                 </div>}
               </div>
