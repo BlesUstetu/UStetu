@@ -1,7 +1,0 @@
-/*
- * Intentionally empty.
- *
- * BuyModalFlow no longer renders expiry/countdown overlays. Order expiry is
- * handled by the protocol/system flow while the normal BuyModal remains the
- * only buyer-facing interface.
- */
