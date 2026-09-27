@@ -236,7 +236,6 @@ export default function SellerDashboard() {
   }, [registeredQuery.data, activeListingId]);
 
   useEffect(() => {
-    if (seller?.withdrawalWallet) setWithdrawalWallet(seller.withdrawalWallet);
     if (listing) {
       setNewPrice(formatUnits(listing.price, paymentDecimals));
       setMinOrder(formatUnits(listing.minOrderAmount, tokenDecimals));
@@ -625,7 +624,7 @@ export default function SellerDashboard() {
   const requestWallet = async () => {
     try {
       await ensureSeller();
-      if (!isAddress(withdrawalWallet)) throw new Error("Withdrawal wallet tidak valid.");
+      if (!isAddress(withdrawalWallet)) throw new Error("Payout wallet tidak valid.");
       await transact("Request wallet change", () => writeContractAsync({
         address: USTETU_SELLER_REGISTRY_ADDRESS,
         abi: sellerRegistryAbi,
@@ -880,7 +879,7 @@ export default function SellerDashboard() {
 
               {activeMenu === "wallet" && (
                 <div className="seller-card seller-section">
-                  <h2>Withdrawal Wallet</h2><div className="seller-address">{seller?.withdrawalWallet ?? "—"}</div>{pendingActive && <p className="seller-note">Pending: {pendingWallet}<br />Effective: {effectiveAt ? new Date(effectiveAt * 1000).toLocaleString("id-ID") : "—"}</p>}<div className="seller-form" style={{marginTop:12}}><label>New withdrawal wallet</label><input value={withdrawalWallet} onChange={e => setWithdrawalWallet(e.target.value)} placeholder="0x..." /><button disabled={disabled} onClick={() => void requestWallet()}>Request Change (24h delay)</button>{canActivate && <button disabled={disabled} onClick={() => void activateWallet()}>Activate New Wallet</button>}</div>
+                  <h2>Payout Wallet</h2><div className="seller-address"><label>Current Payout Wallet</label>{seller?.withdrawalWallet ?? "—"}</div>{pendingActive && <p className="seller-note">Pending Payout Wallet: {pendingWallet}<br />Effective: {effectiveAt ? new Date(effectiveAt * 1000).toLocaleString("id-ID") : "—"}</p>}<div className="seller-form" style={{marginTop:12}}><label>New Payout Wallet</label><input value={withdrawalWallet} onChange={e => setWithdrawalWallet(e.target.value)} placeholder="0x..." autoComplete="off" spellCheck={false} /><button disabled={disabled} onClick={() => void requestWallet()}>Request Change (24h delay)</button>{canActivate && <button disabled={disabled} onClick={() => void activateWallet()}>Activate New Wallet</button>}</div>
                 </div>
               )}
             </>
