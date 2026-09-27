@@ -252,32 +252,55 @@ html[data-theme="light"] .listing-row:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #a8b4c4;
+  color: #dff7ff;
   text-decoration: none;
-  transition: color 160ms ease, transform 160ms ease;
+  transition: color 180ms ease, transform 180ms ease, filter 180ms ease;
 }
 
 .site-footer-email-icon {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: 1px solid rgba(139,183,232,.18);
-  border-radius: 7px;
-  color: #8bb7e8;
-  font-size: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #8ff6ff;
+  font-size: 18px;
   line-height: 1;
-  background: rgba(139,183,232,.045);
+  background:
+    linear-gradient(145deg, rgba(10,20,38,.96), rgba(9,13,27,.98)) padding-box,
+    linear-gradient(135deg, rgba(72,210,255,.82), rgba(105,92,255,.72), rgba(235,86,255,.66)) border-box;
+  box-shadow:
+    0 0 18px rgba(72,168,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  text-shadow:
+    0 0 8px rgba(72,210,255,.65),
+    0 0 16px rgba(105,92,255,.28);
+  overflow: hidden;
+}
+
+.site-footer-email-icon::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, rgba(72,210,255,.10), transparent 45%, rgba(180,92,255,.08));
+  pointer-events: none;
 }
 
 .site-footer-email:hover {
-  color: #dbe7f5;
+  color: #ffffff;
+  transform: translateY(-1px);
+  filter: brightness(1.12);
 }
 
 .site-footer-email:hover .site-footer-email-icon {
-  border-color: rgba(139,183,232,.34);
-  background: rgba(139,183,232,.08);
+  box-shadow:
+    0 0 22px rgba(72,168,255,.20),
+    0 0 34px rgba(105,92,255,.10),
+    inset 0 1px 0 rgba(255,255,255,.10);
 }
 
 html[data-theme="light"] .site-footer-email {
