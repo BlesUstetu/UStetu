@@ -707,7 +707,6 @@ export default function SellerDashboard() {
           {activeMenu === "create" && (
           <div className="seller-card seller-section">
             <h2>Create Listing</h2>
-            <p className="seller-note">Masukkan token contract yang sudah terdaftar di USTETU Registry. Registration hanya mencatat token untuk marketplace dan bukan merupakan endorsement atau verifikasi terhadap token.</p>
             <div className="seller-form">
               <div className="seller-form">
                 <label>Token Contract</label>
