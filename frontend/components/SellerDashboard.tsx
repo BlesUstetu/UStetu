@@ -650,7 +650,74 @@ export default function SellerDashboard() {
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
         .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
         .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-menu{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 14px;padding:6px;border:1px solid rgba(127,153,196,.12);border-radius:14px;background:linear-gradient(145deg,rgba(14,20,34,.92),rgba(7,11,19,.96));box-shadow:0 10px 28px rgba(0,0,0,.14)}.seller-menu button{flex:1 1 110px;min-height:38px;border:1px solid transparent;border-radius:10px;background:transparent;color:#7f8da4;font-size:11px;font-weight:650;cursor:pointer;transition:.18s}.seller-menu button:hover{color:#dce6f5;background:rgba(255,255,255,.035)}.seller-menu button.active{color:#a8ffd0;border-color:rgba(117,247,174,.18);background:linear-gradient(145deg,rgba(117,247,174,.09),rgba(20,35,32,.7));box-shadow:inset 0 1px rgba(255,255,255,.04)}.seller-page{min-height:180px}.seller-overview{padding:15px 17px}.seller-overview-head{display:flex;justify-content:space-between;align-items:center;gap:14px}.seller-overview-head h2{margin:0}.seller-overview-head>div>span{display:block;margin-top:4px;color:#68768d;font-size:9px}.seller-overview-listing{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.seller-overview-item{padding:10px 11px;border:1px solid rgba(127,153,196,.11);border-radius:10px;background:rgba(255,255,255,.018)}.seller-overview-item span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:4px;font-size:12px}.seller-overview-item small{display:block;margin-top:2px;color:#68768d;font-size:8px}.seller-overview-item span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:5px;font-size:13px}.seller-overview-item small{display:block;margin-top:3px;color:#68768d;font-size:9px}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}.seller-locked-orders{margin-top:13px;padding:12px;border:1px solid rgba(139,163,205,.10);border-radius:12px;background:rgba(255,255,255,.018)}.seller-locked-orders-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.seller-locked-orders-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-locked-order{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:9px}.seller-locked-order strong{font-size:11px}.seller-locked-order small{display:block;color:#68768d;font-size:9px;margin-top:3px}.seller-locked-state{font-size:9px;color:#ffd166;border:1px solid rgba(255,209,102,.22);border-radius:999px;padding:4px 7px}.seller-view-orders{border:1px solid rgba(112,151,226,.24)!important;background:linear-gradient(145deg,#182744,#0a111e)!important;color:#dce7f7;border-radius:9px;padding:7px 9px;font-size:10px;cursor:pointer}.seller-view-orders:disabled{opacity:.45;cursor:not-allowed}
-        @media(max-width:850px){.seller-grid,.seller-two{grid-template-columns:1fr}.seller-stats{grid-template-columns:repeat(2,1fr)}.seller-head{align-items:flex-start;flex-direction:column}.seller-overview-listing{grid-template-columns:repeat(2,1fr)}.seller-grid{grid-template-columns:1fr}.seller-summary-item{padding:7px 9px}.seller-menu{overflow-x:auto;flex-wrap:nowrap}.seller-menu button{flex:0 0 auto;padding:0 13px}}
+        @media(max-width:1100px){
+          .seller-dashboard{padding-left:18px;padding-right:18px}
+          .seller-overview-listing{grid-template-columns:repeat(4,minmax(0,1fr))}
+          .seller-menu button{flex:1 1 0}
+        }
+        @media(max-width:850px){
+          .seller-dashboard{padding:24px 14px 50px}
+          .seller-head{margin-bottom:16px}
+          .seller-head h1{font-size:22px;margin:0 0 8px}
+          .seller-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding-bottom:8px}
+          .seller-summary-item{padding:6px 5px}
+          .seller-summary-item label{font-size:5px;letter-spacing:.09em}
+          .seller-summary-item .seller-value{font-size:11px;margin-top:2px}
+          .seller-summary-item .seller-sub{font-size:6px;line-height:1.25}
+          .seller-overview-shell{border-radius:14px;padding:8px 9px 11px}
+          .seller-overview{padding:9px 1px 0}
+          .seller-overview-head{gap:8px}
+          .seller-overview-head h2{font-size:12px}
+          .seller-overview-head>div>span{font-size:7px}
+          .seller-overview-listing{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:7px}
+          .seller-overview-item{padding:8px}
+          .seller-overview-item span{font-size:6px}
+          .seller-overview-item strong{font-size:10px;margin-top:3px}
+          .seller-overview-item small{font-size:6px}
+          .seller-menu{margin:10px 0 10px;padding:4px;gap:4px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+          .seller-menu::-webkit-scrollbar{display:none}
+          .seller-menu button{flex:0 0 auto;min-height:34px;padding:0 11px;font-size:9px;white-space:nowrap}
+          .seller-card{padding:14px;border-radius:14px}
+          .seller-section{margin-bottom:10px}
+          .seller-section h2{font-size:13px;margin-bottom:10px}
+          .seller-listing-top{align-items:flex-start}
+          .seller-token{gap:8px}
+          .seller-token-mark{width:38px;height:38px;border-radius:11px;font-size:16px}
+          .seller-status{font-size:8px;padding:5px 8px;white-space:nowrap}
+          .seller-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:12px}
+          .seller-stat{padding:9px;border-radius:10px}
+          .seller-stat span{font-size:7px}
+          .seller-stat strong{font-size:10px;margin-top:4px;word-break:break-word}
+          .seller-inline{grid-template-columns:1fr;gap:8px}
+          .seller-actions{gap:6px;margin-top:12px}
+          .seller-actions button,.seller-form button,.seller-card>button{padding:9px 10px;font-size:10px}
+          .seller-form{gap:7px}
+          .seller-form input{padding:10px;font-size:12px}
+          .seller-token-info{gap:6px;padding:8px 9px;font-size:8px}
+          .seller-token-info strong{font-size:9px}
+          .seller-locked-orders{padding:9px;margin-top:10px}
+          .seller-locked-orders-head{align-items:flex-start}
+          .seller-locked-orders-title{font-size:8px}
+          .seller-view-orders{font-size:8px;padding:6px 7px}
+          .seller-locked-order{grid-template-columns:1fr auto;gap:7px}
+          .seller-locked-order>div:nth-child(2){grid-column:1}
+          .seller-locked-state{grid-column:2;grid-row:1 / span 2;align-self:center;font-size:7px}
+          .seller-earnings .seller-value{font-size:24px}
+          .seller-earnings-meta{margin:10px 0;padding:8px 9px}
+          .seller-earnings-meta span{font-size:7px}
+          .seller-earnings-meta strong{font-size:9px}
+        }
+        @media(max-width:420px){
+          .seller-dashboard{padding-left:10px;padding-right:10px}
+          .seller-grid{gap:2px}
+          .seller-summary-item{padding:5px 3px}
+          .seller-summary-item .seller-value{font-size:10px}
+          .seller-summary-item .seller-sub{font-size:5px}
+          .seller-menu button{padding:0 10px}
+          .seller-overview-item{padding:7px}
+          .seller-overview-item strong{font-size:9px}
+          .seller-actions button,.seller-form button{font-size:9px}
+        }
       `}</style>
 
       {!isConnected ? (
