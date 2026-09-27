@@ -4,7 +4,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import ThemeLanguageControls from "@/components/ThemeLanguageControls";
 import SystemInfo from "@/components/SystemInfo";
 
-export default function Header({ showSellerOrders = false, showHome = true }: { showSellerOrders?: boolean; showHome?: boolean }) {
+export default function Header({ showSellerOrders = false, showHome = true, showSellerCenter = true }: { showSellerOrders?: boolean; showHome?: boolean; showSellerCenter?: boolean }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
