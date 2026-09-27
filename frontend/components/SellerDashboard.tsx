@@ -6,6 +6,7 @@ import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, u
 import { base } from "wagmi/chains";
 import {
   BASE_MAINNET_CHAIN_ID,
+  BASE_MAINNET_USDC_ADDRESS,
   escrowAbi,
   registryAbi,
   sellerRegistryAbi,
@@ -147,6 +148,7 @@ export default function SellerDashboard() {
   const seller = sellerQuery.data;
   const paymentToken = paymentTokenQuery.data;
   const paymentDecimals = Number(paymentDecimalsQuery.data ?? 6);
+  const paymentSymbol = paymentToken && paymentToken.toLowerCase() === BASE_MAINNET_USDC_ADDRESS.toLowerCase() ? "USDC" : paymentToken ? short(paymentToken) : "PAYMENT";
   const tokenAddress = tokenInfoQuery.data?.contractAddress;
   const tokenDecimals = Number(tokenInfoQuery.data?.decimalsSnapshot ?? tokenDecimalsQuery.data ?? 18);
   const tokenSymbol = tokenMetadataQuery.data ?? "TOKEN";
@@ -477,6 +479,8 @@ export default function SellerDashboard() {
 
         .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-form input{width:100%;box-sizing:border-box;border:1px solid rgba(127,153,196,.14);background:#070c16;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{border-color:rgba(122,157,229,.42);background:#090f1b;box-shadow:0 0 0 3px rgba(91,120,196,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
+        .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
+        .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}
         @media(max-width:850px){.seller-grid,.seller-two{grid-template-columns:1fr}.seller-stats{grid-template-columns:repeat(2,1fr)}.seller-head{align-items:flex-start;flex-direction:column}}
       `}</style>
 
@@ -505,7 +509,7 @@ export default function SellerDashboard() {
 
           <div className="seller-grid">
             <div className="seller-card"><label>Seller</label><div className="seller-value seller-ok">REGISTERED</div><div className="seller-sub">Permissionless Seller Registry</div></div>
-            <div className="seller-card"><label>Claimable</label><div className="seller-value">{formatUnits(claimable, paymentDecimals)} {paymentToken ? short(paymentToken) : "PAYMENT"}</div><div className="seller-sub">Proceeds after settlement</div></div>
+            <div className="seller-card"><label>Claimable USDC</label><div className="seller-value">{formatUnits(claimable, paymentDecimals)} USDC</div><div className="seller-sub">Available proceeds after settlement</div></div>
             <div className="seller-card"><label>Network</label><div className="seller-value">BASE</div><div className="seller-sub">Chain ID {BASE_MAINNET_CHAIN_ID}</div></div>
           </div>
 
@@ -518,7 +522,7 @@ export default function SellerDashboard() {
                 <div><label>Token Contract</label><input value={listingTokenAddress} onChange={e => setListingTokenAddress(e.target.value)} placeholder="0x..." /></div>
               </div>
               <div className="seller-inline">
-                <div><label>Price ({paymentToken ? short(paymentToken) : "PAYMENT"} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" /></div>
+                <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" /></div>
                 <div><label>Inventory</label><input value={listingInventory} onChange={e => setListingInventory(e.target.value)} inputMode="decimal" /></div>
               </div>
               <div className="seller-inline">
@@ -573,7 +577,7 @@ export default function SellerDashboard() {
                 {isListingOwner && <div className="seller-card seller-section">
                   <h2>Listing Settings</h2>
                   <div className="seller-form">
-                    <label>Price ({paymentToken ? short(paymentToken) : "PAYMENT"} / {tokenSymbol})</label>
+                    <label>Price ({paymentSymbol} / {tokenSymbol})</label>
                     <input value={newPrice} onChange={e => setNewPrice(e.target.value)} inputMode="decimal" />
                     <button disabled={disabled} onClick={() => void updatePrice()}>Update Price</button>
                     <div className="seller-inline"><div><label>Min Order</label><input value={minOrder} onChange={e => setMinOrder(e.target.value)} inputMode="decimal" /></div><div><label>Max Order</label><input value={maxOrder} onChange={e => setMaxOrder(e.target.value)} inputMode="decimal" /></div></div>
@@ -581,11 +585,12 @@ export default function SellerDashboard() {
                   </div>
                 </div>}
 
-                <div className="seller-card seller-section">
-                  <h2>Earnings</h2>
-                  <div className="seller-value">{formatUnits(claimable, paymentDecimals)} {paymentToken ? short(paymentToken) : "PAYMENT"}</div>
-                  <p className="seller-note">Claimable proceeds dapat ditarik ke withdrawal wallet seller setelah settlement.</p>
-                  <button disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>Withdraw Proceeds</button>
+                <div className="seller-card seller-section seller-earnings">
+                  <h2>Seller Earnings</h2>
+                  <div className="seller-value">{formatUnits(claimable, paymentDecimals)} USDC</div>
+                  <p className="seller-note">USDC yang sudah menjadi claimable setelah settlement dan siap dicairkan.</p>
+                  <div className="seller-earnings-meta"><span>Withdrawal destination</span><strong>{short(seller?.withdrawalWallet)}</strong></div>
+                  <button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC"}</button>
                 </div>
 
                 <div className="seller-card seller-section">
