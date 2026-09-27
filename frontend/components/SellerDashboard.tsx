@@ -264,7 +264,17 @@ export default function SellerDashboard() {
           }
         }
 
-        const discovered = [];
+        const discovered: Array<{
+          id: bigint;
+          seller: string;
+          price: bigint;
+          inventoryDeposited: bigint;
+          inventoryLocked: bigint;
+          minOrderAmount: bigint;
+          maxOrderAmount: bigint;
+          status: number;
+          createdAt: bigint;
+        }> = [];
         for (const idText of listingIds) {
           if (cancelled) return;
           const id = BigInt(idText);
