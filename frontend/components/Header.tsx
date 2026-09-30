@@ -107,7 +107,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
       )}
 
       <style jsx global>{`
-        .topbar{position:relative !important;background:transparent !important;border:0 !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;padding-top:6px;padding-bottom:6px}
+        .topbar{position:sticky !important;top:0;z-index:100 !important;background:transparent !important;border:0 !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;padding-top:6px;padding-bottom:6px}
         html[data-theme="dark"] .topbar{background:transparent !important;border:0 !important;box-shadow:none !important}
 
         .ustetu-header-brand{display:flex;align-items:center;min-width:0}
