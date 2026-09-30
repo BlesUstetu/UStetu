@@ -1305,3 +1305,39 @@ body {
     margin-top: 10px !important;
   }
 }
+
+
+/* Align mobile drawer close control with the token logo row. */
+@media (max-width: 600px) {
+  .drawer-topline {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    left: 12px !important;
+    z-index: 3 !important;
+    pointer-events: none;
+  }
+
+  .drawer-topline .drawer-close {
+    pointer-events: auto;
+  }
+
+  .drawer-token-head {
+    position: relative !important;
+    margin-top: 10px !important;
+    padding-right: 40px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .drawer-topline {
+    top: 10px !important;
+    right: 10px !important;
+    left: 10px !important;
+  }
+
+  .drawer-token-head {
+    margin-top: 8px !important;
+    padding-right: 38px !important;
+  }
+}
