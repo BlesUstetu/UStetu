@@ -107,7 +107,9 @@ export default function Header({ showSellerOrders = false, showHome = true, show
       )}
 
       <style jsx global>{`
-        .topbar{position:relative !important}
+        .topbar{position:relative !important;background:transparent !important;border:0 !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;padding-top:6px;padding-bottom:6px}
+        html[data-theme="dark"] .topbar{background:transparent !important;border:0 !important;box-shadow:none !important}
+
         .ustetu-header-brand{display:flex;align-items:center;min-width:0}
         .ustetu-header-brand-link{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
         .ustetu-header-brand-link .ustetu-logo{width:27px;height:44px;object-fit:contain;display:block}
