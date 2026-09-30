@@ -351,7 +351,7 @@ export default function HomePage() {
         <>
           <button className="drawer-backdrop" aria-label={t("close")} onClick={() => { setSelectedId(null); setBuyOpen(false); }} />
           <aside className="token-drawer" aria-label="Registered token">
-            <div className="drawer-topline"><span className="eyebrow">{t("registeredToken")}</span><button className="drawer-close" type="button" onClick={() => setSelectedId(null)}>×</button></div>
+            <div className="drawer-topline"><span aria-hidden="true"></span><button className="drawer-close" type="button" onClick={() => setSelectedId(null)}>×</button></div>
             <div className="drawer-token-head"><TokenLogo address={selected.address} chainId={selected.chainId} name={selected.tokenName} symbol={selected.symbol} size={58} /><div><h2>{selected.tokenName}</h2><span>Registered on-chain</span></div></div>
             <div className="detail-grid">
               <div><span>{t("name")}</span><strong>{selected.tokenName}</strong></div><div><span>{t("symbol")}</span><strong>{selected.symbol}</strong></div><div><span>{t("decimals")}</span><strong>{selected.tokenDecimals}</strong></div><div><span>Payment</span><strong>{selected.paymentSymbol} · {selected.paymentDecimals} decimals</strong></div><div><span>{t("networkLabel")}</span><strong>Base Mainnet</strong></div>
