@@ -1341,3 +1341,20 @@ body {
     padding-right: 38px !important;
   }
 }
+
+
+/* Keep the token drawer below the sticky header so its controls are never covered. */
+@media (max-width: 600px) {
+  .token-drawer {
+    top: 68px !important;
+    bottom: 6px !important;
+    z-index: 90 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .token-drawer {
+    top: 64px !important;
+    bottom: 5px !important;
+  }
+}
