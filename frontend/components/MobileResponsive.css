@@ -1358,3 +1358,20 @@ body {
     bottom: 5px !important;
   }
 }
+
+
+@media (max-width: 600px) {
+  .wallet-token-action {
+    grid-column: 1 / -1 !important;
+    padding: 8px 10px !important;
+    background: rgba(7,12,22,.82) !important;
+  }
+
+  .wallet-token-action .secondary-glass {
+    width: 100% !important;
+    min-height: 34px !important;
+    padding: 7px 10px !important;
+    border-radius: 9px !important;
+    font-size: 9px !important;
+  }
+}
