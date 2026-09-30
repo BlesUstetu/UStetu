@@ -309,6 +309,32 @@ export default function HomePage() {
   const hasError = Boolean(apiError);
   const refreshMarketplace = async () => { await loadListings(); };
 
+  const addUstToWallet = async () => {
+    const ethereum = (window as Window & {
+      ethereum?: {
+        request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      };
+    }).ethereum;
+    if (!ethereum?.request) return;
+
+    try {
+      await ethereum.request({
+        method: "wallet_watchAsset",
+        params: [{
+          type: "ERC20",
+          options: {
+            address: USTETU_TOKEN_ADDRESS,
+            symbol: "UST",
+            decimals: 18,
+            image: new URL("/UStetu/ustetu-logo.svg", window.location.origin).toString(),
+          },
+        }],
+      });
+    } catch {
+      // Wallet declined or does not support wallet_watchAsset.
+    }
+  };
+
   return (
     <main className="app-shell">
       <Header showHome={false} />
@@ -355,7 +381,7 @@ export default function HomePage() {
             <div className="drawer-token-head"><TokenLogo address={selected.address} chainId={selected.chainId} name={selected.tokenName} symbol={selected.symbol} size={58} /><div><h2>{selected.tokenName}</h2><span>Registered on-chain</span></div></div>
             <div className="detail-grid">
               <div><span>{t("name")}</span><strong>{selected.tokenName}</strong></div><div><span>{t("symbol")}</span><strong>{selected.symbol}</strong></div><div><span>{t("decimals")}</span><strong>{selected.tokenDecimals}</strong></div><div><span>Payment</span><strong>{selected.paymentSymbol} · {selected.paymentDecimals} decimals</strong></div><div><span>{t("networkLabel")}</span><strong>Base Mainnet</strong></div>
-              <div className="detail-wide"><span>{t("contractAddress")}</span><div className="address-line"><strong className="address-value">{selected.address}</strong><div className="address-tools"><button className="address-icon-button" type="button" onClick={async () => { try { await navigator.clipboard?.writeText(selected.address); setCopiedAddress(true); window.setTimeout(() => setCopiedAddress(false), 1600); } catch {} }} aria-label={copiedAddress ? "Copied" : "Copy address"} title={copiedAddress ? "Copied" : "Copy address"}>{copiedAddress ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" /></svg>}</button><a className="address-icon-button" href={`https://basescan.org/token/${selected.address}`} target="_blank" rel="noreferrer" aria-label="Open BaseScan" title="BaseScan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9M10 19V5M15 19v-8M20 19V3" /><path d="M3 19h18" /></svg></a></div></div></div><div className="detail-wide"><span>{t("status")}</span><strong>● Registered</strong></div>
+              <div className="detail-wide"><span>{t("contractAddress")}</span><div className="address-line"><strong className="address-value">{selected.address}</strong><div className="address-tools"><button className="address-icon-button" type="button" onClick={async () => { try { await navigator.clipboard?.writeText(selected.address); setCopiedAddress(true); window.setTimeout(() => setCopiedAddress(false), 1600); } catch {} }} aria-label={copiedAddress ? "Copied" : "Copy address"} title={copiedAddress ? "Copied" : "Copy address"}>{copiedAddress ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" /></svg>}</button><a className="address-icon-button" href={`https://basescan.org/token/${selected.address}`} target="_blank" rel="noreferrer" aria-label="Open BaseScan" title="BaseScan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9M10 19V5M15 19v-8M20 19V3" /><path d="M3 19h18" /></svg></a></div></div></div><div className="detail-wide wallet-token-action"><button className="secondary-glass" type="button" onClick={addUstToWallet}>Add UST to Wallet</button></div><div className="detail-wide"><span>{t("status")}</span><strong>● Registered</strong></div>
             </div>
             <div className="drawer-listing-card"><div className="drawer-listing-title">Listing #{selected.listingId.toString()}</div><div className="drawer-price"><strong>{selected.price}</strong> <span>{selected.paymentSymbol} / {selected.symbol}</span></div><div className="drawer-available">{t("available")} <strong>{selected.available} {selected.symbol}</strong></div></div>
             <div className="drawer-actions">
