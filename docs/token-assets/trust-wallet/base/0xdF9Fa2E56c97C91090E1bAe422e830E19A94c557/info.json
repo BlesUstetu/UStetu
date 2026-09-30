@@ -1,0 +1,18 @@
+{
+  "name": "USTETU",
+  "website": "https://github.com/BlesUstetu/UStetu",
+  "description": "USTETU (UST) is a fixed-supply ERC-20 token deployed on Base Mainnet and used by the USTETU permissionless P2P marketplace.",
+  "explorer": "https://basescan.org/token/0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557",
+  "type": "ERC20",
+  "symbol": "UST",
+  "decimals": 18,
+  "status": "active",
+  "id": "0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557",
+  "links": [
+    {
+      "name": "github",
+      "url": "https://github.com/BlesUstetu/UStetu"
+    }
+  ],
+  "tags": []
+}
