@@ -1,0 +1,92 @@
+import { createPublicClient, fallback, http, parseAbiItem } from "viem";
+import { base } from "wagmi/chains";
+import { USTETU_ESCROW_ADDRESS, USTETU_BOOTSTRAP_LISTING_ID, USTETU_TOKEN_ADDRESS, USTETU_TOKEN_ID } from "@/lib/contracts";
+
+export type DiscoveredListing = {
+  listing_id: string;
+  seller: `0x${string}`;
+  token_id: string;
+  token_contract: `0x${string}`;
+  payment_token: string;
+  price: string;
+  inventory_deposited: string;
+  inventory_locked: string;
+  min_order_amount: string;
+  max_order_amount: string;
+  status: "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED";
+};
+
+const event = parseAbiItem(
+  "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)"
+);
+
+const client = createPublicClient({
+  chain: base,
+  transport: fallback([
+    http("https://mainnet.base.org", { timeout: 12_000, retryCount: 1 }),
+    http("https://base.publicnode.com", { timeout: 12_000, retryCount: 1 })
+  ])
+});
+
+const DEFAULT_BLOCK_WINDOW = 50_000n;
+const CHUNK_SIZE = 2_000n;
+
+export async function discoverListingsOnChain(): Promise<DiscoveredListing[]> {
+  const latest = await client.getBlockNumber();
+  const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
+  const configuredWindow = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_BLOCKS;
+  const windowSize = configuredWindow && Number.isFinite(Number(configuredWindow)) && Number(configuredWindow) > 0
+    ? BigInt(Math.floor(Number(configuredWindow)))
+    : DEFAULT_BLOCK_WINDOW;
+  const fromBlock = configuredFrom ? BigInt(configuredFrom) : latest > windowSize ? latest - windowSize : 0n;
+
+  const discovered = new Map<string, DiscoveredListing>();
+
+  for (let start = fromBlock; start <= latest; start += CHUNK_SIZE) {
+    const end = start + CHUNK_SIZE - 1n > latest ? latest : start + CHUNK_SIZE - 1n;
+    const logs = await client.getLogs({
+      address: USTETU_ESCROW_ADDRESS,
+      event,
+      fromBlock: start,
+      toBlock: end
+    });
+
+    for (const log of logs) {
+      const listingId = log.args.listingId?.toString();
+      const seller = log.args.seller;
+      const token = log.args.token;
+      if (!listingId || !seller || !token) continue;
+      discovered.set(listingId, {
+        listing_id: listingId,
+        seller,
+        token_id: "",
+        token_contract: token,
+        payment_token: "",
+        price: "",
+        inventory_deposited: "",
+        inventory_locked: "",
+        min_order_amount: "",
+        max_order_amount: "",
+        status: "ACTIVE"
+      });
+    }
+  }
+
+  if (!discovered.has(USTETU_BOOTSTRAP_LISTING_ID.toString())) {
+    discovered.set(USTETU_BOOTSTRAP_LISTING_ID.toString(), {
+      listing_id: USTETU_BOOTSTRAP_LISTING_ID.toString(),
+      seller: "0x52dF1Ff4c9CD41869a691627cb1c903e68a3863b",
+      token_id: USTETU_TOKEN_ID,
+      token_contract: USTETU_TOKEN_ADDRESS,
+      payment_token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      price: "200000",
+      inventory_deposited: "10000000000000000000000000",
+      inventory_locked: "0",
+      min_order_amount: "1000000000000000000",
+      max_order_amount: "10000000000000000000000000",
+      status: "ACTIVE"
+    });
+  }
+
+  return Array.from(discovered.values());
+}
