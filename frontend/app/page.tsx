@@ -202,9 +202,9 @@ export default function HomePage() {
       const registeredTokenAddress = token.contractAddress as `0x${string}`;
       if (!indexedTokenAddress || registeredTokenAddress.toLowerCase() !== indexedTokenAddress.toLowerCase()) return null;
 
-      const indexedTokenId = hexTokenId(item.token_id);
       const chainTokenId = hexTokenId(chainListing.tokenId.toString());
-      if (indexedTokenId.toLowerCase() !== chainTokenId.toLowerCase()) return null;
+      const indexedTokenId = item.token_id ? hexTokenId(item.token_id) : chainTokenId;
+      if (item.token_id && indexedTokenId.toLowerCase() !== chainTokenId.toLowerCase()) return null;
       if (chainListing.seller.toLowerCase() !== item.seller.toLowerCase()) return null;
 
       // The Escrow payment token is authoritative. The indexer is discovery-only.
