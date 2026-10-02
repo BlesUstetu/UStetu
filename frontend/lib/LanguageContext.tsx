@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { translations, type Language } from "@/lib/i18n";
+import { getInitialLanguage, translations, type Language } from "@/lib/i18n";
 
 type LanguageContextValue = {
   language: Language;
@@ -11,27 +11,19 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-/* English is the default/fallback language. Users can switch to any
-   language available in the translation catalog from the language control. */
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
 
   useEffect(() => {
-    setLanguageState("en");
-    window.localStorage.setItem("ustetu-language", "en");
-
-    const onLanguageChange = () => {
-      setLanguageState("en");
-    };
-
+    setLanguageState(getInitialLanguage());
+    const onLanguageChange = () => setLanguageState(getInitialLanguage());
     window.addEventListener("ustetu-language-change", onLanguageChange);
     return () => window.removeEventListener("ustetu-language-change", onLanguageChange);
   }, []);
 
-  const setLanguage = (_next: Language) => {
-    // USTETU frontend is English-only.
-    setLanguageState("en");
-    window.localStorage.setItem("ustetu-language", "en");
+  const setLanguage = (next: Language) => {
+    setLanguageState(next);
+    window.localStorage.setItem("ustetu-language", next);
     window.dispatchEvent(new Event("ustetu-language-change"));
   };
 
