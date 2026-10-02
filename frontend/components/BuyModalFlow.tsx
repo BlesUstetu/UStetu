@@ -126,16 +126,16 @@ export default function BuyModalFlow(props: Props) {
             </div>
             <div className="mt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Success</div>
             <h2 className="mt-1 text-2xl font-semibold">USTETU Purchased</h2>
-            <p className="mt-3 text-sm text-slate-300">Order #{completed.orderId} sudah COMPLETED on-chain.</p>
+            <p className="mt-3 text-sm text-slate-300">Order #{completed.orderId} is COMPLETED on-chain.</p>
           </div>
           <div className="mt-5 rounded-xl border border-emerald-400/20 bg-slate-900/60 p-3 text-xs">
             <div className="flex items-center gap-2 font-semibold text-emerald-300">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/15">✓</span>
-              Transaksi Complete berhasil
+              Complete transaction confirmed
             </div>
-            {completed.txHash ? <a className="mt-2 block break-all text-cyan-300 underline" href={`${BASESCAN_TX}${completed.txHash}`} target="_blank" rel="noreferrer">{completed.txHash.slice(0, 10)}…{completed.txHash.slice(-8)} ↗</a> : <div className="mt-2 text-slate-400">Confirmed. Hash sedang dicari…</div>}
+            {completed.txHash ? <a className="mt-2 block break-all text-cyan-300 underline" href={`${BASESCAN_TX}${completed.txHash}`} target="_blank" rel="noreferrer">{completed.txHash.slice(0, 10)}…{completed.txHash.slice(-8)} ↗</a> : <div className="mt-2 text-slate-400">Confirmed. Searching for transaction hash…</div>}
           </div>
-          <button type="button" className="mt-4 w-full rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-200" onClick={props.onCompleted}>Selesai</button>
+          <button type="button" className="mt-4 w-full rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-200" onClick={props.onCompleted}>Done</button>
         </div>
       </div>,
       document.body
