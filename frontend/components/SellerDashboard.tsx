@@ -430,6 +430,41 @@ export default function SellerDashboard() {
     } catch {}
   };
 
+  const registerListingToken = async () => {
+    try {
+      await ensureSeller();
+      if (!publicClient || !address) throw new Error("RPC client atau wallet belum tersedia.");
+      if (!createTokenAddress) throw new Error("Token contract address tidak valid.");
+
+      const tokenId = tokenIdFor(createTokenAddress);
+      const alreadyRegistered = await publicClient.readContract({
+        address: USTETU_REGISTRY_ADDRESS,
+        abi: registryAbi,
+        functionName: "isRegisteredToken",
+        args: [tokenId]
+      });
+
+      if (alreadyRegistered) {
+        await createTokenInfoQuery.refetch();
+        setMessage("Token sudah terdaftar di USTETU Registry.");
+        return;
+      }
+
+      await transact("Register token", () => writeContractAsync({
+        address: USTETU_REGISTRY_ADDRESS,
+        abi: registryAbi,
+        functionName: "registerToken",
+        args: [BigInt(BASE_MAINNET_CHAIN_ID), createTokenAddress]
+      }));
+
+      await createTokenInfoQuery.refetch();
+      setMessage("Token berhasil terdaftar di USTETU Registry. Create Listing sekarang dapat diproses.");
+    } catch (e) {
+      const text = e instanceof Error ? e.message : String(e);
+      setError(text.length > 500 ? text.slice(0, 500) + "…" : text);
+    }
+  };
+
   const createListing = async () => {
     try {
       await ensureSeller();
@@ -791,7 +826,16 @@ export default function SellerDashboard() {
                 <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(e.target.value)} inputMode="decimal" /></div>
               </div>
               {createTokenMetadataReady && <div className="seller-token-info"><span>Token</span><strong>{createTokenSymbol}</strong><span>Decimals</span><strong>{createTokenDecimals}</strong><span className="seller-token-address">{short(listingTokenAddress)}</span>{createTokenRegistered && <span className="seller-token-registered">✓ Registered</span>}</div>}
-              {createTokenAddress && !createTokenRegistered && <div className="seller-note">Token belum terdaftar di USTETU Registry. Create Listing akan aktif setelah token terdaftar. Tidak ada transaksi approval atau deposit yang akan dikirim sebelum status Registry valid.</div>}
+              {createTokenAddress && !createTokenRegistered && (
+                <div className="seller-note">
+                  Token belum terdaftar di USTETU Registry. Daftarkan token terlebih dahulu. Registration hanya mencatat identitas token on-chain; tidak melakukan approval atau deposit.
+                  <div className="seller-actions" style={{marginTop:10}}>
+                    <button className="primary" disabled={disabled || chainId !== base.id || !createTokenAddress} onClick={() => void registerListingToken()}>
+                      {busy === "Register token" ? "Registering…" : "Register Token"}
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="seller-actions"><button className="primary" disabled={disabled || chainId !== base.id || !createTokenRegistered} onClick={() => void createListing()}>Create Listing</button></div>
             </div>
           </div>
