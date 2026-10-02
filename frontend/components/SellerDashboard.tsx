@@ -685,7 +685,27 @@ export default function SellerDashboard() {
 
         .seller-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.seller-actions button,.seller-form button,.seller-card>button{border:1px solid rgba(133,160,210,.16);background:linear-gradient(145deg,rgba(28,40,65,.88),rgba(13,19,32,.96));color:#dce6f5;border-radius:10px;padding:10px 13px;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.045),0 6px 18px rgba(0,0,0,.16);transition:transform 160ms ease,border-color 160ms ease,background 160ms ease,box-shadow 160ms ease}.seller-actions button:hover,.seller-form button:hover,.seller-card>button:hover{background:linear-gradient(145deg,rgba(40,57,91,.95),rgba(16,24,40,.98));border-color:rgba(143,174,232,.32);transform:translateY(-1px);box-shadow:inset 0 1px rgba(255,255,255,.06),0 9px 24px rgba(0,0,0,.22)}.seller-actions button:disabled,.seller-form button:disabled,.seller-card>button:disabled{opacity:.42;cursor:not-allowed;transform:none}.danger{border-color:rgba(255,100,100,.28)!important;color:#ff9aa4!important}.primary{border-color:rgba(117,247,174,.28)!important;color:#a8ffd0!important;background:linear-gradient(145deg,rgba(22,70,54,.62),rgba(12,29,27,.96))!important}
 
-        .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-auto-id{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border:1px solid rgba(117,247,174,.15);border-radius:12px;background:linear-gradient(145deg,rgba(117,247,174,.055),rgba(255,255,255,.018))}.seller-auto-id span{display:block;font-size:9px;color:#71819b;text-transform:uppercase;letter-spacing:.14em}.seller-auto-id strong{display:block;margin-top:4px;color:#8ff6ba;font-size:12px;letter-spacing:.08em}.seller-auto-id small{display:block;margin-top:4px;color:#65738a;font-size:10px;line-height:1.45}.seller-auto-id-value{font:11px ui-monospace,SFMono-Regular,monospace;color:#cfeedd;white-space:nowrap}.seller-my-listings{display:grid;gap:8px;margin-top:14px}.seller-my-listing{width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;text-align:left;padding:12px 14px;border:1px solid rgba(127,153,196,.12);border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));color:#dce6f5;cursor:pointer;transition:transform 160ms ease,border-color 160ms ease,background 160ms ease}.seller-my-listing:hover{transform:translateY(-1px);border-color:rgba(143,174,232,.30);background:linear-gradient(145deg,rgba(35,51,82,.65),rgba(12,18,30,.92))}.seller-my-listing.selected{border-color:rgba(117,247,174,.30);background:linear-gradient(145deg,rgba(117,247,174,.065),rgba(12,22,25,.94))}.seller-my-listing>div:first-child{display:grid;gap:3px}.seller-my-listing-label{font-size:8px;letter-spacing:.12em;color:#75f7ae}.seller-my-listing strong{font-size:12px}.seller-my-listing small{font-size:10px;color:#6f7e95}.seller-my-listing-value{text-align:right}.seller-my-listing-value strong{display:block;font:12px ui-monospace,SFMono-Regular,monospace}.seller-my-listing-value small{display:block;margin-top:2px}.seller-form input{width:100%;box-sizing:border-box;border:1px solid transparent;background:linear-gradient(145deg,#07101f,#070c16) padding-box,linear-gradient(135deg,rgba(72,210,255,.20),rgba(105,92,255,.18),rgba(235,86,255,.10)) border-box;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18),0 0 12px rgba(72,168,255,.035);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{background:linear-gradient(145deg,#09152a,#080e1a) padding-box,linear-gradient(135deg,rgba(72,210,255,.62),rgba(105,92,255,.52),rgba(235,86,255,.30)) border-box;box-shadow:0 0 0 3px rgba(72,168,255,.07),0 0 18px rgba(72,168,255,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
+        .seller-form{display:grid;gap:9px}.seller-form label{font-size:10px;color:#7888a2;letter-spacing:.08em;text-transform:uppercase}.seller-auto-id{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border:1px solid rgba(117,247,174,.15);border-radius:12px;background:linear-gradient(145deg,rgba(117,247,174,.055),rgba(255,255,255,.018))}.seller-auto-id span{display:block;font-size:9px;color:#71819b;text-transform:uppercase;letter-spacing:.14em}.seller-auto-id strong{display:block;margin-top:4px;color:#8ff6ba;font-size:12px;letter-spacing:.08em}.seller-auto-id small{display:block;margin-top:4px;color:#65738a;font-size:10px;line-height:1.45}.seller-auto-id-value{font:11px ui-monospace,SFMono-Regular,monospace;color:#cfeedd;white-space:nowrap}.seller-my-listings{display:grid;gap:8px;margin-top:14px}.seller-my-listing{width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;text-align:left;padding:12px 14px;border:1px solid rgba(127,153,196,.12);border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));color:#dce6f5;cursor:pointer;transition:transform 160ms ease,border-color 160ms ease,background 160ms ease}.seller-my-listing:hover{transform:translateY(-1px);border-color:rgba(143,174,232,.30);background:linear-gradient(145deg,rgba(35,51,82,.65),rgba(12,18,30,.92))}.seller-my-listing.selected{border-color:rgba(117,247,174,.30);background:linear-gradient(145deg,rgba(117,247,174,.065),rgba(12,22,25,.94))}.seller-my-listing>div:first-child{display:grid;gap:3px}.seller-my-listing-label{font-size:8px;letter-spacing:.12em;color:#75f7ae}.seller-my-listing strong{font-size:12px}.seller-my-listing small{font-size:10px;color:#6f7e95}.seller-my-listing-value{text-align:right}.seller-my-listing-value strong{display:block;font:12px ui-monospace,SFMono-Regular,monospace}.seller-my-listing-value small{display:block;margin-top:2px}.seller-form input{width:100%;box-sizing:border-box;border:1px solid transparent;background:linear-gradient(145deg,#07101f,#070c16) padding-box,linear-gradient(135deg,rgba(72,210,255,.20),rgba(105,92,255,.18),rgba(235,86,255,.10)) border-box;color:#e8eef8;border-radius:10px;padding:11px 12px;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.18),0 0 12px rgba(72,168,255,.035);transition:border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-form input::placeholder{color:#58667c}.seller-form input:focus{background:linear-gradient(145deg,#09152a,#080e1a) padding-box,linear-gradient(135deg,rgba(72,210,255,.62),rgba(105,92,255,.52),rgba(235,86,255,.30)) border-box;box-shadow:0 0 0 3px rgba(72,168,255,.07),0 0 18px rgba(72,168,255,.08),inset 0 2px 8px rgba(0,0,0,.2)}.seller-inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seller-inline>input{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(127,153,196,.16);background:linear-gradient(145deg,#0a101c,#070c15);color:#e8eef8;border-radius:11px;padding:11px 13px;outline:none;font-size:12px;box-shadow:inset 0 2px 10px rgba(0,0,0,.22),0 1px 0 rgba(255,255,255,.025);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease,background 160ms ease}.seller-inline>input::placeholder{color:#56657d}.seller-inline>input:focus{border-color:rgba(111,151,232,.48);background:#090f1b;box-shadow:0 0 0 3px rgba(80,119,202,.08),inset 0 2px 10px rgba(0,0,0,.24);transform:translateY(-1px)}.seller-inline>button{width:100%;min-height:40px;border:1px solid rgba(112,151,226,.24);border-radius:11px;background:linear-gradient(145deg,#182744 0%,#0d1728 55%,#0a111e 100%);color:#dce7f7;font-size:12px;font-weight:650;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.2);transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease,background 160ms ease}.seller-inline>button:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(133,171,239,.42);background:linear-gradient(145deg,#203456 0%,#101d32 55%,#0b1422 100%);box-shadow:inset 0 1px rgba(255,255,255,.07),0 11px 26px rgba(0,0,0,.25)}.seller-inline>button:disabled{opacity:.42;cursor:not-allowed}.seller-note{font-size:11px;line-height:1.55;color:#68768d}        .listing-flow{display:flex;align-items:center;gap:8px;margin:0 0 18px;padding:10px;border:1px solid rgba(95,139,255,.16);border-radius:13px;background:linear-gradient(135deg,rgba(10,18,32,.88),rgba(18,12,31,.7));overflow-x:auto}
+        .listing-flow-step{display:flex;align-items:center;gap:7px;min-width:max-content}
+        .listing-flow-index{width:22px;height:22px;display:grid;place-items:center;border-radius:50%;font-size:9px;font-weight:800;border:1px solid rgba(119,151,210,.25);background:#0b1220;color:#7e8faa}
+        .listing-flow-step strong{font-size:9px;letter-spacing:.04em;color:#8799b5;white-space:nowrap}
+        .listing-flow-step.done .listing-flow-index{border-color:rgba(74,238,168,.5);background:rgba(45,188,129,.12);color:#70f3b7}
+        .listing-flow-step.done strong{color:#a8ffd7}
+        .listing-flow-step.active .listing-flow-index{border-color:rgba(70,207,255,.65);background:linear-gradient(135deg,rgba(32,163,255,.18),rgba(168,79,255,.16));color:#8deaff;box-shadow:0 0 18px rgba(64,181,255,.12)}
+        .listing-flow-step.active strong{color:#dcecff}
+        .listing-flow-line{width:28px;height:1px;background:linear-gradient(90deg,rgba(83,137,224,.35),rgba(173,83,255,.2));flex:0 0 auto}
+        .registry-panel{margin:2px 0 14px;padding:12px 13px;border:1px solid rgba(95,139,255,.2);border-radius:12px;background:linear-gradient(145deg,rgba(8,16,29,.96),rgba(18,12,31,.78));}
+        .registry-panel.registered{border-color:rgba(74,238,168,.25);background:linear-gradient(145deg,rgba(8,25,25,.94),rgba(13,19,31,.82))}
+        .registry-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .registry-title{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8fa5c4}
+        .registry-state{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:800;letter-spacing:.05em;color:#ffcf70}
+        .registry-state.ok{color:#78f5b9}
+        .registry-detail{margin-top:7px;font-size:8px;line-height:1.45;color:#71829d}
+        .registry-actions{display:flex;gap:8px;align-items:center;margin-top:10px}
+        .registry-button{min-height:34px!important;padding:8px 13px!important;border-radius:9px!important}
+        .listing-form-disabled{opacity:.48;pointer-events:none;filter:saturate(.65)}
+        .listing-ready{margin-top:10px;padding:8px 10px;border-radius:9px;border:1px solid rgba(74,238,168,.18);background:rgba(45,188,129,.07);font-size:8px;color:#9cf8cc}
+.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
         .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
         .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-menu{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 14px;padding:6px;border:1px solid transparent;border-radius:14px;background:linear-gradient(145deg,rgba(8,16,31,.94),rgba(7,11,21,.98)) padding-box,linear-gradient(110deg,rgba(72,210,255,.24),rgba(105,92,255,.28),rgba(235,86,255,.16)) border-box;box-shadow:0 10px 32px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.06)}.seller-menu button{flex:1 1 110px;min-height:38px;border:1px solid transparent;border-radius:10px;background:transparent;color:#7f8da4;font-size:11px;font-weight:650;cursor:pointer;transition:.18s}.seller-menu button:hover{color:#dce6f5;background:rgba(255,255,255,.035)}.seller-menu button.active{color:#8ff6ff;border-color:rgba(72,210,255,.34);background:linear-gradient(145deg,rgba(72,210,255,.10),rgba(105,92,255,.08));box-shadow:0 0 18px rgba(72,168,255,.08),inset 0 1px rgba(255,255,255,.07)}.seller-page{min-height:180px}.seller-overview{padding:15px 17px}.seller-overview-head{display:flex;justify-content:space-between;align-items:center;gap:14px}.seller-overview-head h2{margin:0}.seller-overview-head>div>span{display:block;margin-top:4px;color:#68768d;font-size:9px}.seller-overview-listing{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.seller-overview-item{padding:10px 11px;border:1px solid rgba(127,153,196,.11);border-radius:10px;background:rgba(255,255,255,.018)}.seller-overview-item span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:4px;font-size:12px}.seller-overview-item small{display:block;margin-top:2px;color:#68768d;font-size:8px}.seller-overview-item span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:5px;font-size:13px}.seller-overview-item small{display:block;margin-top:3px;color:#68768d;font-size:9px}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}.seller-locked-orders{margin-top:13px;padding:12px;border:1px solid rgba(139,163,205,.10);border-radius:12px;background:rgba(255,255,255,.018)}.seller-locked-orders-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.seller-locked-orders-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-locked-order{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:9px}.seller-locked-order strong{font-size:11px}.seller-locked-order small{display:block;color:#68768d;font-size:9px;margin-top:3px}.seller-locked-state{font-size:9px;color:#ffd166;border:1px solid rgba(255,209,102,.22);border-radius:999px;padding:4px 7px}.seller-view-orders{border:1px solid rgba(112,151,226,.24)!important;background:linear-gradient(145deg,#182744,#0a111e)!important;color:#dce7f7;border-radius:9px;padding:7px 9px;font-size:10px;cursor:pointer}.seller-view-orders:disabled{opacity:.45;cursor:not-allowed}.seller-locked-order-action{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.seller-locked-state.expired{color:#ffcf70;border-color:rgba(255,207,112,.3)}.seller-expire-button{border:1px solid rgba(117,247,174,.24);background:linear-gradient(145deg,rgba(117,247,174,.13),rgba(20,35,32,.82));color:#baffd8;border-radius:8px;padding:6px 9px;font-size:9px;font-weight:700;cursor:pointer}.seller-expire-button:hover{border-color:rgba(117,247,174,.42);background:linear-gradient(145deg,rgba(117,247,174,.18),rgba(20,35,32,.9))}.seller-expire-button:disabled{opacity:.45;cursor:not-allowed}
@@ -817,31 +837,95 @@ export default function SellerDashboard() {
           {activeMenu === "create" && (
           <div className="seller-card seller-section">
             <h2>Create Listing</h2>
+
+            <div className="listing-flow" aria-label="Listing creation progress">
+              <div className={`listing-flow-step ${createTokenAddress ? "done" : "active"}`}>
+                <span className="listing-flow-index">1</span><strong>Token</strong>
+              </div>
+              <span className="listing-flow-line" />
+              <div className={`listing-flow-step ${createTokenRegistered ? "done" : createTokenAddress ? "active" : ""}`}>
+                <span className="listing-flow-index">2</span><strong>Registry</strong>
+              </div>
+              <span className="listing-flow-line" />
+              <div className={`listing-flow-step ${createTokenRegistered ? "active" : ""}`}>
+                <span className="listing-flow-index">3</span><strong>Listing</strong>
+              </div>
+            </div>
+
             <div className="seller-form">
-              <div className="seller-form">
-                <label>Token Contract</label>
-                <input value={listingTokenAddress} onChange={e => setListingTokenAddress(e.target.value)} placeholder="0x..." />
-              </div>
-              <div className="seller-inline">
-                <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" /></div>
-                <div><label>Inventory{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingInventory} onChange={e => setListingInventory(e.target.value)} inputMode="decimal" /></div>
-              </div>
-              <div className="seller-inline">
-                <div><label>Min Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMin} onChange={e => setListingMin(e.target.value)} inputMode="decimal" /></div>
-                <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(e.target.value)} inputMode="decimal" /></div>
-              </div>
-              {createTokenMetadataReady && <div className="seller-token-info"><span>Token</span><strong>{createTokenSymbol}</strong><span>Decimals</span><strong>{createTokenDecimals}</strong><span className="seller-token-address">{short(listingTokenAddress)}</span>{createTokenRegistered && <span className="seller-token-registered">✓ Registered</span>}</div>}
-              {createTokenAddress && !createTokenRegistered && (
-                <div className="seller-note">
-                  Token belum terdaftar di USTETU Registry. Daftarkan token terlebih dahulu. Registration hanya mencatat identitas token on-chain; tidak melakukan approval atau deposit.
-                  <div className="seller-actions" style={{marginTop:10}}>
-                    <button className="primary" disabled={disabled || chainId !== base.id || !createTokenAddress} onClick={() => void registerListingToken()}>
-                      {busy === "Register token" ? "Registering…" : "Register Token"}
-                    </button>
+              <label>Token Contract</label>
+              <input
+                value={listingTokenAddress}
+                onChange={e => setListingTokenAddress(e.target.value)}
+                placeholder="0x... token contract"
+                spellCheck={false}
+                autoComplete="off"
+              />
+
+              {createTokenAddress && (
+                <div className={`registry-panel ${createTokenRegistered ? "registered" : ""}`}>
+                  <div className="registry-row">
+                    <span className="registry-title">USTETU Token Registry</span>
+                    <span className={`registry-state ${createTokenRegistered ? "ok" : ""}`}>
+                      ● {createTokenRegistered ? "REGISTERED" : "NOT REGISTERED"}
+                    </span>
                   </div>
+
+                  {createTokenMetadataReady && (
+                    <div className="registry-detail">
+                      {createTokenSymbol} · {createTokenDecimals} decimals · {short(listingTokenAddress)}
+                    </div>
+                  )}
+
+                  {!createTokenRegistered ? (
+                    <>
+                      <div className="registry-detail">
+                        Token harus terdaftar di USTETU Registry sebelum approval atau deposit. Registrasi hanya mencatat token on-chain.
+                      </div>
+                      <div className="registry-actions">
+                        <button
+                          className="primary registry-button"
+                          disabled={disabled || chainId !== base.id}
+                          onClick={() => void registerListingToken()}
+                        >
+                          {busy === "Register token" ? "Registering…" : "Register Token"}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="registry-detail">
+                      ✓ Token terverifikasi di Registry. Anda dapat melanjutkan ke parameter listing.
+                    </div>
+                  )}
                 </div>
               )}
-              <div className="seller-actions"><button className="primary" disabled={disabled || chainId !== base.id || !createTokenRegistered} onClick={() => void createListing()}>Create Listing</button></div>
+
+              <div className={createTokenRegistered ? "" : "listing-form-disabled"}>
+                <div className="seller-inline">
+                  <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                  <div><label>Inventory{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingInventory} onChange={e => setListingInventory(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                </div>
+                <div className="seller-inline">
+                  <div><label>Min Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMin} onChange={e => setListingMin(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                  <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                </div>
+
+                {createTokenRegistered && <div className="listing-ready">✓ Registry valid — parameter listing siap diisi.</div>}
+
+                <div className="seller-actions">
+                  <button
+                    className="primary"
+                    disabled={disabled || chainId !== base.id || !createTokenRegistered}
+                    onClick={() => void createListing()}
+                  >
+                    {busy === "Create listing" ? "Creating Listing…" : "Create Listing"}
+                  </button>
+                </div>
+              </div>
+
+              {!createTokenAddress && (
+                <div className="seller-note">Masukkan contract address token terlebih dahulu. Setelah token terdeteksi, status Registry akan muncul otomatis.</div>
+              )}
             </div>
           </div>
 
