@@ -307,3 +307,80 @@ html[data-theme="light"] .escrow-progress-bar {
   background:linear-gradient(145deg,#18243a,#0c1320);
   box-shadow:inset 0 1px rgba(255,255,255,.045);
 }
+
+
+
+/* USTETU — Premium Web3 language controls */
+.header-controls{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.language-control{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  width:62px;
+  height:34px;
+  padding:0 7px;
+  border:1px solid rgba(92,202,255,.28);
+  border-radius:11px;
+  background:
+    linear-gradient(145deg,rgba(14,27,48,.96),rgba(7,12,25,.98)) padding-box,
+    linear-gradient(135deg,rgba(72,210,255,.50),rgba(105,92,255,.44),rgba(235,86,255,.26)) border-box;
+  color:#cfe8ff;
+  box-shadow:0 0 16px rgba(72,168,255,.08),inset 0 1px 0 rgba(255,255,255,.07);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.language-control::before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius:10px;
+  background:linear-gradient(120deg,rgba(72,210,255,.08),transparent 42%,rgba(235,86,255,.07));
+  pointer-events:none;
+}
+.language-control:hover{
+  transform:translateY(-1px);
+  border-color:rgba(72,210,255,.48);
+  box-shadow:0 0 22px rgba(72,168,255,.14),0 0 34px rgba(105,92,255,.06),inset 0 1px 0 rgba(255,255,255,.09);
+}
+.language-control>span{
+  position:relative;
+  z-index:1;
+  font-size:12px;
+  color:#8ff6ff;
+  line-height:1;
+  text-shadow:0 0 9px rgba(72,210,255,.55);
+}
+.language-control select{
+  position:relative;
+  z-index:1;
+  width:28px;
+  height:30px;
+  padding:0;
+  border:0;
+  outline:0;
+  appearance:none;
+  -webkit-appearance:none;
+  background:transparent;
+  color:#eef7ff;
+  text-align:center;
+  font:800 10px/30px ui-sans-serif,system-ui,sans-serif;
+  letter-spacing:.04em;
+  cursor:pointer;
+}
+.language-control select option{
+  background:#0a1220;
+  color:#eef7ff;
+}
+.header-controls .icon-button{
+  width:34px;
+  height:34px;
+  border-radius:11px;
+}
+.header-controls .icon-button:hover{
+  transform:translateY(-1px);
+}
