@@ -41,14 +41,14 @@ export default function SystemInfo(){
     {contracts.map(([label,address])=><div className="system-contract-row" key={label}>
       <div className="system-contract-main">
         <span>{label}</span>
-        <strong title={address}>{address}</strong>
+        <strong className="system-contract-hidden">Contract address hidden</strong>
       </div>
       <a href={`https://basescan.org/address/${address}`} target="_blank" rel="noreferrer">BaseScan ↗</a>
     </div>)}
     <div className="system-contract-row">
       <div className="system-contract-main">
         <span>USTETU Token ID</span>
-        <strong title="0xfb1118b849730343ccf4b6788efa54f47c8693399be5911efcd39d65dd290715">0xfb1118b849730343ccf4b6788efa54f47c8693399be5911efcd39d65dd290715</strong>
+        <strong className="system-contract-hidden">Token ID hidden</strong>
       </div>
       <span className="system-contract-network">BASE MAINNET · 8453</span>
     </div>
