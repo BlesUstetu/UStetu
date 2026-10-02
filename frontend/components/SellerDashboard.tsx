@@ -249,39 +249,13 @@ export default function SellerDashboard() {
   }, [listing, paymentDecimals, tokenDecimals]);
 
 
+  // Mainnet registration intentionally does not run an application-side transaction
+  // simulation/estimate. MetaMask remains responsible for the final gas preview.
   useEffect(() => {
-    let cancelled = false;
+    setRegisterGasCost(null);
+    setRegisterGasLoading(false);
+  }, [address, registeredQuery.data]);
 
-    const checkRegisterGas = async () => {
-      if (!address || !basePublicClient || registeredQuery.data) {
-        setRegisterGasCost(null);
-        setRegisterGasLoading(false);
-        return;
-      }
-
-      setRegisterGasLoading(true);
-      try {
-        const gas = await basePublicClient.estimateContractGas({
-          address: USTETU_SELLER_REGISTRY_ADDRESS,
-          abi: sellerRegistryAbi,
-          functionName: "registerSeller",
-          args: [address],
-          account: address
-        });
-        const gasPrice = await basePublicClient.getGasPrice();
-        const estimatedCost = (gas * gasPrice * 120n) / 100n;
-
-        if (!cancelled) setRegisterGasCost(estimatedCost);
-      } catch {
-        if (!cancelled) setRegisterGasCost(null);
-      } finally {
-        if (!cancelled) setRegisterGasLoading(false);
-      }
-    };
-
-    void checkRegisterGas();
-    return () => { cancelled = true; };
-  }, [address, basePublicClient, registeredQuery.data]);
 
   const refresh = () => {
     void listingQuery.refetch();
@@ -419,11 +393,8 @@ export default function SellerDashboard() {
       if (!address) return;
 
       const balance = baseBalanceQuery.data?.value ?? 0n;
-      if (registerGasCost !== null && balance < registerGasCost) {
-        throw new Error("Saldo ETH di Base tidak cukup untuk biaya gas Register Seller.");
-      }
-      if (registerGasCost === null) {
-        throw new Error("Estimasi biaya gas belum tersedia. Tunggu sebentar lalu coba lagi.");
+      if (balance <= 0n) {
+        throw new Error("Saldo Base ETH tidak tersedia untuk membayar gas.");
       }
 
       await transact("Register seller", () => writeContractAsync({
