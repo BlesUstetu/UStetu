@@ -1012,11 +1012,27 @@ export default function SellerDashboard() {
                 </div>
           )}
 
-          {activeMenu === "inventory" && (
-                <div className="seller-card seller-section">
-                  <h2>Listing Settings</h2>
-                  <div className="seller-form"><label>Price ({paymentSymbol} / {tokenSymbol})</label><input value={newPrice} onChange={e => setNewPrice(e.target.value)} inputMode="decimal" /><button disabled={disabled} onClick={() => void updatePrice()}>Update Price</button><div className="seller-inline"><div><label>Min Order</label><input value={minOrder} onChange={e => setMinOrder(e.target.value)} inputMode="decimal" /></div><div><label>Max Order</label><input value={maxOrder} onChange={e => setMaxOrder(e.target.value)} inputMode="decimal" /></div></div><button disabled={disabled} onClick={() => void updateLimits()}>Update Limits</button></div>
+          {activeMenu === "inventory" && !listing && (
+            <div className="seller-card seller-section">
+              <h2>Inventory</h2>
+              <div className="seller-note">Belum ada listing yang tersedia untuk wallet ini. Buat listing terlebih dahulu atau tunggu discovery listing selesai.</div>
+            </div>
+          )}
+
+          {activeMenu === "settings" && isListingOwner && (
+            <div className="seller-card seller-section">
+              <h2>Listing Settings</h2>
+              <div className="seller-form">
+                <label>Price ({paymentSymbol} / {tokenSymbol})</label>
+                <input value={newPrice} onChange={e => setNewPrice(e.target.value)} inputMode="decimal" />
+                <button disabled={disabled} onClick={() => void updatePrice()}>Update Price</button>
+                <div className="seller-inline">
+                  <div><label>Min Order</label><input value={minOrder} onChange={e => setMinOrder(e.target.value)} inputMode="decimal" /></div>
+                  <div><label>Max Order</label><input value={maxOrder} onChange={e => setMaxOrder(e.target.value)} inputMode="decimal" /></div>
                 </div>
+                <button disabled={disabled} onClick={() => void updateLimits()}>Update Limits</button>
+              </div>
+            </div>
           )}
 
           {activeMenu === "settings" && !listing && (
