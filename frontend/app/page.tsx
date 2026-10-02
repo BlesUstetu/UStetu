@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatUnits, getAddress } from "viem";
+import { formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 import Header from "@/components/Header";
 import BuyModalFlow from "@/components/BuyModalFlow";
 import TokenLogo from "@/components/TokenLogo";
 import { useLanguage } from "@/lib/LanguageContext";
+import { discoverListingsOnChain } from "@/lib/listingDiscovery";
 import {
   erc20MetadataAbi,
   escrowAbi,
@@ -101,21 +102,6 @@ export default function HomePage() {
   });
   const paymentTokenAddress = paymentTokenQuery.data;
 
-  const tokenConfigs = useMemo(
-    () => listings.map((item) => ({
-      address: USTETU_REGISTRY_ADDRESS,
-      abi: registryAbi,
-      functionName: "getToken" as const,
-      args: [hexTokenId(item.token_id)] as const
-    })).filter((item) => item.address !== null),
-    [listings]
-  );
-
-  const tokenQueries = useReadContracts({
-    contracts: tokenConfigs as never[],
-    query: { enabled: tokenConfigs.length > 0 }
-  });
-
   const listingConfigs = useMemo(
     () => listings.map((item) => ({
       address: USTETU_ESCROW_ADDRESS,
@@ -130,6 +116,25 @@ export default function HomePage() {
     contracts: listingConfigs as never[],
     query: { enabled: listingConfigs.length > 0, refetchInterval: 10000 }
   });
+
+  const tokenConfigs = useMemo(
+    () => (listingQueries.data ?? []).map((entry) => {
+      const chainListing: any = entry?.result;
+      return {
+        address: USTETU_REGISTRY_ADDRESS,
+        abi: registryAbi,
+        functionName: "getToken" as const,
+        args: [hexTokenId(chainListing?.tokenId?.toString() ?? "0")] as const
+      };
+    }).filter((item) => item.args[0] !== "0x" + "0".repeat(64)),
+    [listingQueries.data]
+  );
+
+  const tokenQueries = useReadContracts({
+    contracts: tokenConfigs as never[],
+    query: { enabled: tokenConfigs.length > 0 }
+  });
+
   const paymentSymbolQuery = useReadContract({
     address: paymentTokenAddress,
     abi: erc20MetadataAbi,
@@ -144,40 +149,39 @@ export default function HomePage() {
   });
 
   const loadListings = async () => {
-    if (!INDEXER_API_URL) {
-      // Production bootstrap: keep marketplace usable directly from the
-      // verified on-chain Listing #1 while the discovery indexer is optional.
-      // Escrow/Registry reads below remain authoritative for all transaction data.
-      setApiError("");
-      setListings([BOOTSTRAP_LISTING]);
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setApiError("");
     try {
-      const baseUrl = INDEXER_API_URL.replace(/\/$/, "");
-      const collected: ApiListing[] = [];
-      let cursor: string | null = null;
-      do {
-        const query = new URLSearchParams({ status: "ACTIVE", limit: "100" });
-        if (cursor) query.set("cursor", cursor);
-        const response = await fetch(`${baseUrl}/listings?${query.toString()}`, { cache: "no-store" });
-        const body = await response.json() as { success?: boolean; items?: ApiListing[]; pagination?: { nextCursor?: string | null; hasMore?: boolean }; error?: string };
-        if (!response.ok || !body.success) throw new Error(body.error ?? "Unable to read marketplace listings.");
-        collected.push(...(body.items ?? []));
-        cursor = body.pagination?.hasMore ? (body.pagination.nextCursor ?? null) : null;
-        if (body.pagination?.hasMore && !cursor) throw new Error("Marketplace pagination returned an invalid cursor.");
-      } while (cursor);
-      setListings(collected.filter((item) => item.token_contract));
+      if (INDEXER_API_URL) {
+        const baseUrl = INDEXER_API_URL.replace(/\/$/, "");
+        const collected: ApiListing[] = [];
+        let cursor: string | null = null;
+        do {
+          const query = new URLSearchParams({ status: "ACTIVE", limit: "100" });
+          if (cursor) query.set("cursor", cursor);
+          const response = await fetch(baseUrl + "/listings?" + query.toString(), { cache: "no-store" });
+          const body = await response.json() as { success?: boolean; items?: ApiListing[]; pagination?: { nextCursor?: string | null; hasMore?: boolean }; error?: string };
+          if (!response.ok || !body.success) throw new Error(body.error ?? "Unable to read marketplace listings.");
+          collected.push(...(body.items ?? []));
+          cursor = body.pagination?.hasMore ? (body.pagination.nextCursor ?? null) : null;
+          if (body.pagination?.hasMore && !cursor) throw new Error("Marketplace pagination returned an invalid cursor.");
+        } while (cursor);
+        setListings(collected.filter((item) => item.token_contract));
+      } else {
+        setListings(await discoverListingsOnChain());
+      }
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : "Unable to read marketplace listings.");
-      setListings([]);
+      try {
+        setListings(await discoverListingsOnChain());
+        setApiError("");
+      } catch {
+        setListings([BOOTSTRAP_LISTING]);
+        setApiError(error instanceof Error ? error.message : "Unable to discover marketplace listings.");
+      }
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     void loadListings();
     const timer = window.setInterval(() => void loadListings(), 10000);
