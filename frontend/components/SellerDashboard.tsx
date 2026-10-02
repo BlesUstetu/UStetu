@@ -756,15 +756,18 @@ export default function SellerDashboard() {
         <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">Wallet ini belum terdaftar. Seller registration bersifat permissionless dan membutuhkan sedikit ETH di Base untuk gas.</p>
           <div className="seller-gas-status">
             <div className="seller-gas-row"><span>Base ETH Balance</span><strong>{baseBalanceQuery.isLoading ? "Checking…" : formatEther(baseBalanceQuery.data?.value ?? 0n) + " ETH"}</strong></div>
-            <div className="seller-gas-row"><span>Estimated Register Gas</span><strong>{registerGasLoading ? "Estimating…" : registerGasCost !== null ? "~" + formatEther(registerGasCost) + " ETH" : "Unavailable"}</strong></div>
-            <div className={"seller-gas-state " + (registerGasCost !== null && (baseBalanceQuery.data?.value ?? 0n) >= registerGasCost ? "ready" : "warning")}>
-              {registerGasLoading ? "Checking Base gas balance…" :
-                registerGasCost === null ? "Gas estimate belum tersedia. Coba lagi sebentar." :
-                (baseBalanceQuery.data?.value ?? 0n) >= registerGasCost ? "✓ Ready — saldo Base cukup untuk registrasi." :
-                "⚠ Saldo ETH Base tidak cukup untuk registrasi."}
+            <div className="seller-gas-state ready">
+              {(baseBalanceQuery.data?.value ?? 0n) > 0n
+                ? "✓ Ready — saldo Base ETH tersedia untuk gas."
+                : "⚠ Tambahkan Base ETH untuk membayar gas."}
             </div>
           </div>
-          <button onClick={() => void register()} disabled={disabled || chainId !== base.id || registerGasLoading || registerGasCost === null || (baseBalanceQuery.data?.value ?? 0n) < registerGasCost}>{busy || "Register Seller"}</button>
+          <button
+            onClick={() => void register()}
+            disabled={disabled || chainId !== base.id || baseBalanceQuery.isLoading || (baseBalanceQuery.data?.value ?? 0n) <= 0n}
+          >
+            {busy || "Register Seller"}
+          </button>
           {error && <div className="seller-error">{error}</div>}</div>
       ) : (
         <>
