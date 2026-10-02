@@ -17,20 +17,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
 
   useEffect(() => {
-    const initial = getInitialLanguage();
-    setLanguageState(initial);
+    setLanguageState("en");
+    window.localStorage.setItem("ustetu-language", "en");
 
     const onLanguageChange = () => {
-      setLanguageState(getInitialLanguage());
+      setLanguageState("en");
     };
 
     window.addEventListener("ustetu-language-change", onLanguageChange);
     return () => window.removeEventListener("ustetu-language-change", onLanguageChange);
   }, []);
 
-  const setLanguage = (next: Language) => {
-    setLanguageState(next);
-    window.localStorage.setItem("ustetu-language", next);
+  const setLanguage = (_next: Language) => {
+    // USTETU frontend is English-only.
+    setLanguageState("en");
+    window.localStorage.setItem("ustetu-language", "en");
     window.dispatchEvent(new Event("ustetu-language-change"));
   };
 
