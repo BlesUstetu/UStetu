@@ -266,15 +266,22 @@ export default function HomePage() {
   // valid on-chain listing is visible in the marketplace.
   const logoVerifiedListings = enrichedListings;
 
+  // A listing with zero available inventory is not buyable, so keep it out of
+  // the public marketplace list. The on-chain listing itself remains untouched.
+  const availableListings = useMemo(
+    () => logoVerifiedListings.filter((item) => item.availableRaw > 0n),
+    [logoVerifiedListings]
+  );
+
   const filteredListings = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return logoVerifiedListings;
-    return logoVerifiedListings.filter((item) =>
+    if (!q) return availableListings;
+    return availableListings.filter((item) =>
       [item.address, item.tokenName, item.symbol, item.seller].some((value) => value.toLowerCase().includes(q))
     );
-  }, [logoVerifiedListings, search]);
+  }, [availableListings, search]);
 
-  const selected = selectedId === null ? null : logoVerifiedListings.find((item) => item.listingId === selectedId) ?? null;
+  const selected = selectedId === null ? null : availableListings.find((item) => item.listingId === selectedId) ?? null;
   const isLoading = loading || paymentTokenQuery.isLoading || paymentDecimalsQuery.isLoading || (listings.length > 0 && (tokenQueries.isLoading || listingQueries.isLoading));
   const hasError = Boolean(apiError) && listings.length === 0;
   const refreshMarketplace = async () => { await loadListings(); };
