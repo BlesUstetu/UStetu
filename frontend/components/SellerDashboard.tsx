@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SellerOrders from "@/components/SellerOrders";
+import { discoverListingsOnChain } from "@/lib/listingDiscovery";
 import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
@@ -236,13 +237,27 @@ export default function SellerDashboard() {
   useEffect(() => {
     if (!registeredQuery.data) {
       setActiveListingId(null);
+      return;
     }
-  }, [registeredQuery.data, address]);
 
-  // Listing IDs are caller-generated and the Escrow contract has no enumeration
-  // function. Never default every seller to the bootstrap Listing #1.
-  // The active listing is selected explicitly after a successful createListing.
-  // Existing seller listings remain available through the marketplace/indexer flow.
+    if (!address || activeListingId !== null) return;
+
+    let cancelled = false;
+    void discoverListingsOnChain()
+      .then((listings) => {
+        if (cancelled) return;
+        const mine = listings.filter((item) => item.seller.toLowerCase() === address.toLowerCase());
+        const latest = mine.length ? mine[mine.length - 1] : undefined;
+        if (latest) setActiveListingId(BigInt(latest.listing_id));
+      })
+      .catch(() => {
+        // Listing discovery is best-effort. The seller can still use Create Listing.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [registeredQuery.data, address, activeListingId]);
 
 
   useEffect(() => {
@@ -952,9 +967,7 @@ export default function SellerDashboard() {
 
           )}
 
-          {activeListingId !== null && listing && (
-            <>
-              {activeMenu === "inventory" && (
+          {activeMenu === "inventory" && activeListingId !== null && listing && (
                 <div className="seller-card seller-section">
                   <div className="seller-listing-top">
                     <div className="seller-token"><div className="seller-token-mark">T</div><div><strong>{tokenSymbol} / PAYMENT</strong><div className="seller-sub">Listing #{activeListingId.toString()} • Base Mainnet</div></div></div>
@@ -997,27 +1010,32 @@ export default function SellerDashboard() {
                   </div>}
                   {isListingOwner && <div className="seller-actions" style={{marginTop:14}}><button className="primary" disabled={disabled || status !== LISTING_STATUS.ACTIVE} onClick={() => void listingAction("pauseListing")}>Pause</button><button disabled={disabled || status !== LISTING_STATUS.PAUSED} onClick={() => void listingAction("resumeListing")}>Resume</button><button className="danger" disabled={disabled || status === LISTING_STATUS.CLOSED} onClick={() => void listingAction("closeListing")}>Close</button></div>}
                 </div>
-              )}
+          )}
 
-              {activeMenu === "settings" && isListingOwner && (
+          {activeMenu === "inventory" && (
                 <div className="seller-card seller-section">
                   <h2>Listing Settings</h2>
                   <div className="seller-form"><label>Price ({paymentSymbol} / {tokenSymbol})</label><input value={newPrice} onChange={e => setNewPrice(e.target.value)} inputMode="decimal" /><button disabled={disabled} onClick={() => void updatePrice()}>Update Price</button><div className="seller-inline"><div><label>Min Order</label><input value={minOrder} onChange={e => setMinOrder(e.target.value)} inputMode="decimal" /></div><div><label>Max Order</label><input value={maxOrder} onChange={e => setMaxOrder(e.target.value)} inputMode="decimal" /></div></div><button disabled={disabled} onClick={() => void updateLimits()}>Update Limits</button></div>
                 </div>
-              )}
+          )}
 
-              {activeMenu === "earnings" && (
+          {activeMenu === "settings" && !listing && (
+            <div className="seller-card seller-section">
+              <h2>Listing Settings</h2>
+              <div className="seller-note">Belum ada listing yang tersedia untuk wallet ini. Listing Settings akan aktif setelah listing ditemukan.</div>
+            </div>
+          )}
+
+          {activeMenu === "earnings" && (
                 <div className="seller-card seller-section seller-earnings">
                   <h2>Seller Earnings</h2><div className="seller-value">{formatUnits(claimable, paymentDecimals)} USDC</div><p className="seller-note">Claimable USDC from completed settlements, ready to withdraw.</p><div className="seller-earnings-meta"><span>Withdrawal destination</span><strong>{short(seller?.withdrawalWallet)}</strong></div><button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC to Wallet"}</button>
                 </div>
-              )}
+          )}
 
-              {activeMenu === "wallet" && (
+          {activeMenu === "wallet" && (
                 <div className="seller-card seller-section">
                   <h2>Payout Wallet</h2><div className="seller-address"><label>Current Payout Wallet</label>{seller?.withdrawalWallet ?? "—"}</div>{pendingActive && <p className="seller-note">Pending Payout Wallet: {pendingWallet}<br />Effective: {effectiveAt ? new Date(effectiveAt * 1000).toLocaleString("id-ID") : "—"}</p>}<div className="seller-form" style={{marginTop:12}}><label>New Payout Wallet</label><input value={withdrawalWallet} onChange={e => setWithdrawalWallet(e.target.value)} placeholder="0x..." autoComplete="off" spellCheck={false} /><button disabled={disabled} onClick={() => void requestWallet()}>Request Change (24h delay)</button>{canActivate && <button disabled={disabled} onClick={() => void activateWallet()}>Activate New Wallet</button>}</div>
                 </div>
-              )}
-            </>
           )}
 
           {message && <div className="seller-message">{message}</div>}
