@@ -45,18 +45,18 @@ export default function OrderRecoveryPage() {
   const expire = async () => {
     setBusy(true); setError(""); setMessage("");
     try {
-      if (!address) throw new Error("Hubungkan wallet terlebih dahulu.");
+      if (!address) throw new Error("Connect your wallet first.");
       if (chainId !== base.id) await switchChainAsync({ chainId: base.id });
       if (!order || orderState !== PAYMENT_PENDING) throw new Error(`Order #${orderId} bukan PAYMENT_PENDING.`);
-      if (!expired) throw new Error(`Order #${orderId} belum melewati expiry.`);
+      if (!expired) throw new Error(`Order #${orderId} has not expired yet.`);
       const hash = await writeContractAsync({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "expireOrder", args: [orderId] });
       setMessage(`expireOrder(${orderId}) terkirim: ${hash.slice(0, 10)}…${hash.slice(-8)}`);
       if (publicClient) {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
-        if (receipt.status !== "success") throw new Error("expireOrder gagal atau di-revert.");
+        if (receipt.status !== "success") throw new Error("expireOrder failed or was reverted.");
       }
       await refresh();
-      setMessage(`Order #${orderId} berhasil di-expire. Inventory ${formatUnits(order.tokenAmount, TOKEN_DECIMALS)} USTETU dilepas kembali ke Listing #${LISTING_ID}.`);
+      setMessage(`Order #${orderId} was expired successfully. ${formatUnits(order.tokenAmount, TOKEN_DECIMALS)} USTETU inventory was released back to Listing #${LISTING_ID}.`);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
@@ -66,9 +66,9 @@ export default function OrderRecoveryPage() {
   return (
     <main style={{ minHeight: "100vh", padding: 24, background: "#070a12", color: "#eef2ff", fontFamily: "system-ui, sans-serif" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}><div style={{ fontSize: 12, letterSpacing: 2, opacity: .65 }}>USTETU ORDER RECOVERY</div><h1 style={{ margin: "8px 0 4px", fontSize: 30 }}>Release Expired Order #{orderId.toString()}</h1><p style={{ margin: 0, opacity: .7 }}>Recovery on-chain untuk mengembalikan inventory yang masih terkunci pada Listing #2.</p></div>
-        {!isConnected && <Notice text="Hubungkan wallet terlebih dahulu." />}
-        {chainId !== base.id && <Notice text="Wallet harus berada di Base Mainnet (chain ID 8453)." />}
+        <div style={{ marginBottom: 24 }}><div style={{ fontSize: 12, letterSpacing: 2, opacity: .65 }}>USTETU ORDER RECOVERY</div><h1 style={{ margin: "8px 0 4px", fontSize: 30 }}>Release Expired Order #{orderId.toString()}</h1><p style={{ margin: 0, opacity: .7 }}>On-chain recovery to release inventory still locked in Listing #2.</p></div>
+        {!isConnected && <Notice text="Connect your wallet first." />}
+        {chainId !== base.id && <Notice text="The wallet must be on Base Mainnet (Chain ID 8453)." />}
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 14, marginBottom: 16 }}>
           <Card label="LISTING #2" value={status === null ? "Loading…" : status === 1 ? "ACTIVE" : status === 2 ? "PAUSED" : `STATE ${status}`} />
           <Card label="DEPOSITED" value={listing ? `${formatUnits(listing.inventoryDeposited, TOKEN_DECIMALS)} USTETU` : "—"} />
@@ -80,10 +80,10 @@ export default function OrderRecoveryPage() {
           <Row label="State" value={stateLabel} />
           <Row label="Amount" value={order ? `${formatUnits(order.tokenAmount, TOKEN_DECIMALS)} USTETU` : "—"} />
           <Row label="Expires at" value={order ? new Date(Number(order.expiresAt) * 1000).toLocaleString("id-ID") : "—"} />
-          <Row label="Expiry check" value={expired ? "EXPIRED — inventory siap dilepas" : "BELUM EXPIRED / tidak dapat di-expire"} />
+          <Row label="Expiry check" value={expired ? "EXPIRED — inventory ready to be released" : "NOT EXPIRED / cannot be expired"} />
         </section>
         {canExpire && <button onClick={expire} disabled={busy} style={{ width: "100%", border: 0, borderRadius: 12, padding: "14px 18px", cursor: busy ? "wait" : "pointer", background: "#e55353", color: "white", fontWeight: 800 }}>{busy ? "Memproses…" : `RELEASE ${formatUnits(order!.tokenAmount, TOKEN_DECIMALS)} USTETU`}</button>}
-        {orderState === EXPIRED && <Notice text={`Order #${orderId.toString()} sudah EXPIRED dan inventory sudah dilepas dari lock.`} />}
+        {orderState === EXPIRED && <Notice text={`Order #${orderId.toString()} is EXPIRED and its inventory has been released from the lock.`} />}
         {message && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "#10251b", color: "#75f7ae" }}>{message}</div>}
         {error && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "#29151a", color: "#ff8b8b", whiteSpace: "pre-wrap" }}>{error}</div>}
         <p style={{ marginTop: 18, fontSize: 12, opacity: .55 }}>Escrow: {USTETU_ESCROW_ADDRESS}</p>
