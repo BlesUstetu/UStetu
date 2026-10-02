@@ -291,10 +291,9 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [enrichedListings]);
 
-  const logoVerifiedListings = useMemo(
-    () => enrichedListings.filter((item) => item.address.toLowerCase() === USTETU_TOKEN_ADDRESS.toLowerCase() || trustWalletLogoReady.has(item.address.toLowerCase())),
-    [enrichedListings, trustWalletLogoReady]
-  );
+  // Token logo availability is presentation-only. It must never decide whether a
+  // valid on-chain listing is visible in the marketplace.
+  const logoVerifiedListings = enrichedListings;
 
   const filteredListings = useMemo(() => {
     const q = search.trim().toLowerCase();
