@@ -369,20 +369,23 @@ export default function SellerDashboard() {
   };
 
   const transact = async (label: string, fn: () => Promise<`0x${string}`>) => {
-    setBusy(label); setError(""); setMessage("");
+    setBusy(`Confirm ${label}`);
+    setError("");
+    setMessage("Menunggu konfirmasi di wallet…");
     try {
       const hash = await fn();
-      setMessage(`${label} terkirim: ${short(hash)}`);
+      setBusy(`Waiting ${label}`);
+      setMessage(`${label} terkirim. Menunggu konfirmasi Base…`);
       if (publicClient) {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") throw new Error(`${label} gagal atau di-revert.`);
-        setMessage(`${label} berhasil: ${short(hash)}`);
+        setMessage(`${label} berhasil: ${short(hash)`);
       }
       refresh();
       return hash;
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
-      setError(text.length > 300 ? `${text.slice(0, 300)}…` : text);
+      setError(text.length > 300 ? `${text.slice(0, 300)"}…` : text);
       throw e;
     } finally { setBusy(""); }
   };
@@ -638,9 +641,24 @@ export default function SellerDashboard() {
   };
 
   const disabled = !!busy;
+  const txLabel = busy.startsWith("Confirm ") ? busy.slice(8) : busy.startsWith("Waiting ") ? busy.slice(8) : "";
   return (
     <section className="seller-dashboard">
+      {busy && (
+        <div className="tx-progress" role="status" aria-live="polite">
+          <span className="tx-spinner" aria-hidden="true" />
+          <div>
+            <strong>{busy.startsWith("Confirm ") ? "Konfirmasi di Wallet" : "Transaksi sedang diproses"}</strong>
+            <span>{busy.startsWith("Confirm ") ? `Silakan konfirmasi “${txLabel}” di MetaMask/wallet Anda.` : `“${txLabel}” sedang menunggu konfirmasi Base.`}</span>
+          </div>
+        </div>
+      )}
       <style jsx global>{`
+        .tx-progress{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:11px 13px;border:1px solid rgba(79,183,255,.28);border-radius:12px;background:linear-gradient(135deg,rgba(8,20,34,.94),rgba(22,12,35,.82));box-shadow:0 0 24px rgba(76,126,255,.08)}
+        .tx-spinner{width:16px;height:16px;border:2px solid rgba(126,162,214,.25);border-top-color:#74e7ff;border-right-color:#9c72ff;border-radius:50%;animation:sellerTxSpin .8s linear infinite;flex:0 0 auto}
+        .tx-progress strong{display:block;font-size:10px;color:#dcecff;letter-spacing:.04em}
+        .tx-progress span{display:block;margin-top:2px;font-size:8px;color:#8294b0}
+        @keyframes sellerTxSpin{to{transform:rotate(360deg)}}
         .seller-dashboard{max-width:1180px;margin:0 auto;padding:34px 22px 70px;color:#f4f7ff}
         .seller-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:26px}.seller-eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#8fa5c4;opacity:.9}.seller-head h1{margin:2px 0 12px;font-size:28px;line-height:1.05;letter-spacing:-.03em;font-weight:760;background:linear-gradient(135deg,#fff 20%,#cddcff 55%,#91a9ff);-webkit-background-clip:text;background-clip:text;color:transparent}.seller-head p{margin:0;color:#8290a7;font-size:13px}.seller-wallet{font-family:ui-monospace,SFMono-Regular,monospace;font-size:10px;color:#71809a;padding:7px 10px;border:1px solid rgba(132,160,205,.14);border-radius:9px;background:#0b1120}
 
