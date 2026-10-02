@@ -91,8 +91,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState("");
   const [copiedAddress, setCopiedAddress] = useState(false);
-  const [trustWalletLogoReady, setTrustWalletLogoReady] = useState<Set<string>>(new Set());
-  const [logoChecking, setLogoChecking] = useState(false);
 
   const paymentTokenQuery = useReadContract({
     address: USTETU_ESCROW_ADDRESS,
@@ -253,17 +251,6 @@ export default function HomePage() {
     query: { enabled: metadataConfigs.length > 0 }
   });
 
-  const trustWalletLogoUrl = (address: string, chainId: number) => {
-    const chains: Record<number, string> = { 8453: "base", 1: "ethereum", 56: "smartchain", 137: "polygon", 10: "optimism", 42161: "arbitrum", 43114: "avalanchec", 250: "fantom", 42220: "celo", 59144: "linea", 324: "zksync", 534352: "scroll", 81457: "blast", 5000: "mantle", 204: "opbnb", 100: "xdai" };
-    const chain = chains[chainId];
-    if (!chain) return "";
-    try {
-      return `https://assets-cdn.trustwallet.com/blockchains/${chain}/assets/${getAddress(address)}/logo.png`;
-    } catch {
-      return "";
-    }
-  };
-
   const enrichedListings = useMemo(() => liveListings.map((item, index) => ({
     ...item,
     tokenName: String(metadataQueries.data?.[index * 2]?.result ?? "Token"),
@@ -326,7 +313,7 @@ export default function HomePage() {
 
         <div className="listing-glass">
           <div className="listing-toolbar">
-            <span className="listing-count">{isLoading || logoChecking ? "Checking Trust Wallet logos…" : `${filteredListings.length} ${filteredListings.length === 1 ? t("listing") : t("listings")}`}</span>
+            <span className="listing-count">{isLoading ? t("readingListings") : `${filteredListings.length} ${filteredListings.length === 1 ? t("listing") : t("listings")}`}</span>
             <span className="status-dot"><i /> {t("live")}</span>
           </div>
           <div className="listing-table-wrap">
