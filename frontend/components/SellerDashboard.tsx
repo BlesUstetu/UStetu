@@ -871,92 +871,83 @@ export default function SellerDashboard() {
                   <span>Listing DNA Anda sudah aktif di Base Mainnet.</span>
                 </div>
               ) : (
-              {createListingConfirm ? (
-                <div className="create-listing-confirm" role="status" aria-live="polite">
-                  <div className="create-listing-confirm-inner">
-                    <div className="create-listing-check" aria-hidden="true">✓</div>
-                    <div className="create-listing-confirm-title">{busy === "Confirm Create listing" ? "Konfirmasi di Wallet" : "Transaksi Sedang Diproses"}</div>
-                    <div className="create-listing-confirm-text">{busy === "Confirm Create listing" ? "Silakan konfirmasi Create Listing di MetaMask. Data listing disembunyikan sementara." : "Create Listing sudah dikonfirmasi. Menunggu konfirmasi dari Base Mainnet…"}</div>
-                  </div>
-                </div>
-              ) : (
-              <label>Token Contract</label>
-              <input
-                value={listingTokenAddress}
-                onChange={e => setListingTokenAddress(e.target.value)}
-                placeholder="0x... token contract"
-                spellCheck={false}
-                autoComplete="off"
-              />
+                <>
+                  <label>Token Contract</label>
+                  <input
+                    value={listingTokenAddress}
+                    onChange={e => setListingTokenAddress(e.target.value)}
+                    placeholder="0x... token contract"
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
 
-              {createTokenAddress && (
-                <div className={`registry-panel ${createTokenRegistered ? "registered" : ""}`}>
-                  <div className="registry-row">
-                    <span className="registry-title">USTETU Token Registry</span>
-                    <span className={`registry-state ${createTokenRegistered ? "ok" : ""}`}>
-                      ● {createTokenRegistered ? "REGISTERED" : "NOT REGISTERED"}
-                    </span>
-                  </div>
+                  {createTokenAddress && (
+                    <div className={`registry-panel ${createTokenRegistered ? "registered" : ""}`}>
+                      <div className="registry-row">
+                        <span className="registry-title">USTETU Token Registry</span>
+                        <span className={`registry-state ${createTokenRegistered ? "ok" : ""}`}>
+                          ● {createTokenRegistered ? "REGISTERED" : "NOT REGISTERED"}
+                        </span>
+                      </div>
 
-                  {createTokenMetadataReady && (
-                    <div className="registry-detail">
-                      {createTokenSymbol} · {createTokenDecimals} decimals · {short(listingTokenAddress)}
+                      {createTokenMetadataReady && (
+                        <div className="registry-detail">
+                          {createTokenSymbol} · {createTokenDecimals} decimals · {short(listingTokenAddress)}
+                        </div>
+                      )}
+
+                      {!createTokenRegistered ? (
+                        <>
+                          <div className="registry-detail">
+                            Token harus terdaftar di USTETU Registry sebelum approval atau deposit. Registrasi hanya mencatat token on-chain.
+                          </div>
+                          <div className="registry-actions">
+                            <button
+                              className="primary registry-button"
+                              disabled={disabled || chainId !== base.id}
+                              onClick={() => void registerListingToken()}
+                            >
+                              {busy === "Register token" ? "Registering…" : "Register Token"}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="registry-detail">
+                          ✓ Token terverifikasi di Registry. Anda dapat melanjutkan ke parameter listing.
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {!createTokenRegistered ? (
-                    <>
-                      <div className="registry-detail">
-                        Token harus terdaftar di USTETU Registry sebelum approval atau deposit. Registrasi hanya mencatat token on-chain.
-                      </div>
-                      <div className="registry-actions">
-                        <button
-                          className="primary registry-button"
-                          disabled={disabled || chainId !== base.id}
-                          onClick={() => void registerListingToken()}
-                        >
-                          {busy === "Register token" ? "Registering…" : "Register Token"}
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="registry-detail">
-                      ✓ Token terverifikasi di Registry. Anda dapat melanjutkan ke parameter listing.
+                  <div className={createTokenRegistered ? "" : "listing-form-disabled"}>
+                    <div className="seller-inline">
+                      <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                      <div><label>Inventory{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingInventory} onChange={e => setListingInventory(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
                     </div>
+                    <div className="seller-inline">
+                      <div><label>Min Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMin} onChange={e => setListingMin(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                      <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                    </div>
+
+                    {createTokenRegistered && <div className="listing-ready">✓ Registry valid — parameter listing siap diisi.</div>}
+
+                    <div className="seller-actions">
+                      <button
+                        className="primary"
+                        disabled={disabled || chainId !== base.id || !createTokenRegistered}
+                        onClick={() => void createListing()}
+                      >
+                        {busy === "Create listing" ? "Creating Listing…" : "Create Listing"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {!createTokenAddress && (
+                    <div className="seller-note">Masukkan contract address token terlebih dahulu. Setelah token terdeteksi, status Registry akan muncul otomatis.</div>
                   )}
-                </div>
-              )}
-
-              <div className={createTokenRegistered ? "" : "listing-form-disabled"}>
-                <div className="seller-inline">
-                  <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
-                  <div><label>Inventory{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingInventory} onChange={e => setListingInventory(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
-                </div>
-                <div className="seller-inline">
-                  <div><label>Min Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMin} onChange={e => setListingMin(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
-                  <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
-                </div>
-
-                {createTokenRegistered && <div className="listing-ready">✓ Registry valid — parameter listing siap diisi.</div>}
-
-                <div className="seller-actions">
-                  <button
-                    className="primary"
-                    disabled={disabled || chainId !== base.id || !createTokenRegistered}
-                    onClick={() => void createListing()}
-                  >
-                    {busy === "Create listing" ? "Creating Listing…" : "Create Listing"}
-                  </button>
-                </div>
-              </div>
-
-              {!createTokenAddress && (
-                <div className="seller-note">Masukkan contract address token terlebih dahulu. Setelah token terdeteksi, status Registry akan muncul otomatis.</div>
-              )}
-              )}
+                </>
               )}
             </div>
-          </div>
 
           )}
 
