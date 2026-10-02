@@ -231,8 +231,6 @@ export default function SellerDashboard() {
   const pendingActive = !!pendingWallet && pendingWallet !== ZERO;
   const canActivate = pendingActive && effectiveAt > 0 && Date.now() >= effectiveAt * 1000;
   const isListingOwner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
-  const isUstetuListing = !!listing && 
-    `0x${listing.tokenId.toString(16).padStart(64, "0")}`.toLowerCase() === USTETU_TOKEN_ID.toLowerCase();
 
   useEffect(() => {
     if (!registeredQuery.data) {
@@ -979,12 +977,12 @@ export default function SellerDashboard() {
                     <div className="seller-stat"><span>Locked</span><strong>{formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</strong></div>
                     <div className="seller-stat"><span>Wallet</span><strong>{formatUnits(tokenBalance, tokenDecimals)} {tokenSymbol}</strong></div>
                   </div>
-                  {isListingOwner && isUstetuListing && <div className="seller-form" style={{marginTop:14}}>
-                    <h2>USTETU Inventory</h2>
-                    <p className="seller-note">Hanya inventory yang belum terkunci oleh order yang dapat ditarik.</p>
+                  {isListingOwner && <div className="seller-form" style={{marginTop:14}}>
+                    <h2>{tokenSymbol} Inventory</h2>
+                    <p className="seller-note">Hanya inventory {tokenSymbol} yang belum terkunci oleh order yang dapat ditarik.</p>
                     <label>Amount {tokenSymbol}</label>
                     <input value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal" placeholder="Enter amount" />
-                    <div className="seller-actions"><button disabled={disabled || available === 0n} onClick={() => setAmount(formatUnits(available, tokenDecimals))}>Use Max</button><button disabled={disabled} onClick={() => void addInventory()}>Add Inventory</button><button className="primary" disabled={disabled || available === 0n} onClick={() => void withdrawInventory()}>Withdraw USTETU</button></div>
+                    <div className="seller-actions"><button disabled={disabled || available === 0n} onClick={() => setAmount(formatUnits(available, tokenDecimals))}>Use Max</button><button disabled={disabled} onClick={() => void addInventory()}>Add Inventory</button><button className="primary" disabled={disabled || available === 0n} onClick={() => void withdrawInventory()}>Withdraw {tokenSymbol}</button></div>
                     <div className="seller-note">Available: {formatUnits(available, tokenDecimals)} {tokenSymbol} · Locked: {formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</div>
                     <div className="seller-locked-orders">
                       <div className="seller-locked-orders-head"><span className="seller-locked-orders-title">Orders locking inventory</span><button className="seller-view-orders" disabled={disabled || lockedOrdersLoading} onClick={() => void loadLockedOrders()}>{lockedOrdersLoading ? "Checking…" : "View Locked Orders"}</button></div>
