@@ -826,13 +826,13 @@ export default function SellerDashboard() {
       {!isConnected ? (
         <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect wallet untuk membuka Seller Center.</p></div>
       ) : !registeredQuery.data ? (
-        <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">Wallet ini belum terdaftar. Seller registration bersifat permissionless dan membutuhkan sedikit ETH di Base untuk gas.</p>
+        <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">This wallet is not registered. Seller registration is permissionless and requires a small amount of ETH on Base for gas.</p>
           <div className="seller-gas-status">
             <div className="seller-gas-row"><span>Base ETH Balance</span><strong>{baseBalanceQuery.isLoading ? "Checking…" : formatEther(baseBalanceQuery.data?.value ?? 0n) + " ETH"}</strong></div>
             <div className="seller-gas-state ready">
               {(baseBalanceQuery.data?.value ?? 0n) > 0n
-                ? "✓ Ready — saldo Base ETH tersedia untuk gas."
-                : "⚠ Tambahkan Base ETH untuk membayar gas."}
+                ? "✓ Ready — Base ETH balance is available for gas."
+                : "⚠ Add Base ETH to pay gas."}
             </div>
           </div>
           <button
@@ -1018,7 +1018,7 @@ export default function SellerDashboard() {
                           </div>
                           <div>
                             <strong>{formatUnits(order.tokenAmount, order.tokenDecimals)} {order.tokenSymbol}</strong>
-                            <small>{order.expiresAt ? `Expires ${new Date(Number(order.expiresAt) * 1000).toLocaleString("id-ID")}` : "No expiry shown"}</small>
+                            <small>{order.expiresAt ? `Expires ${new Date(Number(order.expiresAt) * 1000).toLocaleString("en-US")}` : "No expiry shown"}</small>
                           </div>
                           <div className="seller-locked-order-action">
                             <span className={expired ? "seller-locked-state expired" : "seller-locked-state"}>{order.state === 0 ? (expired ? "EXPIRED" : "PAYMENT PENDING") : "PAID"}</span>
@@ -1071,7 +1071,7 @@ export default function SellerDashboard() {
 
           {activeMenu === "wallet" && (
                 <div className="seller-card seller-section">
-                  <h2>Payout Wallet</h2><div className="seller-address"><label>Current Payout Wallet</label>{seller?.withdrawalWallet ?? "—"}</div>{pendingActive && <p className="seller-note">Pending Payout Wallet: {pendingWallet}<br />Effective: {effectiveAt ? new Date(effectiveAt * 1000).toLocaleString("id-ID") : "—"}</p>}<div className="seller-form" style={{marginTop:12}}><label>New Payout Wallet</label><input value={withdrawalWallet} onChange={e => setWithdrawalWallet(e.target.value)} placeholder="0x..." autoComplete="off" spellCheck={false} /><button disabled={disabled} onClick={() => void requestWallet()}>Request Change (24h delay)</button>{canActivate && <button disabled={disabled} onClick={() => void activateWallet()}>Activate New Wallet</button>}</div>
+                  <h2>Payout Wallet</h2><div className="seller-address"><label>Current Payout Wallet</label>{seller?.withdrawalWallet ?? "—"}</div>{pendingActive && <p className="seller-note">Pending Payout Wallet: {pendingWallet}<br />Effective: {effectiveAt ? new Date(effectiveAt * 1000).toLocaleString("en-US") : "—"}</p>}<div className="seller-form" style={{marginTop:12}}><label>New Payout Wallet</label><input value={withdrawalWallet} onChange={e => setWithdrawalWallet(e.target.value)} placeholder="0x..." autoComplete="off" spellCheck={false} /><button disabled={disabled} onClick={() => void requestWallet()}>Request Change (24h delay)</button>{canActivate && <button disabled={disabled} onClick={() => void activateWallet()}>Activate New Wallet</button>}</div>
                 </div>
           )}
 
