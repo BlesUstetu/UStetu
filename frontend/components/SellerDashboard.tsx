@@ -15,7 +15,6 @@ import {
   USTETU_ESCROW_ADDRESS,
   USTETU_REGISTRY_ADDRESS,
   USTETU_SELLER_REGISTRY_ADDRESS,
-  USTETU_BOOTSTRAP_LISTING_ID,
   USTETU_TOKEN_ID
 } from "@/lib/contracts";
 
@@ -230,10 +229,16 @@ export default function SellerDashboard() {
     `0x${listing.tokenId.toString(16).padStart(64, "0")}`.toLowerCase() === USTETU_TOKEN_ID.toLowerCase();
 
   useEffect(() => {
-    if (registeredQuery.data && activeListingId === null) {
-      setActiveListingId(USTETU_BOOTSTRAP_LISTING_ID);
+    if (!registeredQuery.data) {
+      setActiveListingId(null);
     }
-  }, [registeredQuery.data, activeListingId]);
+  }, [registeredQuery.data, address]);
+
+  // Listing IDs are caller-generated and the Escrow contract has no enumeration
+  // function. Never default every seller to the bootstrap Listing #1.
+  // The active listing is selected explicitly after a successful createListing.
+  // Existing seller listings remain available through the marketplace/indexer flow.
+
 
   useEffect(() => {
     if (listing) {
