@@ -293,7 +293,7 @@ export default function SellerOrders() {
             <small>Auto-refresh every 30 seconds · Scan up to Order #5,000</small>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="orders-empty"><strong>Tidak ada order {filterLabels[filter].toLowerCase()}</strong><span>No orders with this status yet.</span></div>
+          <div className="orders-empty"><strong>No {filterLabels[filter].toLowerCase()} orders</strong><span>No orders with this status yet.</span></div>
         ) : (
           <table className="orders-table">
             <thead><tr><th>Order</th><th>Listing</th><th>Buyer</th><th>Token Amount</th><th>Gross</th><th>Proceeds</th><th>Fee</th><th>Status</th></tr></thead>
