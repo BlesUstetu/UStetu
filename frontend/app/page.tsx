@@ -146,9 +146,9 @@ export default function HomePage() {
     query: { enabled: Boolean(paymentTokenAddress) }
   });
 
-  const loadListings = async () => {
-    setLoading(true);
-    setApiError("");
+  const loadListings = async (background = false) => {
+    if (!background) setLoading(true);
+    if (!background) setApiError("");
     try {
       if (INDEXER_API_URL) {
         const baseUrl = INDEXER_API_URL.replace(/\/$/, "");
@@ -173,16 +173,19 @@ export default function HomePage() {
         setListings(await discoverListingsOnChain());
         setApiError("");
       } catch {
-        setListings([BOOTSTRAP_LISTING]);
-        setApiError(error instanceof Error ? error.message : "Unable to discover marketplace listings.");
+        if (!background && listings.length === 0) {
+          setListings([BOOTSTRAP_LISTING]);
+          setApiError(error instanceof Error ? error.message : "Unable to discover marketplace listings.");
+        }
       }
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
+
   useEffect(() => {
     void loadListings();
-    const timer = window.setInterval(() => void loadListings(), 10000);
+    const timer = window.setInterval(() => void loadListings(true), 30000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -273,7 +276,7 @@ export default function HomePage() {
 
   const selected = selectedId === null ? null : logoVerifiedListings.find((item) => item.listingId === selectedId) ?? null;
   const isLoading = loading || paymentTokenQuery.isLoading || paymentDecimalsQuery.isLoading || (listings.length > 0 && (tokenQueries.isLoading || listingQueries.isLoading));
-  const hasError = Boolean(apiError);
+  const hasError = Boolean(apiError) && listings.length === 0;
   const refreshMarketplace = async () => { await loadListings(); };
 
   return (
