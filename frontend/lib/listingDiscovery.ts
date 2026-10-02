@@ -30,8 +30,18 @@ const client = createPublicClient({
 
 const DEFAULT_BLOCK_WINDOW = 50_000n;
 const CHUNK_SIZE = 2_000n;
+const DISCOVERY_CACHE_MS = 45_000;
+let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
+let discoveryInFlight: Promise<DiscoveredListing[]> | null = null;
 
 export async function discoverListingsOnChain(): Promise<DiscoveredListing[]> {
+  const now = Date.now();
+  if (discoveryCache && now - discoveryCache.at < DISCOVERY_CACHE_MS) {
+    return discoveryCache.listings;
+  }
+  if (discoveryInFlight) return discoveryInFlight;
+
+  discoveryInFlight = (async () => {
   const latest = await client.getBlockNumber();
   const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
   const configuredWindow = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_BLOCKS;
@@ -88,5 +98,13 @@ export async function discoverListingsOnChain(): Promise<DiscoveredListing[]> {
     });
   }
 
-  return Array.from(discovered.values());
+  const result = Array.from(discovered.values());
+    discoveryCache = { at: Date.now(), listings: result };
+    return result;
+  })();
+  try {
+    return await discoveryInFlight;
+  } finally {
+    discoveryInFlight = null;
+  }
 }
