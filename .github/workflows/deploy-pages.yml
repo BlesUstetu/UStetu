@@ -23,6 +23,7 @@ env:
   NODE_VERSION: 22
   SITE_DIR: frontend/out
   NEXT_DEPLOYMENT_ID: ${{ github.sha }}
+  NEXT_DEPLOY_TARGET: github-pages
 
 jobs:
   build:
