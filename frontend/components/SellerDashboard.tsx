@@ -948,6 +948,7 @@ export default function SellerDashboard() {
                 </>
               )}
             </div>
+          </div>
 
           )}
 
