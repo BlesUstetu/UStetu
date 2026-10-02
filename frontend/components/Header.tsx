@@ -73,7 +73,6 @@ export default function Header({ showSellerOrders = false, showHome = true, show
           <button type="button" className="ustetu-menu-backdrop" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
           <div className="ustetu-header-menu">
             <div className="ustetu-header-menu-head">
-              <span>USTETU MENU</span>
               <button type="button" className="ustetu-menu-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>×</button>
             </div>
 
@@ -123,12 +122,12 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         .ustetu-menu-button.is-open span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
         .ustetu-menu-button.is-open span:nth-child(2){opacity:0;width:0}
         .ustetu-menu-button.is-open span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
-        .ustetu-header-menu{position:absolute;z-index:80;top:calc(100% + 10px);right:13px;width:min(310px,calc(100vw - 28px));padding:14px;border:1px solid transparent;border-radius:18px;background:linear-gradient(145deg,rgba(7,14,29,.985),rgba(8,12,25,.985)) padding-box,linear-gradient(135deg,rgba(72,210,255,.46),rgba(105,92,255,.40),rgba(235,86,255,.24)) border-box;box-shadow:0 24px 70px rgba(0,0,0,.52),0 0 28px rgba(54,130,255,.08),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%)}
+        .ustetu-header-menu{position:absolute;z-index:80;top:calc(100% + 8px);right:13px;width:min(310px,calc(100vw - 28px));padding:10px;border:1px solid transparent;border-radius:18px;background:linear-gradient(145deg,rgba(7,14,29,.985),rgba(8,12,25,.985)) padding-box,linear-gradient(135deg,rgba(72,210,255,.46),rgba(105,92,255,.40),rgba(235,86,255,.24)) border-box;box-shadow:0 24px 70px rgba(0,0,0,.52),0 0 28px rgba(54,130,255,.08),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%)}
         .ustetu-menu-backdrop{position:fixed;z-index:70;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:default}
-        .ustetu-header-menu-head{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 11px;color:#9fc7e8;font-size:9px;font-weight:800;letter-spacing:.16em}
+        .ustetu-header-menu-head{display:flex;align-items:center;justify-content:flex-end;min-height:27px;padding:0 0 7px}
         .ustetu-menu-close{display:grid;width:27px;height:27px;place-items:center;padding:0;border:1px solid rgba(139,183,232,.14);border-radius:8px;background:rgba(255,255,255,.025);color:#b9c9dc;font-size:18px;line-height:1;cursor:pointer}
         .ustetu-menu-close:hover{background:rgba(139,183,232,.08);color:#fff}
-        .ustetu-header-menu-tools{display:flex;align-items:center;gap:7px;padding:9px 0;border-top:1px solid rgba(139,183,232,.10);border-bottom:1px solid rgba(139,183,232,.10)}
+        .ustetu-header-menu-tools{display:flex;align-items:center;gap:7px;padding:9px 1px;border-top:1px solid rgba(139,183,232,.10);border-bottom:1px solid rgba(139,183,232,.10)}
         .ustetu-header-menu-tools .system-info-trigger{margin-left:auto}
         .ustetu-header-menu-nav{display:grid;gap:6px;padding-top:10px}
         .ustetu-header-menu-link{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 11px;border:1px solid transparent;border-radius:10px;background:linear-gradient(145deg,rgba(10,20,38,.72),rgba(8,12,25,.82)) padding-box,linear-gradient(135deg,rgba(72,210,255,.18),rgba(105,92,255,.18),rgba(235,86,255,.10)) border-box;color:#dcecff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.035em;transition:transform .16s ease,background .16s ease}
