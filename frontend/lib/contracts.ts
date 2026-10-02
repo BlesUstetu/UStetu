@@ -45,6 +45,7 @@ export const escrowAbi = [
 ] as const;
 
 export const registryAbi = [
+  {type:"function",name:"registerToken",stateMutability:"nonpayable",inputs:[{name:"chainId",type:"uint256"},{name:"token",type:"address"}],outputs:[{name:"tokenId",type:"bytes32"}]},
   {type:"function",name:"getToken",stateMutability:"view",inputs:[{name:"tokenId",type:"bytes32"}],outputs:[{name:"token",type:"tuple",components:[
     {name:"chainId",type:"uint256"},{name:"contractAddress",type:"address"},{name:"decimalsSnapshot",type:"uint8"},{name:"registeredBy",type:"address"},{name:"registeredAt",type:"uint64"}]}]},
   {type:"function",name:"isRegisteredToken",stateMutability:"view",inputs:[{name:"tokenId",type:"bytes32"}],outputs:[{name:"",type:"bool"}]},
