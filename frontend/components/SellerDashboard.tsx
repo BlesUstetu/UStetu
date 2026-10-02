@@ -545,7 +545,9 @@ export default function SellerDashboard() {
         functionName: "addListingInventory",
         args: [activeListingId!, raw]
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const withdrawInventory = async () => {
@@ -560,7 +562,9 @@ export default function SellerDashboard() {
         functionName: "withdrawListingInventory",
         args: [activeListingId!, raw]
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const updatePrice = async () => {
@@ -575,7 +579,9 @@ export default function SellerDashboard() {
         functionName: "updateListingPrice",
         args: [activeListingId!, raw]
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const updateLimits = async () => {
@@ -591,7 +597,9 @@ export default function SellerDashboard() {
         functionName: "updateListingOrderLimits",
         args: [activeListingId!, min, max]
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const listingAction = async (functionName: "pauseListing" | "resumeListing" | "closeListing") => {
@@ -604,7 +612,9 @@ export default function SellerDashboard() {
         functionName,
         args: [activeListingId!]
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const expireLockedOrder = async (orderId: bigint) => {
@@ -622,7 +632,9 @@ export default function SellerDashboard() {
       }));
 
       await loadLockedOrders();
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const withdrawEarnings = async () => {
@@ -635,7 +647,9 @@ export default function SellerDashboard() {
         functionName: "withdrawClaimable",
         args: []
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const requestWallet = async () => {
@@ -648,7 +662,9 @@ export default function SellerDashboard() {
         functionName: "requestWithdrawalWalletChange",
         args: [withdrawalWallet as `0x${string}`]
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
   };
 
   const activateWallet = async () => {
@@ -659,7 +675,14 @@ export default function SellerDashboard() {
         abi: sellerRegistryAbi,
         functionName: "activateWithdrawalWalletChange"
       }));
-    } catch {}
+    } catch (e) {
+      surfaceError(e);
+    }
+  };
+
+  const surfaceError = (e: unknown) => {
+    const text = e instanceof Error ? e.message : String(e);
+    setError(text.length > 300 ? text.slice(0, 300) + "…" : text);
   };
 
   const disabled = !!busy;
