@@ -5,7 +5,7 @@ const isGitHubPages = process.env.NEXT_DEPLOY_TARGET === "github-pages";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "export",
-  basePath: isGitHubPages ? "/UStetu" : "",
+  ...(isGitHubPages ? { basePath: "/UStetu" } : {}),
   trailingSlash: true,
 
   // Version/cache skew protection for static deployments.
