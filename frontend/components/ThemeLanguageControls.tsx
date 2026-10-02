@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { languages, type Language } from "@/lib/i18n";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function ThemeLanguageControls() {
+  const { language, setLanguage, t } = useLanguage();
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
@@ -21,6 +24,18 @@ export default function ThemeLanguageControls() {
 
   return (
     <div className="header-controls">
+      <label className="language-control" title={t("language")}>
+        <span aria-hidden="true">◎</span>
+        <select
+          value={language}
+          onChange={(event) => setLanguage(event.target.value as Language)}
+          aria-label={t("language")}
+        >
+          {Object.entries(languages).map(([code, label]) => (
+            <option key={code} value={code}>{label}</option>
+          ))}
+        </select>
+      </label>
       <button
         type="button"
         className="icon-button"
