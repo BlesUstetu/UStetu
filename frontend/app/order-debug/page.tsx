@@ -113,18 +113,18 @@ export default function OrderDebugPage() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 12, letterSpacing: 2, opacity: 0.65 }}>USTETU DIAGNOSTIC</div>
           <h1 style={{ margin: "8px 0 4px", fontSize: 30 }}>Listing #2 + Order #1 — Live On-Chain Preflight</h1>
-          <p style={{ margin: 0, opacity: 0.7 }}>Read-only. Tidak mengirim transaksi, tidak approve, dan tidak membuat order baru.</p>
+          <p style={{ margin: 0, opacity: 0.7 }}>Read-only. This page does not send transactions, approve tokens, or create new orders.</p>
         </div>
 
         {!isConnected && (
           <div style={{ padding: 16, borderRadius: 14, background: "#24151a", marginBottom: 16 }}>
-            Hubungkan wallet terlebih dahulu agar simulasi createOrder menggunakan address buyer.
+            Connect your wallet first so the createOrder simulation uses the buyer address.
           </div>
         )}
 
         {chainId !== base.id && (
           <div style={{ padding: 16, borderRadius: 14, background: "#2a2111", marginBottom: 16 }}>
-            Wallet harus berada di Base Mainnet (chain ID 8453).
+            The wallet must be on Base Mainnet (Chain ID 8453).
           </div>
         )}
 
@@ -141,10 +141,10 @@ export default function OrderDebugPage() {
 
         <section style={{ padding: 20, borderRadius: 16, background: "#0d1220", border: "1px solid #20283b", marginBottom: 16 }}>
           <h2 style={{ marginTop: 0 }}>Create Order #2 preflight — 1 USTETU</h2>
-          <Row label="Simulation" value={createOrderSimulation.isLoading ? "Simulating…" : createOrderSimulation.isSuccess ? "SUCCESS — createOrder(2, 1 USTETU) dapat dijalankan" : "REVERT"} />
-          <Row label="Simulation error" value={simulationError || "Tidak ada error"} />
+          <Row label="Simulation" value={createOrderSimulation.isLoading ? "Simulating…" : createOrderSimulation.isSuccess ? "SUCCESS — createOrder(2, 1 USTETU) can execute" : "REVERT"} />
+          <Row label="Simulation error" value={simulationError || "No error"} />
           <p style={{ marginBottom: 0, fontSize: 12, opacity: 0.55 }}>
-            Simulasi memakai eth_call sehingga tidak mengubah blockchain. Jika bagian ini REVERT, jangan klik Buy; error di sini adalah petunjuk utama penyebab transaksi Create Order gagal.
+            The simulation uses eth_call and does not change the blockchain. If this shows REVERT, do not click Buy; this is the primary diagnostic for a failed Create Order transaction.
           </p>
         </section>
 
@@ -165,7 +165,7 @@ export default function OrderDebugPage() {
             <Row label="USDC balance" value={`${formatUnits(balanceValue, 6)} USDC`} />
             <Row label="Escrow allowance" value={`${formatUnits(allowanceValue, 6)} USDC`} />
             <Row label="Required for Order #1" value={`${formatUnits(gross, 6)} USDC`} />
-            <Row label="Allowance check" value={gross === 0n ? "Order belum terbaca" : allowanceEnough ? "SUFFICIENT" : "INSUFFICIENT"} />
+            <Row label="Allowance check" value={gross === 0n ? "Order not yet readable" : allowanceEnough ? "SUFFICIENT" : "INSUFFICIENT"} />
             <Row label="Payment token" value={data?.paymentToken ? shortAddress(data.paymentToken) : "—"} />
           </section>
         </section>
