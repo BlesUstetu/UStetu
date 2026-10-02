@@ -1,21 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { languages, getInitialLanguage, type Language } from "@/lib/i18n";
-import { useLanguage } from "@/lib/LanguageContext";
 
 export default function ThemeLanguageControls() {
   const [dark, setDark] = useState(true);
-  const [open, setOpen] = useState(false);
-  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("ustetu-theme");
     const isDark = savedTheme ? savedTheme === "dark" : true;
     setDark(isDark);
     document.documentElement.dataset.theme = isDark ? "dark" : "light";
-    const initial = getInitialLanguage();
-    if (initial !== language) setLanguage(initial);
   }, []);
 
   function toggleTheme() {
@@ -27,31 +21,15 @@ export default function ThemeLanguageControls() {
 
   return (
     <div className="header-controls">
-      <button type="button" className="icon-button" aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"} onClick={toggleTheme}>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+        title={dark ? "Light mode" : "Dark mode"}
+        onClick={toggleTheme}
+      >
         {dark ? "☀" : "☾"}
       </button>
-      <div className="language-wrap">
-        <button
-          type="button"
-          className="icon-button"
-          style={{ width: "auto", minWidth: 58, padding: "0 10px", fontSize: 11, fontWeight: 750, letterSpacing: ".05em" }}
-          aria-label={t("language")}
-          aria-expanded={open}
-          title={t("language")}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {language.toUpperCase()} <span aria-hidden="true">▾</span>
-        </button>
-        {open && (
-          <div className="language-menu">
-            {Object.entries(languages).map(([code, label]) => (
-              <button type="button" className={`language-option ${language === code ? "active" : ""}`} key={code} onClick={() => { setLanguage(code as Language); setOpen(false); }}>
-                {code.toUpperCase()} — {label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
