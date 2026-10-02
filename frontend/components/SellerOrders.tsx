@@ -230,7 +230,7 @@ export default function SellerOrders() {
   };
 
   if (!isConnected) {
-    return <section className="seller-orders"><div className="orders-empty"><strong>Connect wallet</strong><span>Hubungkan wallet seller untuk melihat order.</span></div></section>;
+    return <section className="seller-orders"><div className="orders-empty"><strong>Connect wallet</strong><span>Connect the seller wallet to view orders.</span></div></section>;
   }
 
   return (
@@ -245,16 +245,16 @@ export default function SellerOrders() {
       `}</style>
 
       <div className="orders-summary">
-        <div className="orders-card"><label>Completed Orders</label><strong>{completed.length}</strong><small>Order selesai</small></div>
-        <div className="orders-card"><label>Gross Sales</label><strong>{formatUnits(gross, USDC_DECIMALS)} USDC</strong><small>Total pembayaran order completed</small></div>
-        <div className="orders-card"><label>Completed Proceeds</label><strong>{formatUnits(proceeds, USDC_DECIMALS)} USDC</strong><small>Setelah marketplace fee</small></div>
+        <div className="orders-card"><label>Completed Orders</label><strong>{completed.length}</strong><small>Completed orders</small></div>
+        <div className="orders-card"><label>Gross Sales</label><strong>{formatUnits(gross, USDC_DECIMALS)} USDC</strong><small>Total payment from completed orders</small></div>
+        <div className="orders-card"><label>Completed Proceeds</label><strong>{formatUnits(proceeds, USDC_DECIMALS)} USDC</strong><small>After marketplace fees</small></div>
       </div>
 
       {error && <div className="orders-error">{error}</div>}
 
       <div className="orders-panel">
         <div className="orders-toolbar">
-          <div className="orders-toolbar-info"><span>{loading ? "Memuat order dari blockchain…" : `${filteredOrders.length} order tampil`}</span><span className="orders-toolbar-scan">{lastScan || `Escrow: ${short(USTETU_ESCROW_ADDRESS)}`}</span></div>
+          <div className="orders-toolbar-info"><span>{loading ? "Loading orders from the blockchain…" : `${filteredOrders.length} orders shown`}</span><span className="orders-toolbar-scan">{lastScan || `Escrow: ${short(USTETU_ESCROW_ADDRESS)}`}</span></div>
           <div className="orders-toolbar-actions">
             <button className="orders-refresh" type="button" onClick={() => window.dispatchEvent(new Event("focus"))} disabled={loading} aria-label="Refresh orders" title="Refresh Orders">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4" /><path d="M5 4v4h4M19 20v-4h-4" /></svg>
@@ -270,7 +270,7 @@ export default function SellerOrders() {
             </button>
           </div>
         </div>
-        <div className="orders-filters" role="tablist" aria-label="Filter order berdasarkan status">
+        <div className="orders-filters" role="tablist" aria-label="Filter orders by status">
           {(Object.keys(filterLabels) as OrderFilter[]).map((key) => (
             <button
               key={key}
@@ -288,12 +288,12 @@ export default function SellerOrders() {
         {orders.length === 0 && !loading ? (
           <div className="orders-empty">
             <div className="orders-empty-icon" aria-hidden="true">⌁</div>
-            <strong>Belum ada order seller</strong>
-            <span>Listing yang Anda buat bukan order. Order baru akan tampil setelah buyer membuat order pada listing Anda di Escrow.</span>
-            <small>Auto-refresh setiap 30 detik · Scan sampai Order #5,000</small>
+            <strong>No seller orders yet</strong>
+            <span>A listing you create is not an order. New orders appear after a buyer creates an order for your listing in Escrow.</span>
+            <small>Auto-refresh every 30 seconds · Scan up to Order #5,000</small>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="orders-empty"><strong>Tidak ada order {filterLabels[filter].toLowerCase()}</strong><span>Belum ada order dengan status ini.</span></div>
+          <div className="orders-empty"><strong>Tidak ada order {filterLabels[filter].toLowerCase()}</strong><span>No orders with this status yet.</span></div>
         ) : (
           <table className="orders-table">
             <thead><tr><th>Order</th><th>Listing</th><th>Buyer</th><th>Token Amount</th><th>Gross</th><th>Proceeds</th><th>Fee</th><th>Status</th></tr></thead>
