@@ -257,30 +257,7 @@ export default function HomePage() {
     symbol: String(metadataQueries.data?.[index * 2 + 1]?.result ?? "TOKEN")
   })), [liveListings, metadataQueries.data]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const candidates = enrichedListings.filter((item) => item.address.toLowerCase() !== USTETU_TOKEN_ADDRESS.toLowerCase());
-    if (candidates.length === 0) {
-      setTrustWalletLogoReady(new Set([USTETU_TOKEN_ADDRESS.toLowerCase()]));
-      setLogoChecking(false);
-      return;
-    }
-    setLogoChecking(true);
-    Promise.all(candidates.map((item) => new Promise<[string, boolean]>((resolve) => {
-      const url = trustWalletLogoUrl(item.address, item.chainId);
-      if (!url) return resolve([item.address.toLowerCase(), false]);
-      const image = new Image();
-      image.onload = () => resolve([item.address.toLowerCase(), true]);
-      image.onerror = () => resolve([item.address.toLowerCase(), false]);
-      image.src = url;
-    }))).then((results) => {
-      if (cancelled) return;
-      const ready = new Set<string>([USTETU_TOKEN_ADDRESS.toLowerCase()]);
-      results.forEach(([address, ok]) => { if (ok) ready.add(address); });
-      setTrustWalletLogoReady(ready);
-    }).finally(() => { if (!cancelled) setLogoChecking(false); });
-    return () => { cancelled = true; };
-  }, [enrichedListings]);
+
 
   // Token logo availability is presentation-only. It must never decide whether a
   // valid on-chain listing is visible in the marketplace.
