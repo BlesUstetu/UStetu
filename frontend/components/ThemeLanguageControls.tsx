@@ -31,8 +31,8 @@ export default function ThemeLanguageControls() {
           onChange={(event) => setLanguage(event.target.value as Language)}
           aria-label={t("language")}
         >
-          {Object.entries(languages).map(([code, label]) => (
-            <option key={code} value={code}>{label}</option>
+          {Object.entries(languages).map(([code]) => (
+            <option key={code} value={code}>{code}</option>
           ))}
         </select>
       </label>
