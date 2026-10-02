@@ -51,7 +51,7 @@ function tokenIdFor(address: `0x${string}`) {
 
 function generateListingId(): bigint {
   if (typeof crypto === "undefined" || !crypto.getRandomValues) {
-    throw new Error("Secure random generator tidak tersedia di browser.");
+    throw new Error("Secure random generator is not available in this browser.");
   }
 
   const words = new Uint32Array(4);
@@ -287,20 +287,20 @@ export default function SellerDashboard() {
   };
 
   const ensureBase = async () => {
-    if (!address) throw new Error("Connect wallet terlebih dahulu.");
+    if (!address) throw new Error("Connect your wallet first.");
     if (chainId !== base.id) await switchChainAsync({ chainId: base.id });
   };
 
   const ensureSeller = async () => {
     await ensureBase();
-    if (!registeredQuery.data) throw new Error("Wallet belum terdaftar sebagai seller.");
+    if (!registeredQuery.data) throw new Error("This wallet is not registered as a seller.");
   };
 
   const loadLockedOrders = async () => {
     try {
       await ensureSeller();
       if (!publicClient || activeListingId === null || !listing || !isListingOwner) {
-        throw new Error("Listing USTETU belum tersedia untuk wallet ini.");
+        throw new Error("No USTETU listing is available for this wallet.");
       }
 
       setLockedOrdersLoading(true);
@@ -376,7 +376,7 @@ export default function SellerDashboard() {
       setLockedOrders(matches);
 
       if (!matches.length) {
-        setMessage("Tidak ditemukan order aktif untuk listing USTETU pada 200 Order ID pertama.");
+        setMessage("No active orders were found for this USTETU listing in the first 200 Order IDs.");
       }
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
@@ -389,15 +389,15 @@ export default function SellerDashboard() {
   const transact = async (label: string, fn: () => Promise<`0x${string}`>) => {
     setBusy(`Confirm ${label}`);
     setError("");
-    setMessage("Menunggu konfirmasi di wallet…");
+    setMessage("Waiting for wallet confirmation…");
     try {
       const hash = await fn();
       setBusy(`Waiting ${label}`);
-      setMessage(`${label} terkirim. Menunggu konfirmasi Base…`);
+      setMessage(`${label} submitted. Waiting for Base confirmation…`);
       if (publicClient) {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
-        if (receipt.status !== "success") throw new Error(`${label} gagal atau di-revert.`);
-        setMessage(`${label} berhasil: ${short(hash)}`);
+        if (receipt.status !== "success") throw new Error(`${label} failed or was reverted.`);
+        setMessage(`${label} confirmed: ${short(hash)}`);
       }
       refresh();
       return hash;
@@ -415,7 +415,7 @@ export default function SellerDashboard() {
 
       const balance = baseBalanceQuery.data?.value ?? 0n;
       if (balance <= 0n) {
-        throw new Error("Saldo Base ETH tidak tersedia untuk membayar gas.");
+        throw new Error("No Base ETH is available to pay gas.");
       }
 
       await transact("Register seller", () => writeContractAsync({
@@ -433,8 +433,8 @@ export default function SellerDashboard() {
   const registerListingToken = async () => {
     try {
       await ensureSeller();
-      if (!publicClient || !address) throw new Error("RPC client atau wallet belum tersedia.");
-      if (!createTokenAddress) throw new Error("Token contract address tidak valid.");
+      if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
+      if (!createTokenAddress) throw new Error("Token contract address is invalid.");
 
       const tokenId = tokenIdFor(createTokenAddress);
       const alreadyRegistered = await publicClient.readContract({
@@ -446,7 +446,7 @@ export default function SellerDashboard() {
 
       if (alreadyRegistered) {
         await createTokenInfoQuery.refetch();
-        setMessage("Token sudah terdaftar di USTETU Registry.");
+        setMessage("Token is already registered in the USTETU Registry.");
         return;
       }
 
@@ -458,7 +458,7 @@ export default function SellerDashboard() {
       }));
 
       await createTokenInfoQuery.refetch();
-      setMessage("Token berhasil terdaftar di USTETU Registry. Create Listing sekarang dapat diproses.");
+      setMessage("Token was successfully registered in the USTETU Registry. Create Listing can now proceed.");
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
       setError(text.length > 500 ? text.slice(0, 500) + "…" : text);
@@ -468,8 +468,8 @@ export default function SellerDashboard() {
   const createListing = async () => {
     try {
       await ensureSeller();
-      if (!isAddress(listingTokenAddress)) throw new Error("Token contract address tidak valid.");
-      if (!publicClient || !address) throw new Error("RPC client atau wallet belum tersedia.");
+      if (!isAddress(listingTokenAddress)) throw new Error("Token contract address is invalid.");
+      if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
 
       const token = listingTokenAddress as `0x${string}`;
       const tokenId = tokenIdFor(token);
@@ -478,11 +478,11 @@ export default function SellerDashboard() {
         address: USTETU_REGISTRY_ADDRESS, abi: registryAbi, functionName: "getToken", args: [tokenId]
       });
       if (!registeredToken.contractAddress || registeredToken.contractAddress.toLowerCase() !== token.toLowerCase()) {
-        throw new Error("Token belum terdaftar di USTETU Registry. Daftarkan token terlebih dahulu, lalu ulangi Create Listing.");
+        throw new Error("Token is not registered in the USTETU Registry. Register the token first, then retry Create Listing.");
       }
 
       const decimals = Number(registeredToken.decimalsSnapshot);
-      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) throw new Error("Decimals token dari Registry tidak valid.");
+      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) throw new Error("Token decimals from the Registry are invalid.");
 
       const symbol = await publicClient.readContract({ address: token, abi: erc20MetadataAbi, functionName: "symbol" });
       const balance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "balanceOf", args: [address] });
@@ -491,12 +491,12 @@ export default function SellerDashboard() {
       const min = parseUnits(listingMin || "0", decimals);
       const max = parseUnits(listingMax || "0", decimals);
 
-      if (price <= 0n) throw new Error(`Harga harus lebih dari 0 ${paymentSymbol}.`);
-      if (inventory <= 0n) throw new Error(`Inventory harus lebih dari 0 ${symbol}.`);
-      if (min <= 0n) throw new Error(`Minimum order harus lebih dari 0 ${symbol}.`);
-      if (max < min) throw new Error("Maximum order tidak boleh lebih kecil dari minimum order.");
-      if (max > inventory) throw new Error(`Maximum order tidak boleh melebihi inventory ${symbol}.`);
-      if (balance < inventory) throw new Error(`Saldo ${symbol} tidak cukup. Dibutuhkan ${formatUnits(inventory, decimals)} ${symbol}, tersedia ${formatUnits(balance, decimals)} ${symbol}.`);
+      if (price <= 0n) throw new Error(`Price must be greater than 0 ${paymentSymbol}.`);
+      if (inventory <= 0n) throw new Error(`Inventory must be greater than 0 ${symbol}.`);
+      if (min <= 0n) throw new Error(`Minimum order must be greater than 0 ${symbol}.`);
+      if (max < min) throw new Error("Maximum order cannot be lower than the minimum order.");
+      if (max > inventory) throw new Error(`Maximum order cannot exceed the ${symbol} inventory.`);
+      if (balance < inventory) throw new Error(`Insufficient ${symbol} balance. Required: ${formatUnits(inventory, decimals)} ${symbol}; available: ${formatUnits(balance, decimals)} ${symbol}.`);
 
       let id: bigint | null = null;
       for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -504,7 +504,7 @@ export default function SellerDashboard() {
         const existing = await publicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [candidate] });
         if (!existing.seller || existing.seller.toLowerCase() === ZERO.toLowerCase()) { id = candidate; break; }
       }
-      if (id === null) throw new Error("Gagal mendapatkan Listing ID unik. Silakan coba lagi.");
+      if (id === null) throw new Error("Failed to generate a unique Listing ID. Please try again.");
       setGeneratedListingId(id);
 
       const allowance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
@@ -528,9 +528,9 @@ export default function SellerDashboard() {
   const addInventory = async () => {
     try {
       await ensureSeller();
-      if (!listing || !tokenAddress || !isListingOwner) throw new Error("Listing tidak ditemukan atau bukan milik wallet ini.");
+      if (!listing || !tokenAddress || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
       const raw = parseUnits(amount || "0", tokenDecimals);
-      if (raw <= 0n) throw new Error("Jumlah inventory harus lebih dari 0.");
+      if (raw <= 0n) throw new Error("Inventory amount must be greater than 0.");
       if (tokenAllowance < raw) {
         await transact("Approve inventory", () => writeContractAsync({
           address: tokenAddress,
@@ -553,9 +553,9 @@ export default function SellerDashboard() {
   const withdrawInventory = async () => {
     try {
       await ensureSeller();
-      if (!listing || !isListingOwner) throw new Error("Listing tidak ditemukan atau bukan milik wallet ini.");
+      if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
       const raw = parseUnits(amount || "0", tokenDecimals);
-      if (raw <= 0n || raw > available) throw new Error("Jumlah withdrawal melebihi inventory tersedia.");
+      if (raw <= 0n || raw > available) throw new Error("Withdrawal amount exceeds available inventory.");
       await transact("Withdraw inventory", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
@@ -570,9 +570,9 @@ export default function SellerDashboard() {
   const updatePrice = async () => {
     try {
       await ensureSeller();
-      if (!listing || !isListingOwner) throw new Error("Listing tidak ditemukan atau bukan milik wallet ini.");
+      if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
       const raw = parseUnits(newPrice || "0", paymentDecimals);
-      if (raw <= 0n) throw new Error("Harga harus lebih dari 0.");
+      if (raw <= 0n) throw new Error("Price must be greater than 0.");
       await transact("Update price", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
@@ -587,10 +587,10 @@ export default function SellerDashboard() {
   const updateLimits = async () => {
     try {
       await ensureSeller();
-      if (!listing || !isListingOwner) throw new Error("Listing tidak ditemukan atau bukan milik wallet ini.");
+      if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
       const min = parseUnits(minOrder || "0", tokenDecimals);
       const max = parseUnits(maxOrder || "0", tokenDecimals);
-      if (min <= 0n || max < min) throw new Error("Limit order tidak valid.");
+      if (min <= 0n || max < min) throw new Error("Order limits are invalid.");
       await transact("Update limits", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
@@ -605,7 +605,7 @@ export default function SellerDashboard() {
   const listingAction = async (functionName: "pauseListing" | "resumeListing" | "closeListing") => {
     try {
       await ensureSeller();
-      if (!listing || !isListingOwner) throw new Error("Listing tidak ditemukan atau bukan milik wallet ini.");
+      if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
       await transact(functionName, () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
@@ -621,7 +621,7 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!publicClient || !listing || activeListingId === null || !isListingOwner) {
-        throw new Error("Listing tidak ditemukan atau bukan milik wallet ini.");
+        throw new Error("Listing not found or not owned by this wallet.");
       }
 
       await transact(`Expire order #${orderId.toString()}`, () => writeContractAsync({
@@ -640,7 +640,7 @@ export default function SellerDashboard() {
   const withdrawEarnings = async () => {
     try {
       await ensureSeller();
-      if (claimable === 0n) throw new Error("Tidak ada claimable USDC.");
+      if (claimable === 0n) throw new Error("No claimable USDC is available.");
       await transact("Withdraw earnings", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
@@ -655,7 +655,7 @@ export default function SellerDashboard() {
   const requestWallet = async () => {
     try {
       await ensureSeller();
-      if (!isAddress(withdrawalWallet)) throw new Error("Payout wallet tidak valid.");
+      if (!isAddress(withdrawalWallet)) throw new Error("Payout wallet address is invalid.");
       await transact("Request wallet change", () => writeContractAsync({
         address: USTETU_SELLER_REGISTRY_ADDRESS,
         abi: sellerRegistryAbi,
@@ -694,8 +694,8 @@ export default function SellerDashboard() {
         <div className="tx-progress" role="status" aria-live="polite">
           <span className="tx-spinner" aria-hidden="true" />
           <div>
-            <strong>{busy.startsWith("Confirm ") ? "Konfirmasi di Wallet" : "Transaksi sedang diproses"}</strong>
-            <span>{busy.startsWith("Confirm ") ? `Silakan konfirmasi “${txLabel}” di MetaMask/wallet Anda.` : `“${txLabel}” sedang menunggu konfirmasi Base.`}</span>
+            <strong>{busy.startsWith("Confirm ") ? "Confirm in Wallet" : "Transaction in progress"}</strong>
+            <span>{busy.startsWith("Confirm ") ? `Confirm “${txLabel}” in MetaMask or your wallet.` : `“${txLabel}” is waiting for Base confirmation.`}</span>
           </div>
         </div>
       )}
@@ -824,7 +824,7 @@ export default function SellerDashboard() {
       `}</style>
 
       {!isConnected ? (
-        <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect wallet untuk membuka Seller Center.</p></div>
+        <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect your wallet to open Seller Center.</p></div>
       ) : !registeredQuery.data ? (
         <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">This wallet is not registered. Seller registration is permissionless and requires a small amount of ETH on Base for gas.</p>
           <div className="seller-gas-status">
@@ -903,8 +903,8 @@ export default function SellerDashboard() {
               {listingCreateSuccess ? (
                 <div className="create-listing-success" role="status" aria-live="polite">
                   <div className="create-listing-success-check" aria-hidden="true">✓</div>
-                  <strong>Listing Berhasil Dibuat</strong>
-                  <span>Listing DNA Anda sudah aktif di Base Mainnet.</span>
+                  <strong>Listing Created Successfully</strong>
+                  <span>Your DNA listing is now active on Base Mainnet.</span>
                 </div>
               ) : (
                 <>
@@ -935,7 +935,7 @@ export default function SellerDashboard() {
                       {!createTokenRegistered ? (
                         <>
                           <div className="registry-detail">
-                            Token harus terdaftar di USTETU Registry sebelum approval atau deposit. Registrasi hanya mencatat token on-chain.
+                            The token must be registered in the USTETU Registry before approval or deposit. Registration only records the token on-chain.
                           </div>
                           <div className="registry-actions">
                             <button
@@ -949,7 +949,7 @@ export default function SellerDashboard() {
                         </>
                       ) : (
                         <div className="registry-detail">
-                          ✓ Token terverifikasi di Registry. Anda dapat melanjutkan ke parameter listing.
+                          ✓ Token is registered in the Registry. You can continue to the listing parameters.
                         </div>
                       )}
                     </div>
@@ -979,7 +979,7 @@ export default function SellerDashboard() {
                   </div>
 
                   {!createTokenAddress && (
-                    <div className="seller-note">Masukkan contract address token terlebih dahulu. Setelah token terdeteksi, status Registry akan muncul otomatis.</div>
+                    <div className="seller-note">Enter the token contract address first. Once the token is detected, the Registry status will appear automatically.</div>
                   )}
                 </>
               )}
@@ -1002,7 +1002,7 @@ export default function SellerDashboard() {
                   </div>
                   {isListingOwner && <div className="seller-form" style={{marginTop:14}}>
                     <h2>{tokenSymbol} Inventory</h2>
-                    <p className="seller-note">Hanya inventory {tokenSymbol} yang belum terkunci oleh order yang dapat ditarik.</p>
+                    <p className="seller-note">Only {tokenSymbol} inventory that is not locked by an order can be withdrawn.</p>
                     <label>Amount {tokenSymbol}</label>
                     <input value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal" placeholder="Enter amount" />
                     <div className="seller-actions"><button disabled={disabled || available === 0n} onClick={() => setAmount(formatUnits(available, tokenDecimals))}>Use Max</button><button disabled={disabled} onClick={() => void addInventory()}>Add Inventory</button><button className="primary" disabled={disabled || available === 0n} onClick={() => void withdrawInventory()}>Withdraw {tokenSymbol}</button></div>
@@ -1026,7 +1026,7 @@ export default function SellerDashboard() {
                           </div>
                         </div>;
                       })}
-                      {lockedOrders.length === 0 && !lockedOrdersLoading && <div className="seller-note" style={{marginTop:9}}>Klik View Locked Orders untuk mencari order yang sedang mengunci inventory.</div>}
+                      {lockedOrders.length === 0 && !lockedOrdersLoading && <div className="seller-note" style={{marginTop:9}}>Click View Locked Orders to find orders currently locking inventory.</div>}
                     </div>
                   </div>}
                   {isListingOwner && <div className="seller-actions" style={{marginTop:14}}><button className="primary" disabled={disabled || status !== LISTING_STATUS.ACTIVE} onClick={() => void listingAction("pauseListing")}>Pause</button><button disabled={disabled || status !== LISTING_STATUS.PAUSED} onClick={() => void listingAction("resumeListing")}>Resume</button><button className="danger" disabled={disabled || status === LISTING_STATUS.CLOSED} onClick={() => void listingAction("closeListing")}>Close</button></div>}
@@ -1036,7 +1036,7 @@ export default function SellerDashboard() {
           {activeMenu === "inventory" && !listing && (
             <div className="seller-card seller-section">
               <h2>Inventory</h2>
-              <div className="seller-note">Belum ada listing yang tersedia untuk wallet ini. Buat listing terlebih dahulu atau tunggu discovery listing selesai.</div>
+              <div className="seller-note">No listing is available for this wallet yet. Create a listing first or wait for listing discovery to complete.</div>
             </div>
           )}
 
@@ -1059,7 +1059,7 @@ export default function SellerDashboard() {
           {activeMenu === "settings" && !listing && (
             <div className="seller-card seller-section">
               <h2>Listing Settings</h2>
-              <div className="seller-note">Belum ada listing yang tersedia untuk wallet ini. Listing Settings akan aktif setelah listing ditemukan.</div>
+              <div className="seller-note">No listing is available for this wallet yet. Listing Settings will become available after a listing is discovered.</div>
             </div>
           )}
 
