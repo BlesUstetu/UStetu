@@ -434,78 +434,59 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!isAddress(listingTokenAddress)) throw new Error("Token contract address tidak valid.");
+      if (!publicClient || !address) throw new Error("RPC client atau wallet belum tersedia.");
+
       const token = listingTokenAddress as `0x${string}`;
-      if (!publicClient) throw new Error("RPC client belum tersedia.");
+      const tokenId = tokenIdFor(token);
+
+      const registeredToken = await publicClient.readContract({
+        address: USTETU_REGISTRY_ADDRESS, abi: registryAbi, functionName: "getToken", args: [tokenId]
+      });
+      if (!registeredToken.contractAddress || registeredToken.contractAddress.toLowerCase() !== token.toLowerCase()) {
+        throw new Error("Token belum terdaftar di USTETU Registry. Daftarkan token terlebih dahulu, lalu ulangi Create Listing.");
+      }
+
+      const decimals = Number(registeredToken.decimalsSnapshot);
+      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) throw new Error("Decimals token dari Registry tidak valid.");
+
+      const symbol = await publicClient.readContract({ address: token, abi: erc20MetadataAbi, functionName: "symbol" });
+      const balance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "balanceOf", args: [address] });
+      const price = parseUnits(listingPrice || "0", paymentDecimals);
+      const inventory = parseUnits(listingInventory || "0", decimals);
+      const min = parseUnits(listingMin || "0", decimals);
+      const max = parseUnits(listingMax || "0", decimals);
+
+      if (price <= 0n) throw new Error(`Harga harus lebih dari 0 ${paymentSymbol}.`);
+      if (inventory <= 0n) throw new Error(`Inventory harus lebih dari 0 ${symbol}.`);
+      if (min <= 0n) throw new Error(`Minimum order harus lebih dari 0 ${symbol}.`);
+      if (max < min) throw new Error("Maximum order tidak boleh lebih kecil dari minimum order.");
+      if (max > inventory) throw new Error(`Maximum order tidak boleh melebihi inventory ${symbol}.`);
+      if (balance < inventory) throw new Error(`Saldo ${symbol} tidak cukup. Dibutuhkan ${formatUnits(inventory, decimals)} ${symbol}, tersedia ${formatUnits(balance, decimals)} ${symbol}.`);
 
       let id: bigint | null = null;
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const candidate = generateListingId();
-        const existing = await publicClient.readContract({
-          address: USTETU_ESCROW_ADDRESS,
-          abi: escrowAbi,
-          functionName: "getListing",
-          args: [candidate]
-        });
-
-        if (!existing.seller || existing.seller.toLowerCase() === ZERO.toLowerCase()) {
-          id = candidate;
-          break;
-        }
+        const existing = await publicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [candidate] });
+        if (!existing.seller || existing.seller.toLowerCase() === ZERO.toLowerCase()) { id = candidate; break; }
       }
-
-      if (id === null) {
-        throw new Error("Gagal mendapatkan Listing ID unik. Silakan coba lagi.");
-      }
-
+      if (id === null) throw new Error("Gagal mendapatkan Listing ID unik. Silakan coba lagi.");
       setGeneratedListingId(id);
-      const price = parseUnits(listingPrice || "0", paymentDecimals);
 
-      const tokenId = tokenIdFor(token);
-      const registeredToken = await publicClient.readContract({
-        address: USTETU_REGISTRY_ADDRESS,
-        abi: registryAbi,
-        functionName: "getToken",
-        args: [tokenId]
-      });
-      if (
-        !registeredToken.contractAddress ||
-        registeredToken.contractAddress.toLowerCase() !== token.toLowerCase()
-      ) {
-        throw new Error("Token belum terdaftar di USTETU Registry atau contract address tidak cocok.");
-      }
-      const decimals = Number(registeredToken.decimalsSnapshot);
-      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {
-        throw new Error("Decimals token dari Registry tidak valid.");
-      }
-      const inventory = parseUnits(listingInventory || "0", decimals);
-      const min = parseUnits(listingMin || "0", decimals);
-      const max = parseUnits(listingMax || "0", decimals);
-      if (price <= 0n || inventory <= 0n || min <= 0n || max < min) throw new Error("Parameter listing tidak valid.");
-
-      const allowance = await publicClient?.readContract({
-        address: token,
-        abi: tokenApprovalAbi,
-        functionName: "allowance",
-        args: [address!, USTETU_ESCROW_ADDRESS]
-      });
-      if ((allowance ?? 0n) < inventory) {
-        await transact("Approve listing inventory", () => writeContractAsync({
-          address: token,
-          abi: tokenApprovalAbi,
-          functionName: "approve",
-          args: [USTETU_ESCROW_ADDRESS, inventory]
-        }));
+      const allowance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
+      if (allowance < inventory) {
+        await transact("Approve listing inventory", () => writeContractAsync({ address: token, abi: tokenApprovalAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, inventory] }));
       }
 
       await transact("Create listing", () => writeContractAsync({
-        address: USTETU_ESCROW_ADDRESS,
-        abi: escrowAbi,
-        functionName: "createListingAndDeposit",
-        args: [id, tokenId, address!, price, inventory, min, max]
+        address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "createListingAndDeposit",
+        args: [id, tokenId, address, price, inventory, min, max]
       }));
       setActiveListingId(id);
-      setMessage(`Listing #${id} berhasil dibuat.`);
-    } catch {}
+      setMessage(`Listing #${id} berhasil dibuat untuk ${symbol}.`);
+    } catch (e) {
+      const text = e instanceof Error ? e.message : String(e);
+      setError(text.length > 500 ? `${text.slice(0, 500)}…` : text);
+    }
   };
 
   const addInventory = async () => {
@@ -810,8 +791,8 @@ export default function SellerDashboard() {
                 <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(e.target.value)} inputMode="decimal" /></div>
               </div>
               {createTokenMetadataReady && <div className="seller-token-info"><span>Token</span><strong>{createTokenSymbol}</strong><span>Decimals</span><strong>{createTokenDecimals}</strong><span className="seller-token-address">{short(listingTokenAddress)}</span>{createTokenRegistered && <span className="seller-token-registered">✓ Registered</span>}</div>}
-              {createTokenAddress && !createTokenRegistered && <div className="seller-note">Token address belum cocok dengan token yang terdaftar di USTETU Registry.</div>}
-              <div className="seller-actions"><button className="primary" disabled={disabled || chainId !== base.id} onClick={() => void createListing()}>Create Listing</button></div>
+              {createTokenAddress && !createTokenRegistered && <div className="seller-note">Token belum terdaftar di USTETU Registry. Create Listing akan aktif setelah token terdaftar. Tidak ada transaksi approval atau deposit yang akan dikirim sebelum status Registry valid.</div>}
+              <div className="seller-actions"><button className="primary" disabled={disabled || chainId !== base.id || !createTokenRegistered} onClick={() => void createListing()}>Create Listing</button></div>
             </div>
           </div>
 
