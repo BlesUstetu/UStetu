@@ -379,13 +379,13 @@ export default function SellerDashboard() {
       if (publicClient) {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") throw new Error(`${label} gagal atau di-revert.`);
-        setMessage(`${label} berhasil: ${short(hash)`);
+        setMessage(`${label} berhasil: ${short(hash)}`);
       }
       refresh();
       return hash;
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
-      setError(text.length > 300 ? `${text.slice(0, 300)"}…` : text);
+      setError(text.length > 300 ? `${text.slice(0, 300)}…` : text);
       throw e;
     } finally { setBusy(""); }
   };
@@ -406,7 +406,10 @@ export default function SellerDashboard() {
         functionName: "registerSeller",
         args: [address]
       }));
-    } catch {}
+    } catch (e) {
+      const text = e instanceof Error ? e.message : String(e);
+      setError(text.length > 300 ? text.slice(0, 300) + "…" : text);
+    }
   };
 
   const registerListingToken = async () => {
