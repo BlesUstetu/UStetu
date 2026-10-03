@@ -360,7 +360,7 @@ export default function HomePage() {
       )}
       <footer className="site-footer" aria-label="Contact">
         <a className="site-footer-email" href="mailto:info@ustetu.dev" aria-label="Email USTETU" title="Email USTETU">
-          <span className="site-footer-email-icon" aria-hidden="true" style={{ color: "#B7FF00" }}>✉</span>
+          <span className="site-footer-email-icon" aria-hidden="true" style={{ color: "#B7FF00" }}>✉︎</span>
         </a>
       </footer>
 
