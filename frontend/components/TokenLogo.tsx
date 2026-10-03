@@ -76,9 +76,9 @@ export default function TokenLogo({ address, chainId, symbol, name, size = 38, c
           referrerPolicy="no-referrer"
           onError={() => setFailed(true)}
         />
-      ) : USTETU_TOKEN_ADDRESS.toLowerCase() === (address || "").toLowerCase() ? (
+      ) : (
         <span>{fallback}</span>
-      ) : null}
+      )}
       <style jsx>{`
         .token-logo{flex:0 0 auto;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(145deg,rgba(41,95,164,.35),rgba(10,17,31,.95));border:1px solid rgba(255,255,255,.13);box-shadow:0 4px 18px rgba(0,0,0,.22);font-weight:800;color:#f5f7ff;line-height:1}
         .token-logo img{width:100%;height:100%;display:block;object-fit:contain;padding:8px;box-sizing:border-box}
