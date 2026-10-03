@@ -118,13 +118,17 @@ export default function HomePage() {
   const tokenConfigs = useMemo(
     () => (listingQueries.data ?? []).map((entry) => {
       const chainListing: any = entry?.result;
+      // Keep one registry read per listing index. Filtering failed listing
+      // reads here would shift tokenQueries.data indexes and attach token
+      // metadata to the wrong listing.
+      const tokenId = chainListing?.tokenId?.toString() ?? "0";
       return {
         address: USTETU_REGISTRY_ADDRESS,
         abi: registryAbi,
         functionName: "getToken" as const,
-        args: [hexTokenId(chainListing?.tokenId?.toString() ?? "0")] as const
+        args: [hexTokenId(tokenId)] as const
       };
-    }).filter((item) => item.args[0] !== "0x" + "0".repeat(64)),
+    }),
     [listingQueries.data]
   );
 
@@ -269,7 +273,9 @@ export default function HomePage() {
   // A listing with zero available inventory is not buyable, so keep it out of
   // the public marketplace list. The on-chain listing itself remains untouched.
   const availableListings = useMemo(
-    () => logoVerifiedListings.filter((item) => item.availableRaw > 0n),
+    () => logoVerifiedListings.filter(
+      (item) => item.status === LISTING_ACTIVE && item.availableRaw > 0n
+    ),
     [logoVerifiedListings]
   );
 
