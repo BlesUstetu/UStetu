@@ -22,7 +22,11 @@ const LISTING_EVENTS = new Set([
   "ListingOrderLimitsUpdated",
   "ListingPaused",
   "ListingResumed",
-  "ListingClosed"
+  "ListingClosed",
+  "OrderCreated",
+  "OrderCompleted",
+  "OrderExpired",
+  "AutoReleased"
 ]);
 
 function address(value: unknown): string {
@@ -34,10 +38,11 @@ function big(value: unknown): string {
 }
 
 function statusName(value: unknown): ListingProjection["status"] {
+  // UStetuTypes.ListingStatus is ACTIVE=0, PAUSED=1, CLOSED=2.
   const n = Number(value);
-  if (n === 1) return "ACTIVE";
-  if (n === 2) return "PAUSED";
-  if (n === 3) return "CLOSED";
+  if (n === 0) return "ACTIVE";
+  if (n === 1) return "PAUSED";
+  if (n === 2) return "CLOSED";
   return "UNKNOWN";
 }
 
@@ -84,21 +89,41 @@ async function processLog(log: Log, finalized: boolean) {
   const parsed = escrow.interface.parseLog(log);
   if (!parsed || !LISTING_EVENTS.has(parsed.name)) return;
 
-  const listingId = parsed.args[0] as bigint;
-  if (await eventExists(log.transactionHash, log.index)) return;
+  // Listing lifecycle events carry listingId as their first argument.
+  // Order lifecycle events carry orderId first, so resolve their listing
+  // through the authoritative on-chain order record.
+  let listingId: bigint;
+  if (parsed.name === "OrderCreated") {
+    listingId = parsed.args[1] as bigint;
+  } else if (
+    parsed.name === "OrderCompleted" ||
+    parsed.name === "OrderExpired" ||
+    parsed.name === "AutoReleased"
+  ) {
+    const orderId = parsed.args[0] as bigint;
+    const order = await escrow.getOrder(orderId);
+    listingId = order.listingId as bigint;
+  } else {
+    listingId = parsed.args[0] as bigint;
+  }
 
-  await insertEvent({
-    chain_id: config.chainId,
-    contract_address: config.escrowAddress.toLowerCase(),
-    block_number: log.blockNumber,
-    block_hash: log.blockHash,
-    transaction_hash: log.transactionHash,
-    log_index: log.index,
-    event_name: parsed.name,
-    payload: jsonValue(parsed.args.toObject()) as Record<string, unknown>,
-    finalized_at: finalized ? new Date().toISOString() : null,
-    removed: false
-  });
+  // Event insertion is idempotent. Even if the event was already stored,
+  // refresh the projection again so a previous refresh failure is recoverable
+  // on the next indexer cycle.
+  if (!(await eventExists(log.transactionHash, log.index))) {
+    await insertEvent({
+      chain_id: config.chainId,
+      contract_address: config.escrowAddress.toLowerCase(),
+      block_number: log.blockNumber,
+      block_hash: log.blockHash,
+      transaction_hash: log.transactionHash,
+      log_index: log.index,
+      event_name: parsed.name,
+      payload: jsonValue(parsed.args.toObject()) as Record<string, unknown>,
+      finalized_at: finalized ? new Date().toISOString() : null,
+      removed: false
+    });
+  }
 
   await refreshListing(listingId, log, finalized);
 }
