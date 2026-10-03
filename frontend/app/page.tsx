@@ -360,7 +360,7 @@ export default function HomePage() {
       )}
       <footer className="site-footer" aria-label="Contact">
         <a className="site-footer-email" href="mailto:info@ustetu.dev" aria-label="Email USTETU" title="Email USTETU">
-          <span className="site-footer-email-icon" aria-hidden="true" style={{ color: "#B7FF00" }}>✉︎</span>
+          <span className="site-footer-email-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.5 6.5h17v11h-17v-11Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="m4.2 7.2 7.8 6 7.8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
         </a>
       </footer>
 
