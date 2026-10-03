@@ -28,10 +28,10 @@ const client = createPublicClient({
   ])
 });
 
-// Fallback discovery is only used when the indexer API is unavailable.
-// Production should set NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK to
-// the escrow deployment block so historical listings remain discoverable.
-const DEFAULT_BLOCK_WINDOW = 500_000n;
+// Historical discovery is permanently anchored to the UStetuEscrow deployment
+// block. This prevents older listings from disappearing merely because they
+// fall outside a rolling block window.
+const DISCOVERY_FROM_BLOCK_ENV = "NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK";
 // Keep RPC requests bounded, but discover in parallel so the marketplace does
 // not remain blank while historical listings are being scanned.
 const CHUNK_SIZE = 10_000n;
@@ -52,18 +52,15 @@ export async function discoverListingsOnChain(
   discoveryInFlight = (async () => {
   const latest = await client.getBlockNumber();
   const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
-  const configuredWindow = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_BLOCKS;
-  const windowSize = configuredWindow && Number.isFinite(Number(configuredWindow)) && Number(configuredWindow) > 0
-    ? BigInt(Math.floor(Number(configuredWindow)))
-    : DEFAULT_BLOCK_WINDOW;
-  // A configured deployment block is the production source of historical discovery.
-  // Keep the larger window only as a development fallback when the deployment block
-  // has not yet been supplied through the public environment.
-  const fromBlock = configuredFrom
-    ? BigInt(configuredFrom)
-    : latest > windowSize
-      ? latest - windowSize
-      : 0n;
+  if (!configuredFrom || !/^\\d+$/.test(configuredFrom)) {
+    throw new Error(
+      `Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`
+    );
+  }
+  const fromBlock = BigInt(configuredFrom);
+  if (fromBlock > latest) {
+    throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
+  }
 
   const discovered = new Map<string, DiscoveredListing>();
 
