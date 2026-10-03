@@ -32,12 +32,17 @@ const client = createPublicClient({
 // Production should set NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK to
 // the escrow deployment block so historical listings remain discoverable.
 const DEFAULT_BLOCK_WINDOW = 500_000n;
-const CHUNK_SIZE = 2_000n;
+// Keep RPC requests bounded, but discover in parallel so the marketplace does
+// not remain blank while historical listings are being scanned.
+const CHUNK_SIZE = 10_000n;
+const MAX_CONCURRENT_CHUNKS = 6;
 const DISCOVERY_CACHE_MS = 45_000;
 let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
 let discoveryInFlight: Promise<DiscoveredListing[]> | null = null;
 
-export async function discoverListingsOnChain(): Promise<DiscoveredListing[]> {
+export async function discoverListingsOnChain(
+  onProgress?: (listings: DiscoveredListing[]) => void
+): Promise<DiscoveredListing[]> {
   const now = Date.now();
   if (discoveryCache && now - discoveryCache.at < DISCOVERY_CACHE_MS) {
     return discoveryCache.listings;
@@ -62,34 +67,50 @@ export async function discoverListingsOnChain(): Promise<DiscoveredListing[]> {
 
   const discovered = new Map<string, DiscoveredListing>();
 
+  const ranges: Array<{ start: bigint; end: bigint }> = [];
   for (let start = fromBlock; start <= latest; start += CHUNK_SIZE) {
-    const end = start + CHUNK_SIZE - 1n > latest ? latest : start + CHUNK_SIZE - 1n;
-    const logs = await client.getLogs({
-      address: USTETU_ESCROW_ADDRESS,
-      event,
-      fromBlock: start,
-      toBlock: end
+    ranges.push({
+      start,
+      end: start + CHUNK_SIZE - 1n > latest ? latest : start + CHUNK_SIZE - 1n
     });
+  }
 
-    for (const log of logs) {
-      const listingId = log.args.listingId?.toString();
-      const seller = log.args.seller;
-      const token = log.args.token;
-      if (!listingId || !seller || !token) continue;
-      discovered.set(listingId, {
-        listing_id: listingId,
-        seller,
-        token_id: "",
-        token_contract: token,
-        payment_token: "",
-        price: "",
-        inventory_deposited: "",
-        inventory_locked: "",
-        min_order_amount: "",
-        max_order_amount: "",
-        status: "ACTIVE"
+  for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
+    const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
+    const results = await Promise.all(batch.map(async ({ start, end }) => {
+      return client.getLogs({
+        address: USTETU_ESCROW_ADDRESS,
+        event,
+        fromBlock: start,
+        toBlock: end
       });
+    }));
+
+    for (const logs of results) {
+      for (const log of logs) {
+        const listingId = log.args.listingId?.toString();
+        const seller = log.args.seller;
+        const token = log.args.token;
+        if (!listingId || !seller || !token) continue;
+        discovered.set(listingId, {
+          listing_id: listingId,
+          seller,
+          token_id: "",
+          token_contract: token,
+          payment_token: "",
+          price: "",
+          inventory_deposited: "",
+          inventory_locked: "",
+          min_order_amount: "",
+          max_order_amount: "",
+          status: "ACTIVE"
+        });
+      }
     }
+
+    // Progressive rendering: callers can show listings already discovered
+    // instead of waiting for the complete historical scan.
+    onProgress?.(Array.from(discovered.values()));
   }
 
   if (!discovered.has(USTETU_BOOTSTRAP_LISTING_ID.toString())) {
