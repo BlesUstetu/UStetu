@@ -85,19 +85,19 @@ export default function Header({ showSellerOrders = false, showHome = true, show
 
             <nav className="ustetu-header-menu-nav" aria-label="USTETU navigation">
               {showHome && (
-                <a href={`${DEPLOY_BASE}/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
+                <a href={`${DEPLOY_BASE}/`} className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
                   <span className="ustetu-header-menu-icon">⌂</span>
                   <span>Home</span>
                 </a>
               )}
               {showSellerCenter && (
-                <a href={`${DEPLOY_BASE}/seller/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
+                <a href={`${DEPLOY_BASE}/seller/`} className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
                   <span className="ustetu-header-menu-icon">◆</span>
                   <span>Seller Center</span>
                 </a>
               )}
               {showSellerOrders && (
-                <a href={`${DEPLOY_BASE}/seller/orders/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
+                <a href={`${DEPLOY_BASE}/seller/orders/`} className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
                   <span className="ustetu-header-menu-icon">▣</span>
                   <span>Orders</span>
                 </a>
