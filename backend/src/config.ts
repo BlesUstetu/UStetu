@@ -13,7 +13,7 @@ export const config = {
   escrowAddress: required("ESCROW_ADDRESS"),
   confirmations: Number(process.env.CONFIRMATIONS ?? "12"),
   pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? "10000"),
-  startBlock: Number(process.env.START_BLOCK ?? "0"),
+  startBlock: Number(required("START_BLOCK")),
   supabaseUrl: required("SUPABASE_URL"),
   supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
   apiPort: Number(process.env.API_PORT ?? "8787"),
@@ -22,4 +22,4 @@ export const config = {
 
 if (!Number.isInteger(config.chainId) || config.chainId <= 0) throw new Error("CHAIN_ID must be a positive integer");
 if (!Number.isInteger(config.confirmations) || config.confirmations < 0) throw new Error("CONFIRMATIONS must be >= 0");
-if (!Number.isInteger(config.startBlock) || config.startBlock < 0) throw new Error("START_BLOCK must be >= 0");
+if (!Number.isInteger(config.startBlock) || config.startBlock <= 0) throw new Error("START_BLOCK must be the positive UStetuEscrow deployment block");
