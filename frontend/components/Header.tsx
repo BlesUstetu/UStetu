@@ -5,14 +5,16 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import ThemeLanguageControls from "@/components/ThemeLanguageControls";
 import SystemInfo from "@/components/SystemInfo";
 
+const DEPLOY_BASE = process.env.NEXT_DEPLOY_TARGET === "github-pages" ? "/UStetu" : "";
+
 export default function Header({ showSellerOrders = false, showHome = true, showSellerCenter = true }: { showSellerOrders?: boolean; showHome?: boolean; showSellerCenter?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="topbar">
       <div className="ustetu-header-brand">
-        <a href="/UStetu/" aria-label="USTETU Home" className="ustetu-header-brand-link">
-          <img className="ustetu-logo" src="/UStetu/ustetu-logo.svg" alt="USTETU" />
+        <a href={`${DEPLOY_BASE}/" aria-label="USTETU Home" className="ustetu-header-brand-link">
+          <img className="ustetu-logo" src={`${DEPLOY_BASE}/ustetu-logo.svg`} alt="USTETU" />
           <div className="brand-copy">
             <div className="brand"><span className="brand-ust">UST</span><span className="brand-etu">ETU</span></div>
           </div>
@@ -83,19 +85,19 @@ export default function Header({ showSellerOrders = false, showHome = true, show
 
             <nav className="ustetu-header-menu-nav" aria-label="USTETU navigation">
               {showHome && (
-                <a href="/UStetu/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
+                <a href={`${DEPLOY_BASE}/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
                   <span className="ustetu-header-menu-icon">⌂</span>
                   <span>Home</span>
                 </a>
               )}
               {showSellerCenter && (
-                <a href="/UStetu/seller/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
+                <a href={`${DEPLOY_BASE}/seller/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
                   <span className="ustetu-header-menu-icon">◆</span>
                   <span>Seller Center</span>
                 </a>
               )}
               {showSellerOrders && (
-                <a href="/UStetu/seller/orders/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
+                <a href={`${DEPLOY_BASE}/seller/orders/" className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
                   <span className="ustetu-header-menu-icon">▣</span>
                   <span>Orders</span>
                 </a>
