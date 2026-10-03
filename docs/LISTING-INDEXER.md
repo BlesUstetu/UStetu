@@ -17,7 +17,8 @@ The indexer consumes canonical escrow events:
 - `ListingClosed(listingId, seller)`
 - `OrderCreated(orderId, listingId, buyer, seller, recipient, tokenAmount, unitPrice, grossPayment, paymentToken)`
 - `OrderCompleted(orderId, buyer, seller, tokenAmount)`
-- `OrderRefunded(orderId, buyer, amount)`
+- `OrderExpired(orderId, buyer, seller, tokenAmount)`
+- `AutoReleased(orderId, buyer, seller, tokenAmount)`
 
 The indexer must persist `chainId`, `contractAddress`, `blockNumber`, `transactionHash`, `logIndex`, and an ingestion timestamp for every event. The tuple `(chainId, contractAddress, transactionHash, logIndex)` is the event idempotency key.
 
@@ -48,6 +49,8 @@ lastTransactionHash
 
 ## State Rules
 
+For `UStetuTypes.ListingStatus`, the on-chain values are `ACTIVE=0`, `PAUSED=1`, and `CLOSED=2`. The indexer projection must preserve that mapping.
+
 - `InventoryDeposited` increases deposited inventory.
 - `InventoryWithdrawn` decreases deposited inventory.
 - `ListingPriceUpdated` replaces the displayed unit price.
@@ -57,7 +60,8 @@ lastTransactionHash
 - `ListingClosed` sets status to `CLOSED` and is terminal for discovery.
 - `OrderCreated` increases the projected locked inventory by the order token amount.
 - `OrderCompleted` decreases locked and deposited inventory by the completed token amount.
-- `OrderRefunded` decreases locked inventory by the refunded token amount.
+- `OrderExpired` releases the locked inventory for an unpaid order.
+- `AutoReleased` decreases locked and deposited inventory when the paid order is permissionlessly settled.
 
 For production, the indexer should periodically reconcile projections against `UStetuEscrow.getListing(listingId)` and treat on-chain state as authoritative when a discrepancy exists.
 
