@@ -170,11 +170,34 @@ export default function HomePage() {
         } while (cursor);
         setListings(collected.filter((item) => item.token_contract));
       } else {
-        setListings(await discoverListingsOnChain());
+        // Do not block the marketplace UI on a full historical RPC scan.
+        // Bootstrap listing #1 is rendered immediately, then historical
+        // listings are merged in progressively as InventoryDeposited logs
+        // are discovered.
+        const mergeDiscovered = (items: ApiListing[]) => {
+          setListings((current) => {
+            const byId = new Map<string, ApiListing>([
+              [BOOTSTRAP_LISTING.listing_id, BOOTSTRAP_LISTING],
+              ...current.map((item) => [item.listing_id, item] as const),
+              ...items.map((item) => [item.listing_id, item] as const)
+            ]);
+            return Array.from(byId.values());
+          });
+        };
+
+        setListings((current) => current.length > 0 ? current : [BOOTSTRAP_LISTING]);
+        if (!background) setLoading(false);
+
+        const discovered = await discoverListingsOnChain((items) => {
+          mergeDiscovered(items);
+        });
+        mergeDiscovered(discovered);
       }
     } catch (error) {
       try {
-        setListings(await discoverListingsOnChain());
+        // Keep the known bootstrap listing visible even if RPC discovery is
+        // temporarily unavailable. A failed discovery must not blank the UI.
+        setListings((current) => current.length > 0 ? current : [BOOTSTRAP_LISTING]);
         setApiError("");
       } catch {
         if (!background && listings.length === 0) {
