@@ -25,15 +25,15 @@ function positiveInt(value: string | null, fallback: number): number {
   return n;
 }
 
-function encodeCursor(value: number): string {
-  return Buffer.from(String(value), "utf8").toString("base64url");
+function encodeCursor(value: string): string {
+  return Buffer.from(value, "utf8").toString("base64url");
 }
 
-function decodeCursor(value: string | null): number | null {
+function decodeCursor(value: string | null): string | null {
   if (!value) return null;
   try {
-    const n = Number(Buffer.from(value, "base64url").toString("utf8"));
-    return Number.isInteger(n) && n >= 0 ? n : null;
+    const decoded = Buffer.from(value, "base64url").toString("utf8");
+    return /^\d+$/.test(decoded) ? decoded : null;
   } catch {
     return null;
   }
@@ -72,7 +72,7 @@ async function listListings(url: URL) {
   const rows = data ?? [];
   const hasMore = rows.length > limit;
   const items = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore ? encodeCursor(Number(items[items.length - 1].listing_id)) : null;
+  const nextCursor = hasMore ? encodeCursor(String(items[items.length - 1].listing_id)) : null;
 
   return { items, pagination: { limit, nextCursor, hasMore } };
 }
