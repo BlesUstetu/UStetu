@@ -7,9 +7,11 @@ const nextConfig: NextConfig = {
   ...(isGitHubPages ? { output: "export", basePath: "/UStetu" } : {}),
   trailingSlash: true,
 
-  // Version/cache skew protection for static deployments.
-  // CI injects the commit SHA so every deployment gets a unique asset version.
-  deploymentId: process.env.NEXT_DEPLOYMENT_ID ?? "local",
+  // GitHub Pages CI injects a unique commit SHA.
+  // Vercel must not receive a fixed deploymentId such as "local".
+  ...(process.env.NEXT_DEPLOYMENT_ID
+    ? { deploymentId: process.env.NEXT_DEPLOYMENT_ID }
+    : {}),
 };
 
 export default nextConfig;
