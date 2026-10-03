@@ -267,7 +267,7 @@ html[data-theme="light"] .listing-row:hover {
   height: 34px;
   border: 1px solid transparent;
   border-radius: 10px;
-  color: #8ff6ff;
+  color: #B7FF00 !important;
   font-size: 18px;
   line-height: 1;
   background:
@@ -277,8 +277,8 @@ html[data-theme="light"] .listing-row:hover {
     0 0 18px rgba(72,168,255,.12),
     inset 0 1px 0 rgba(255,255,255,.08);
   text-shadow:
-    0 0 8px rgba(72,210,255,.65),
-    0 0 16px rgba(105,92,255,.28);
+    0 0 8px rgba(183,255,0,.70),
+    0 0 16px rgba(183,255,0,.32);
   overflow: hidden;
 }
 
@@ -289,7 +289,10 @@ html[data-theme="light"] .listing-row:hover {
   border-radius: 9px;
   background: linear-gradient(135deg, rgba(72,210,255,.10), transparent 45%, rgba(180,92,255,.08));
   pointer-events: none;
+  z-index: 0;
 }
+
+.site-footer-email-icon svg { position: relative; z-index: 1; display: block; color: #B7FF00; }
 
 .site-footer-email:hover {
   color: #ffffff;
