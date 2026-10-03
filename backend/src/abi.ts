@@ -15,5 +15,6 @@ export const ESCROW_ABI = [
   "event SellerWithdrawal(address indexed seller,address indexed token,address indexed withdrawalWallet,uint256 amount)",
   "event MarketplaceFeeWithdrawn(address indexed feeRecipient,address indexed token,uint256 amount)",
   "function paymentToken() view returns (address)",
-  "function getListing(uint256 listingId) view returns (uint256 tokenId,address seller,uint256 price,uint256 inventoryDeposited,uint256 inventoryLocked,uint256 minOrderAmount,uint256 maxOrderAmount,uint8 status,uint64 createdAt,uint64 updatedAt)"
+  "function getListing(uint256 listingId) view returns (uint256 tokenId,address seller,uint256 price,uint256 inventoryDeposited,uint256 inventoryLocked,uint256 minOrderAmount,uint256 maxOrderAmount,uint8 status,uint64 createdAt,uint64 updatedAt)",
+  "function getOrder(uint256 orderId) view returns (uint256 listingId,address buyer,address seller,address recipient,address token,address paymentToken,uint256 tokenAmount,uint256 unitPrice,uint256 grossPayment,uint256 marketplaceFee,uint256 sellerProceeds,uint8 state,uint64 createdAt,uint64 paidAt,uint64 completedAt,uint64 expiresAt)"
 ] as const;
