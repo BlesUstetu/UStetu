@@ -159,7 +159,7 @@ export default function HomePage() {
         const collected: ApiListing[] = [];
         let cursor: string | null = null;
         do {
-          const query = new URLSearchParams({ status: "ACTIVE", limit: "100" });
+          const query = new URLSearchParams({ limit: "100" });
           if (cursor) query.set("cursor", cursor);
           const response = await fetch(baseUrl + "/listings?" + query.toString(), { cache: "no-store" });
           const body = await response.json() as { success?: boolean; items?: ApiListing[]; pagination?: { nextCursor?: string | null; hasMore?: boolean }; error?: string };
@@ -270,12 +270,11 @@ export default function HomePage() {
   // valid on-chain listing is visible in the marketplace.
   const logoVerifiedListings = enrichedListings;
 
-  // A listing with zero available inventory is not buyable, so keep it out of
-  // the public marketplace list. The on-chain listing itself remains untouched.
+  // Inventory is the visibility rule. A listing remains discoverable while
+  // any inventory is available, regardless of ACTIVE/PAUSED/CLOSED status.
+  // Status only controls whether the Buy action is enabled.
   const availableListings = useMemo(
-    () => logoVerifiedListings.filter(
-      (item) => item.status === LISTING_ACTIVE && item.availableRaw > 0n
-    ),
+    () => logoVerifiedListings.filter((item) => item.availableRaw > 0n),
     [logoVerifiedListings]
   );
 
@@ -342,7 +341,7 @@ export default function HomePage() {
             </div>
             <div className="drawer-listing-card"><div className="drawer-listing-title">Listing #{selected.listingId.toString()}</div><div className="drawer-price"><strong>{selected.price}</strong> <span>{selected.paymentSymbol} / {selected.symbol}</span></div><div className="drawer-available">{t("available")} <strong>{selected.available} {selected.symbol}</strong></div></div>
             <div className="drawer-actions">
-              <button className="primary-glass" type="button" disabled={selected.status !== LISTING_ACTIVE || selected.availableRaw < selected.minOrderAmount} onClick={() => setBuyOpen(true)}>{selected.status === LISTING_ACTIVE && selected.availableRaw >= selected.minOrderAmount ? `${t("buy")} ${selected.symbol}` : "Buy unavailable"}</button>
+              <button className="primary-glass" type="button" disabled={selected.status !== LISTING_ACTIVE || selected.availableRaw < selected.minOrderAmount} onClick={() => setBuyOpen(true)}>{selected.status === LISTING_ACTIVE && selected.availableRaw >= selected.minOrderAmount ? `${t("buy")} ${selected.symbol}` : selected.status === 1 ? "Listing paused" : selected.status === 2 ? "Listing closed" : "Buy unavailable"}</button>
             </div>
           </aside>
           {buyOpen && (
