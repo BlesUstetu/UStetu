@@ -154,6 +154,23 @@ export default function HomePage() {
     if (!background) setLoading(true);
     if (!background) setApiError("");
     try {
+      // The indexer is an acceleration layer, not the authoritative discovery
+      // source. Load it when configured, then always run the permanent on-chain
+      // historical discovery once per page session so listings cannot be hidden
+      // by an incomplete/stale indexer.
+      const mergeListings = (items: ApiListing[]) => {
+        setListings((current) => {
+          const byId = new Map<string, ApiListing>([
+            [BOOTSTRAP_LISTING.listing_id, BOOTSTRAP_LISTING],
+            ...current.map((item) => [item.listing_id, item] as const),
+            ...items.map((item) => [item.listing_id, item] as const)
+          ]);
+          return Array.from(byId.values());
+        });
+      };
+
+      setListings((current) => current.length > 0 ? current : [BOOTSTRAP_LISTING]);
+
       if (INDEXER_API_URL) {
         const baseUrl = INDEXER_API_URL.replace(/\/$/, "");
         const collected: ApiListing[] = [];
@@ -168,30 +185,24 @@ export default function HomePage() {
           cursor = body.pagination?.hasMore ? (body.pagination.nextCursor ?? null) : null;
           if (body.pagination?.hasMore && !cursor) throw new Error("Marketplace pagination returned an invalid cursor.");
         } while (cursor);
-        setListings(collected.filter((item) => item.token_contract));
-      } else {
-        // Do not block the marketplace UI on a full historical RPC scan.
-        // Bootstrap listing #1 is rendered immediately, then historical
-        // listings are merged in progressively as InventoryDeposited logs
-        // are discovered.
-        const mergeDiscovered = (items: ApiListing[]) => {
-          setListings((current) => {
-            const byId = new Map<string, ApiListing>([
-              [BOOTSTRAP_LISTING.listing_id, BOOTSTRAP_LISTING],
-              ...current.map((item) => [item.listing_id, item] as const),
-              ...items.map((item) => [item.listing_id, item] as const)
-            ]);
-            return Array.from(byId.values());
-          });
-        };
+        mergeListings(collected.filter((item) => item.token_contract));
+      }
 
-        setListings((current) => current.length > 0 ? current : [BOOTSTRAP_LISTING]);
+      // Do not block the marketplace UI on the full historical RPC scan.
+      // The permanent scan starts at the Escrow deployment block and merges
+      // InventoryDeposited events progressively as they are discovered.
+      // With an indexer configured, this is done on the initial page load so
+      // the indexer can never hide older listings. Without an indexer, it also
+      // runs on background refreshes.
+      const shouldRunHistoricalDiscovery = !background || !INDEXER_API_URL;
+      if (shouldRunHistoricalDiscovery) {
         if (!background) setLoading(false);
-
         const discovered = await discoverListingsOnChain((items) => {
-          mergeDiscovered(items);
+          mergeListings(items);
         });
-        mergeDiscovered(discovered);
+        mergeListings(discovered);
+      } else if (!background) {
+        setLoading(false);
       }
     } catch (error) {
       try {
