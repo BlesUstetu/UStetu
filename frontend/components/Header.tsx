@@ -13,7 +13,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
   return (
     <header className="topbar">
       <div className="ustetu-header-brand">
-        <a href={`${DEPLOY_BASE}/" aria-label="USTETU Home" className="ustetu-header-brand-link">
+        <a href={`${DEPLOY_BASE}/`} aria-label="USTETU Home" className="ustetu-header-brand-link">
           <img className="ustetu-logo" src={`${DEPLOY_BASE}/ustetu-logo.svg`} alt="USTETU" />
           <div className="brand-copy">
             <div className="brand"><span className="brand-ust">UST</span><span className="brand-etu">ETU</span></div>
