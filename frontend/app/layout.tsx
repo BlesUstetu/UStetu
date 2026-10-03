@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import Providers from "./providers";
 import "./globals.css";
 import "./buy-modal.css";
@@ -18,6 +19,19 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" data-theme="dark">
       <body>
         <Providers>{children}</Providers>
+
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-HDRSBE7EW9"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-HDRSBE7EW9');
+          `}
+        </Script>
       </body>
     </html>
   );
