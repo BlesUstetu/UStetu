@@ -74,6 +74,9 @@ export async function discoverListingsOnChain(
       end: start + CHUNK_SIZE - 1n > latest ? latest : start + CHUNK_SIZE - 1n
     });
   }
+  // Scan newest blocks first so recently created listings become visible
+  // quickly while the remaining historical range continues in the background.
+  ranges.reverse();
 
   for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
     const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
