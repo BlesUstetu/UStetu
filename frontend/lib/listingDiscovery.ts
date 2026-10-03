@@ -28,7 +28,10 @@ const client = createPublicClient({
   ])
 });
 
-const DEFAULT_BLOCK_WINDOW = 50_000n;
+// Fallback discovery is only used when the indexer API is unavailable.
+// Production should set NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK to
+// the escrow deployment block so historical listings remain discoverable.
+const DEFAULT_BLOCK_WINDOW = 500_000n;
 const CHUNK_SIZE = 2_000n;
 const DISCOVERY_CACHE_MS = 45_000;
 let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
