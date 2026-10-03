@@ -51,7 +51,14 @@ export async function discoverListingsOnChain(): Promise<DiscoveredListing[]> {
   const windowSize = configuredWindow && Number.isFinite(Number(configuredWindow)) && Number(configuredWindow) > 0
     ? BigInt(Math.floor(Number(configuredWindow)))
     : DEFAULT_BLOCK_WINDOW;
-  const fromBlock = configuredFrom ? BigInt(configuredFrom) : latest > windowSize ? latest - windowSize : 0n;
+  // A configured deployment block is the production source of historical discovery.
+  // Keep the larger window only as a development fallback when the deployment block
+  // has not yet been supplied through the public environment.
+  const fromBlock = configuredFrom
+    ? BigInt(configuredFrom)
+    : latest > windowSize
+      ? latest - windowSize
+      : 0n;
 
   const discovered = new Map<string, DiscoveredListing>();
 
