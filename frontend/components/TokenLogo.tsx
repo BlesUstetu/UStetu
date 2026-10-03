@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { getAddress, isAddress } from "viem";
 import { USTETU_TOKEN_ADDRESS } from "@/lib/contracts";
 
+const DEPLOY_BASE = process.env.NEXT_DEPLOY_TARGET === "github-pages" ? "/UStetu" : "";
+
 type TokenLogoProps = {
   address?: string;
   chainId?: number;
@@ -45,7 +47,7 @@ export default function TokenLogo({ address, chainId, symbol, name, size = 38, c
     // Use it before third-party token-logo repositories so the official
     // USTETU logo is available even when Trust Wallet Assets has no entry.
     if (address.toLowerCase() === USTETU_TOKEN_ADDRESS.toLowerCase() && chainId === 8453) {
-      return "/UStetu/ustetu-logo-32.svg";
+      return `${DEPLOY_BASE}/ustetu-logo-32.png`;
     }
 
     const chain = CHAIN_PATHS[chainId];
