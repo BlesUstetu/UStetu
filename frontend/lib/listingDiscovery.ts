@@ -52,7 +52,7 @@ export async function discoverListingsOnChain(
   discoveryInFlight = (async () => {
   const latest = await client.getBlockNumber();
   const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
-  if (!configuredFrom || !/^\\d+$/.test(configuredFrom)) {
+  if (!configuredFrom || !/^\d+$/.test(configuredFrom)) {
     throw new Error(
       `Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`
     );
