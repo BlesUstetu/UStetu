@@ -35,7 +35,8 @@ const DISCOVERY_FROM_BLOCK_ENV = "NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOC
 // Keep RPC requests bounded, but discover in parallel so the marketplace does
 // not remain blank while historical listings are being scanned.
 const CHUNK_SIZE = 10_000n;
-const MAX_CONCURRENT_CHUNKS = 6;
+const RETRY_CHUNK_SIZE = 2_500n;
+const MAX_CONCURRENT_CHUNKS = 2;
 const DISCOVERY_CACHE_MS = 45_000;
 let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
 let discoveryInFlight: Promise<DiscoveredListing[]> | null = null;
@@ -78,12 +79,32 @@ export async function discoverListingsOnChain(
   for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
     const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
     const results = await Promise.all(batch.map(async ({ start, end }) => {
-      return client.getLogs({
-        address: USTETU_ESCROW_ADDRESS,
-        event,
-        fromBlock: start,
-        toBlock: end
-      });
+      try {
+        return await client.getLogs({
+          address: USTETU_ESCROW_ADDRESS,
+          event,
+          fromBlock: start,
+          toBlock: end
+        });
+      } catch (error) {
+        // Some public Base RPC endpoints reject larger log ranges or bursty
+        // concurrent requests. Retry a failed range as smaller sequential
+        // chunks so one provider error cannot hide historical listings.
+        const logs = [] as Awaited<ReturnType<typeof client.getLogs>>;
+        for (let subStart = start; subStart <= end; subStart += RETRY_CHUNK_SIZE) {
+          const subEnd = subStart + RETRY_CHUNK_SIZE - 1n > end
+            ? end
+            : subStart + RETRY_CHUNK_SIZE - 1n;
+          const subLogs = await client.getLogs({
+            address: USTETU_ESCROW_ADDRESS,
+            event,
+            fromBlock: subStart,
+            toBlock: subEnd
+          });
+          logs.push(...subLogs);
+        }
+        return logs;
+      }
     }));
 
     for (const logs of results) {
