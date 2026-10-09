@@ -58,18 +58,6 @@ export async function discoverListingsOnChain(
   }
 
   discoveryInFlight = (async () => {
-  const latest = await client.getBlockNumber();
-  const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
-  if (!configuredFrom || !/^\d+$/.test(configuredFrom)) {
-    throw new Error(
-      `Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`
-    );
-  }
-  const fromBlock = BigInt(configuredFrom);
-  if (fromBlock > latest) {
-    throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
-  }
-
   const discovered = new Map<string, DiscoveredListing>();
   const failedRanges: string[] = [];
 
@@ -117,7 +105,23 @@ export async function discoverListingsOnChain(
 
   // Publish the verified seeds immediately. Do not make the user wait for the
   // first historical eth_getLogs batch before known listings are queried.
+  // Publish known listing IDs before any RPC or deployment-block configuration
+  // checks. Seller Dashboard can show/manage known listings even if the historical
+  // scan cannot start; the Escrow read remains authoritative for listing details.
   onProgress?.(Array.from(discovered.values()));
+
+  const latest = await client.getBlockNumber();
+  const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
+  if (!configuredFrom || !/^\d+$/.test(configuredFrom)) {
+    throw new Error(
+      `Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`
+    );
+  }
+  const fromBlock = BigInt(configuredFrom);
+  if (fromBlock > latest) {
+    throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
+  }
+
 
   const ranges: Array<{ start: bigint; end: bigint }> = [];
   for (let start = fromBlock; start <= latest; start += CHUNK_SIZE) {
