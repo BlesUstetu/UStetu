@@ -217,6 +217,9 @@ export default function SellerDashboard() {
   const tokenAddress = tokenInfoQuery.data?.contractAddress;
   const tokenDecimals = Number(tokenInfoQuery.data?.decimalsSnapshot ?? tokenDecimalsQuery.data ?? 18);
   const tokenSymbol = tokenMetadataQuery.data ?? "TOKEN";
+  const existingSellerTokenListing = createTokenAddress
+    ? sellerListings.find((item) => item.token_contract.toLowerCase() === createTokenAddress.toLowerCase())
+    : undefined;
   const createTokenRegistered = !!createTokenInfoQuery.data?.contractAddress && createTokenAddress ? createTokenInfoQuery.data.contractAddress.toLowerCase() === createTokenAddress.toLowerCase() : false;
   const createTokenSymbol = createTokenSymbolQuery.data ?? "TOKEN";
   const createTokenDecimals = Number(createTokenInfoQuery.data?.decimalsSnapshot ?? createTokenDecimalsQuery.data ?? 18);
@@ -234,12 +237,15 @@ export default function SellerDashboard() {
   const isListingOwner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
 
   useEffect(() => {
-    if (!registeredQuery.data) {
+    // Listing ownership is determined by the connected wallet, independently
+    // of seller-registry loading. This keeps duplicate detection available while
+    // the registration query is still loading and does not block other sellers
+    // from listing the same token.
+    if (!address) {
       setActiveListingId(null);
       setSellerListings([]);
       return;
     }
-    if (!address) return;
 
     let cancelled = false;
     const selectMyListings = (listings: Awaited<ReturnType<typeof discoverListingsOnChain>>) => {
@@ -264,7 +270,7 @@ export default function SellerDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [registeredQuery.data, address]);
+  }, [address]);
 
   useEffect(() => {
     if (listing) {
@@ -794,7 +800,7 @@ export default function SellerDashboard() {
         .registry-button{min-height:34px!important;padding:8px 13px!important;border-radius:9px!important}
         .listing-form-disabled{opacity:.48;pointer-events:none;filter:saturate(.65)}
         .listing-ready{margin-top:10px;padding:8px 10px;border-radius:9px;border:1px solid rgba(74,238,168,.18);background:rgba(45,188,129,.07);font-size:8px;color:#9cf8cc}
-.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
+.seller-token-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(117,247,174,.12);border-radius:11px;background:rgba(117,247,174,.035);font-size:10px}.seller-token-info span{color:#71819b;text-transform:uppercase;letter-spacing:.1em}.seller-token-info strong{color:#cfeedd;font-size:11px}.seller-token-address{font-family:ui-monospace,SFMono-Regular,monospace!important;text-transform:none!important;letter-spacing:0!important;margin-left:auto}.seller-token-registered{color:#75f7ae!important;text-transform:none!important;letter-spacing:0!important}.seller-duplicate-warning{display:grid;gap:5px;margin:10px 0;padding:12px 13px;border:1px solid rgba(255,190,90,.28);border-radius:12px;background:rgba(255,190,90,.065);color:#ffd79a;font-size:11px;line-height:1.5}.seller-duplicate-warning strong{font-size:12px;color:#ffe4b5}.seller-duplicate-warning span{color:#c4a978}.seller-message{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(117,247,174,.055);border:1px solid rgba(117,247,174,.16);font-size:12px}.seller-error{margin:12px 0;padding:11px 13px;border-radius:10px;background:rgba(255,80,100,.055);border:1px solid rgba(255,80,100,.18);font-size:12px;word-break:break-word}.seller-address{font-family:ui-monospace,monospace;font-size:12px;word-break:break-all}.seller-gas-status{margin:14px 0;display:grid;gap:8px;padding:12px;border:1px solid rgba(127,153,196,.11);border-radius:12px;background:#090f1a}.seller-gas-row{display:flex;justify-content:space-between;gap:14px;font-size:12px}.seller-gas-row span{color:#71809a}.seller-gas-row strong{font-family:ui-monospace,monospace}.seller-gas-state{font-size:11px;line-height:1.45;padding:9px 10px;border-radius:9px;background:rgba(255,209,102,.055);border:1px solid rgba(255,209,102,.14);color:#ffd166}.seller-gas-state.ready{background:rgba(117,247,174,.055);border-color:rgba(117,247,174,.14);color:#75f7ae}
         .seller-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(128,157,205,.14),transparent);margin:15px 0}
         .seller-earnings{border-color:rgba(117,247,174,.18);background:radial-gradient(circle at 100% 0%,rgba(72,190,132,.10),transparent 38%),linear-gradient(145deg,#0d171b 0%,#090f17 58%,#080d15 100%)}
         .seller-earnings .seller-value{font-size:30px;letter-spacing:-.035em}.seller-earnings-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:13px 0;padding:10px 12px;border:1px solid rgba(139,163,205,.10);border-radius:11px;background:rgba(255,255,255,.025)}.seller-earnings-meta span{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-earnings-meta strong{font:11px ui-monospace,SFMono-Regular,monospace;color:#dce6f5}.seller-menu{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 14px;padding:6px;border:1px solid transparent;border-radius:14px;background:linear-gradient(145deg,rgba(8,16,31,.94),rgba(7,11,21,.98)) padding-box,linear-gradient(110deg,rgba(72,210,255,.24),rgba(105,92,255,.28),rgba(235,86,255,.16)) border-box;box-shadow:0 10px 32px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.06)}.seller-menu button{flex:1 1 110px;min-height:38px;border:1px solid transparent;border-radius:10px;background:transparent;color:#7f8da4;font-size:11px;font-weight:650;cursor:pointer;transition:.18s}.seller-menu button:hover{color:#dce6f5;background:rgba(255,255,255,.035)}.seller-menu button.active{color:#8ff6ff;border-color:rgba(72,210,255,.34);background:linear-gradient(145deg,rgba(72,210,255,.10),rgba(105,92,255,.08));box-shadow:0 0 18px rgba(72,168,255,.08),inset 0 1px rgba(255,255,255,.07)}.seller-page{min-height:180px}.seller-overview{padding:15px 17px}.seller-overview-head{display:flex;justify-content:space-between;align-items:center;gap:14px}.seller-overview-head h2{margin:0}.seller-overview-head>div>span{display:block;margin-top:4px;color:#68768d;font-size:9px}.seller-overview-listing{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.seller-overview-item{padding:10px 11px;border:1px solid rgba(127,153,196,.11);border-radius:10px;background:rgba(255,255,255,.018)}.seller-overview-item span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:4px;font-size:12px}.seller-overview-item small{display:block;margin-top:2px;color:#68768d;font-size:8px}.seller-overview-item span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#71819b}.seller-overview-item strong{display:block;margin-top:5px;font-size:13px}.seller-overview-item small{display:block;margin-top:3px;color:#68768d;font-size:9px}.seller-earnings button.primary{width:100%;min-height:43px;font-weight:700}.seller-locked-orders{margin-top:13px;padding:12px;border:1px solid rgba(139,163,205,.10);border-radius:12px;background:rgba(255,255,255,.018)}.seller-locked-orders-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.seller-locked-orders-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#71819b}.seller-locked-order{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:9px}.seller-locked-order strong{font-size:11px}.seller-locked-order small{display:block;color:#68768d;font-size:9px;margin-top:3px}.seller-locked-state{font-size:9px;color:#ffd166;border:1px solid rgba(255,209,102,.22);border-radius:999px;padding:4px 7px}.seller-view-orders{border:1px solid rgba(112,151,226,.24)!important;background:linear-gradient(145deg,#182744,#0a111e)!important;color:#dce7f7;border-radius:9px;padding:7px 9px;font-size:10px;cursor:pointer}.seller-view-orders:disabled{opacity:.45;cursor:not-allowed}.seller-locked-order-action{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.seller-locked-state.expired{color:#ffcf70;border-color:rgba(255,207,112,.3)}.seller-expire-button{border:1px solid rgba(117,247,174,.24);background:linear-gradient(145deg,rgba(117,247,174,.13),rgba(20,35,32,.82));color:#baffd8;border-radius:8px;padding:6px 9px;font-size:9px;font-weight:700;cursor:pointer}.seller-expire-button:hover{border-color:rgba(117,247,174,.42);background:linear-gradient(145deg,rgba(117,247,174,.18),rgba(20,35,32,.9))}.seller-expire-button:disabled{opacity:.45;cursor:not-allowed}
@@ -967,7 +973,7 @@ export default function SellerDashboard() {
                 <div className="create-listing-success" role="status" aria-live="polite">
                   <div className="create-listing-success-check" aria-hidden="true">✓</div>
                   <strong>Listing Created Successfully</strong>
-                  <span>Your DNA listing is now active on Base Mainnet.</span>
+                  <span>Your {createTokenSymbol} listing has been created on Base Mainnet.</span>
                 </div>
               ) : (
                 <>
@@ -979,6 +985,13 @@ export default function SellerDashboard() {
                     spellCheck={false}
                     autoComplete="off"
                   />
+
+                  {existingSellerTokenListing && (
+                    <div className="seller-duplicate-warning" role="alert">
+                      <strong>This token already has a listing.</strong>
+                      <span>Your connected wallet already owns Listing #{existingSellerTokenListing.listing_id} for this token. Use Inventory → Add Inventory instead of creating another listing.</span>
+                    </div>
+                  )}
 
                   {createTokenAddress && (
                     <div className={`registry-panel ${createTokenRegistered ? "registered" : ""}`}>
@@ -1033,10 +1046,10 @@ export default function SellerDashboard() {
                     <div className="seller-actions">
                       <button
                         className="primary"
-                        disabled={disabled || chainId !== base.id || !createTokenRegistered}
+                        disabled={disabled || chainId !== base.id || !createTokenRegistered || !!existingSellerTokenListing}
                         onClick={() => void createListing()}
                       >
-                        {busy === "Create listing" ? "Creating Listing…" : "Create Listing"}
+                        {busy === "Create listing" ? "Creating Listing…" : existingSellerTokenListing ? "Already Listed — Add Inventory" : "Create Listing"}
                       </button>
                     </div>
                   </div>
