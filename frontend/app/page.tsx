@@ -324,7 +324,7 @@ export default function HomePage() {
   const metadataConfigs = useMemo(() => stableLiveListings.map((item) => ([
     { address: item.address, abi: erc20MetadataAbi, functionName: "name" as const },
     { address: item.address, abi: erc20MetadataAbi, functionName: "symbol" as const }
-  ])).flat(), [liveListings]);
+  ])).flat(), [stableLiveListings]);
   const metadataQueries = useReadContracts({
     contracts: metadataConfigs as never[],
     query: { enabled: metadataConfigs.length > 0 }
