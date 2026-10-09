@@ -205,17 +205,11 @@ export default function HomePage() {
         setLoading(false);
       }
     } catch (error) {
-      try {
-        // Keep the known bootstrap listing visible even if RPC discovery is
-        // temporarily unavailable. A failed discovery must not blank the UI.
-        setListings((current) => current.length > 0 ? current : [BOOTSTRAP_LISTING]);
-        setApiError("");
-      } catch {
-        if (!background && listings.length === 0) {
-          setListings([BOOTSTRAP_LISTING]);
-          setApiError(error instanceof Error ? error.message : "Unable to discover marketplace listings.");
-        }
-      }
+      // Preserve already discovered listings, but do not hide discovery failures.
+      // listingDiscovery.ts avoids caching incomplete scans, so the next refresh
+      // can retry failed RPC ranges instead of permanently omitting their listings.
+      setListings((current) => current.length > 0 ? current : [BOOTSTRAP_LISTING]);
+      setApiError(error instanceof Error ? error.message : "Unable to discover marketplace listings.");
     } finally {
       if (!background) setLoading(false);
     }
@@ -342,6 +336,7 @@ export default function HomePage() {
             <span className="listing-count">{isLoading ? t("readingListings") : `${filteredListings.length} ${filteredListings.length === 1 ? t("listing") : t("listings")}`}</span>
             <span className="status-dot"><i /> {t("live")}</span>
           </div>
+          {apiError && <div className="listing-discovery-warning" role="status">{apiError}</div>}
           <div className="listing-table-wrap">
             <table className="listing-table">
               <thead><tr><th>{t("token")}</th><th>{t("seller")}</th><th>{t("available")}</th><th>{t("price")}</th><th>{t("networkLabel")}</th><th /></tr></thead>
