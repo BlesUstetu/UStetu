@@ -35,7 +35,7 @@ const DISCOVERY_FROM_BLOCK_ENV = "NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOC
 // Keep RPC requests bounded, but discover in parallel so the marketplace does
 // not remain blank while historical listings are being scanned.
 const CHUNK_SIZE = 10_000n;
-const RETRY_CHUNK_SIZE = 2_500n;
+const MIN_RETRY_CHUNK_SIZE = 500n;
 const MAX_CONCURRENT_CHUNKS = 2;
 const DISCOVERY_CACHE_MS = 45_000;
 let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
@@ -78,7 +78,7 @@ export async function discoverListingsOnChain(
 
   for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
     const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
-    const results = await Promise.all(batch.map(async ({ start, end }) => {
+    const readLogsAdaptive = async (start: bigint, end: bigint): Promise<Awaited<ReturnType<typeof client.getLogs>>> => {
       try {
         return await client.getLogs({
           address: USTETU_ESCROW_ADDRESS,
@@ -87,25 +87,17 @@ export async function discoverListingsOnChain(
           toBlock: end
         });
       } catch (error) {
-        // Some public Base RPC endpoints reject larger log ranges or bursty
-        // concurrent requests. Retry a failed range as smaller sequential
-        // chunks so one provider error cannot hide historical listings.
-        const logs = [] as Awaited<ReturnType<typeof client.getLogs>>;
-        for (let subStart = start; subStart <= end; subStart += RETRY_CHUNK_SIZE) {
-          const subEnd = subStart + RETRY_CHUNK_SIZE - 1n > end
-            ? end
-            : subStart + RETRY_CHUNK_SIZE - 1n;
-          const subLogs = await client.getLogs({
-            address: USTETU_ESCROW_ADDRESS,
-            event,
-            fromBlock: subStart,
-            toBlock: subEnd
-          });
-          logs.push(...subLogs);
-        }
-        return logs;
+        // Public RPC providers impose different eth_getLogs range limits.
+        // Recursively split failing ranges; a single oversized range should
+        // never abort the complete historical discovery scan.
+        if (end - start + 1n <= MIN_RETRY_CHUNK_SIZE) throw error;
+        const middle = start + (end - start) / 2n;
+        const left = await readLogsAdaptive(start, middle);
+        const right = await readLogsAdaptive(middle + 1n, end);
+        return [...left, ...right];
       }
-    }));
+    };
+    const results = await Promise.all(batch.map(({ start, end }) => readLogsAdaptive(start, end)));
 
     for (const logs of results) {
       for (const log of logs) {
