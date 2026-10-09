@@ -241,15 +241,21 @@ export default function SellerDashboard() {
     if (!address || activeListingId !== null) return;
 
     let cancelled = false;
-    void discoverListingsOnChain()
-      .then((listings) => {
-        if (cancelled) return;
-        const mine = listings.filter((item) => item.seller.toLowerCase() === address.toLowerCase());
-        const latest = mine.length ? mine[mine.length - 1] : undefined;
-        if (latest) setActiveListingId(BigInt(latest.listing_id));
-      })
+    const selectMyLatestListing = (listings: Awaited<ReturnType<typeof discoverListingsOnChain>>) => {
+      if (cancelled) return;
+      const mine = listings.filter((item) => item.seller.toLowerCase() === address.toLowerCase());
+      const latest = mine.length ? mine[mine.length - 1] : undefined;
+      if (latest) setActiveListingId(BigInt(latest.listing_id));
+    };
+
+    // Consume progressive results immediately. The discovery helper publishes
+    // known listing IDs before scanning historical blocks, so Seller Dashboard
+    // does not need to wait for the entire scan to finish before showing inventory.
+    void discoverListingsOnChain(selectMyLatestListing)
+      .then(selectMyLatestListing)
       .catch(() => {
-        // Listing discovery is best-effort. The seller can still use Create Listing.
+        // Keep any listing already selected from progressive results.
+        // The seller can still use Create Listing if discovery is unavailable.
       });
 
     return () => {
