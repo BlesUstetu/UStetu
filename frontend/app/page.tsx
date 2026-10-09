@@ -418,7 +418,6 @@ export default function HomePage() {
             <span className="status-dot"><i /> {t("live")}</span>
           </div>
           {apiError && <div className="listing-discovery-warning" role="status">{apiError}</div>}
-          {hiddenListingDiagnostics.map((item) => <div className="listing-discovery-warning" role="status" key={item.id}>Listing #{item.id} ({item.token}): hidden because {item.reason}.</div>)}
           <div className="listing-table-wrap">
             <table className="listing-table">
               <thead><tr><th>{t("token")}</th><th>{t("seller")}</th><th>{t("available")}</th><th>{t("price")}</th><th>{t("networkLabel")}</th><th /></tr></thead>
