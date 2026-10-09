@@ -41,6 +41,7 @@ const MAX_CONCURRENT_CHUNKS = 4;
 const DISCOVERY_CACHE_MS = 45_000;
 let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
 let discoveryInFlight: Promise<DiscoveredListing[]> | null = null;
+let discoveryProgress: DiscoveredListing[] = [];
 
 export async function discoverListingsOnChain(
   onProgress?: (listings: DiscoveredListing[]) => void
@@ -51,6 +52,8 @@ export async function discoverListingsOnChain(
     return discoveryCache.listings;
   }
   if (discoveryInFlight) {
+    // Publish the latest partial results while another consumer scans history.
+    onProgress?.(discoveryProgress);
     return discoveryInFlight.then((listings) => {
       onProgress?.(listings);
       return listings;
@@ -108,7 +111,8 @@ export async function discoverListingsOnChain(
   // Publish known listing IDs before any RPC or deployment-block configuration
   // checks. Seller Dashboard can show/manage known listings even if the historical
   // scan cannot start; the Escrow read remains authoritative for listing details.
-  onProgress?.(Array.from(discovered.values()));
+  discoveryProgress = Array.from(discovered.values());
+  onProgress?.(discoveryProgress);
 
   const latest = await client.getBlockNumber();
   const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
@@ -205,7 +209,8 @@ export async function discoverListingsOnChain(
 
     // Progressive rendering: callers can show listings already discovered
     // instead of waiting for the complete historical scan.
-    onProgress?.(Array.from(discovered.values()));
+    discoveryProgress = Array.from(discovered.values());
+    onProgress?.(discoveryProgress);
   }
 
   // Do not cache an incomplete scan as if it were authoritative. A failed
@@ -233,6 +238,7 @@ export async function discoverListingsOnChain(
   }
 
   const result = Array.from(discovered.values());
+    discoveryProgress = result;
     discoveryCache = { at: Date.now(), listings: result };
     return result;
   })();
