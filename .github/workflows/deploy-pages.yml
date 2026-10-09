@@ -24,6 +24,7 @@ env:
   SITE_DIR: frontend/out
   NEXT_DEPLOYMENT_ID: ${{ github.sha }}
   NEXT_DEPLOY_TARGET: github-pages
+  NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK: 51811281
 
 jobs:
   build:
