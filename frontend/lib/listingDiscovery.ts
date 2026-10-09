@@ -73,13 +73,13 @@ export async function discoverListingsOnChain(
   // Seed it before historical RPC scanning so RPC log-range failures cannot
   // make this existing listing disappear from the marketplace.
   const DNA_LISTING_ID = "153209047311743547595822967164959468753";
-  const DNA_TOKEN_ID = "18082943315677373775591912433609382296421641131137588533591529078015460316683";
   const DNA_SELLER = "0x73f10c9FcD5A28644c5e39e3B58a970D8696A522" as const;
   const DNA_TOKEN_ADDRESS = "0xDff883676E664E3DBF8ad5F8c00171340efe84FF" as const;
   discovered.set(DNA_LISTING_ID, {
     listing_id: DNA_LISTING_ID,
     seller: DNA_SELLER,
-    token_id: DNA_TOKEN_ID,
+    // InventoryDeposited does not emit tokenId; Escrow getListing is authoritative.
+    token_id: "",
     token_contract: DNA_TOKEN_ADDRESS,
     payment_token: "",
     price: "",
@@ -160,7 +160,8 @@ export async function discoverListingsOnChain(
         discovered.set(listingId, {
           listing_id: listingId,
           seller,
-          token_id: knownListing?.token_id ?? "",
+          // The event has no tokenId field. Resolve it from Escrow getListing.
+          token_id: "",
           token_contract: token,
           payment_token: "",
           price: "",
