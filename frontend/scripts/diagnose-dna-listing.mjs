@@ -25,6 +25,27 @@ const [chainId, listing, expectedId] = await Promise.all([
   client.readContract({ address: REGISTRY, abi: registryAbi, functionName: "getTokenId", args: [8453n, DNA] })
 ]);
 
+// Locate the InventoryDeposited event at the reported block independently
+// of the malformed transaction hash, including the actual emitting address.
+const reportedBlock = 52063083n;
+const paddedListingId = `0x${LISTING_ID.toString(16).padStart(64, "0")}`;
+try {
+  const logs = await client.getLogs({
+    fromBlock: reportedBlock,
+    toBlock: reportedBlock,
+    topics: [null, paddedListingId]
+  });
+  console.log("BLOCK_LISTING_ID_LOGS", JSON.stringify(logs.map((log) => ({
+    address: log.address,
+    transactionHash: log.transactionHash,
+    blockNumber: log.blockNumber?.toString(),
+    topics: log.topics,
+    data: log.data
+  }))));
+} catch (error) {
+  console.log("BLOCK_LISTING_ID_LOGS_ERROR", String(error));
+}
+
 // Do not let a malformed copied transaction hash prevent the authoritative
 // Escrow and Registry state reads from completing.
 let receipt = null;
