@@ -875,6 +875,24 @@ export default function SellerDashboard() {
               </div>
             )}
           </div>
+          {sellerListings.length > 0 && (
+            <div className="seller-card seller-section" style={{marginBottom:12,padding:"12px 14px"}}>
+              <label htmlFor="seller-listing-select" style={{display:"block",fontSize:10,letterSpacing:".08em",textTransform:"uppercase",color:"#7888a2",marginBottom:7}}>Manage Listing</label>
+              <select
+                id="seller-listing-select"
+                value={activeListingId?.toString() ?? ""}
+                onChange={(event) => setActiveListingId(BigInt(event.target.value))}
+                style={{width:"100%",minHeight:40,border:"1px solid rgba(112,151,226,.24)",borderRadius:10,background:"#080f1b",color:"#e8eef8",padding:"9px 12px"}}
+              >
+                {sellerListings.map((item) => (
+                  <option key={item.listing_id} value={item.listing_id}>
+                    Listing #{item.listing_id} · {short(item.token_contract)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <nav className="seller-menu" aria-label="Seller menu">
             {([["create","Create Listing"],["inventory","Inventory"],["settings","Listing Settings"],["orders","Orders"],["earnings","Earnings"],["wallet","Payout Wallet"]] as const).map(([key,label]) => (
               <button key={key} className={activeMenu === key ? "active" : ""} onClick={() => setActiveMenu(key)}>{label}</button>
