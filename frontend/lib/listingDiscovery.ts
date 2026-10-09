@@ -101,9 +101,12 @@ export async function discoverListingsOnChain(
 
     for (const logs of results) {
       for (const log of logs) {
-        const listingId = log.args.listingId?.toString();
-        const seller = log.args.seller;
-        const token = log.args.token;
+        // viem's adaptive recursive helper widens the inferred log type; the
+        // runtime event decoder still supplies args for this typed event.
+        const args = (log as typeof log & { args: { listingId?: bigint; seller?: `0x${string}`; token?: `0x${string}` } }).args;
+        const listingId = args.listingId?.toString();
+        const seller = args.seller;
+        const token = args.token;
         if (!listingId || !seller || !token) continue;
         discovered.set(listingId, {
           listing_id: listingId,
