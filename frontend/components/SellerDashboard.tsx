@@ -237,12 +237,15 @@ export default function SellerDashboard() {
   const isListingOwner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
 
   useEffect(() => {
-    if (!registeredQuery.data) {
+    // Listing ownership is determined by the connected wallet, independently
+    // of seller-registry loading. This keeps duplicate detection available while
+    // the registration query is still loading and does not block other sellers
+    // from listing the same token.
+    if (!address) {
       setActiveListingId(null);
       setSellerListings([]);
       return;
     }
-    if (!address) return;
 
     let cancelled = false;
     const selectMyListings = (listings: Awaited<ReturnType<typeof discoverListingsOnChain>>) => {
@@ -267,7 +270,7 @@ export default function SellerDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [registeredQuery.data, address]);
+  }, [address]);
 
   useEffect(() => {
     if (listing) {
@@ -986,7 +989,7 @@ export default function SellerDashboard() {
                   {existingSellerTokenListing && (
                     <div className="seller-duplicate-warning" role="alert">
                       <strong>This token already has a listing.</strong>
-                      <span>Listing #{existingSellerTokenListing.listing_id} belongs to this seller. Use Inventory → Add Inventory instead of creating another listing.</span>
+                      <span>Your connected wallet already owns Listing #{existingSellerTokenListing.listing_id} for this token. Use Inventory → Add Inventory instead of creating another listing.</span>
                     </div>
                   )}
 
