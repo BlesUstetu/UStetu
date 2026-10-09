@@ -144,7 +144,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         .ustetu-wallet-wrong-network{color:#ffd166}
         .ustetu-wallet-wrong-network .ustetu-wallet-icon{color:#ffd166;border-color:rgba(255,209,102,.75)}
         @media(min-width:761px){.topbar{width:min(1440px,calc(100% - 64px)) !important;box-sizing:border-box;padding-left:15px}.topbar-left,.topbar-right{display:none !important}}
-        @media(max-width:760px){.ustetu-header-brand-link .ustetu-logo{width:22px;height:34px}.ustetu-header-brand-link .brand{font-size:14px;letter-spacing:.14em}.ustetu-menu-button{width:35px;height:35px}.ustetu-wallet-button{min-height:35px;padding:0 9px;font-size:10px}.ustetu-wallet-icon{width:15px;height:15px;font-size:8px}}
+        @media(max-width:760px){.ustetu-header-brand{display:none}.ustetu-menu-button{width:35px;height:35px}.ustetu-wallet-button{min-height:35px;padding:0 9px;font-size:10px}.ustetu-wallet-icon{width:15px;height:15px;font-size:8px}}
         @media(max-width:430px){.topbar{padding:8px 9px}.ustetu-header-brand-link .ustetu-logo{width:20px;height:31px}.ustetu-header-brand-link .brand{font-size:13px}.ustetu-header-actions{gap:6px}.ustetu-wallet-button{padding:0 8px;font-size:9px}.ustetu-wallet-label{max-width:82px;overflow:hidden;text-overflow:ellipsis}.ustetu-header-menu{right:9px;width:min(310px,calc(100vw - 18px))}}
       `}</style>
     </header>
