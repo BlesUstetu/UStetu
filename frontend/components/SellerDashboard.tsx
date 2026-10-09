@@ -1159,3 +1159,29 @@ export default function SellerDashboard() {
     </section>
   );
 }
+
+/* Slow white highlight traveling around the Seller Center navigation border */
+@keyframes sellerMenuBorderSweep {
+  to { transform: rotate(360deg); }
+}
+.seller-dashboard .seller-menu {
+  position: relative;
+  isolation: isolate;
+}
+.seller-dashboard .seller-menu::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0deg 265deg, rgba(255,255,255,.08) 286deg, rgba(255,255,255,.92) 310deg, rgba(255,255,255,.22) 326deg, transparent 345deg 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: sellerMenuBorderSweep 8s linear infinite;
+  z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .seller-dashboard .seller-menu::before { animation: none; }
+}
