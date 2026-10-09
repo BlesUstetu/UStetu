@@ -152,7 +152,7 @@ export default function HomePage() {
 
   const loadListings = async (background = false) => {
     if (!background) setLoading(true);
-    if (!background) setApiError("");
+    setApiError("");
     try {
       // The indexer is an acceleration layer, not the authoritative discovery
       // source. Load it when configured, then always run the permanent on-chain
