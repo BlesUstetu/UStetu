@@ -369,7 +369,7 @@ export default function HomePage() {
     }
     const expectedTokenId = expectedTokenIdQueries.data?.[index]?.result;
     const escrowTokenId = chainListing?.tokenId !== undefined ? hexTokenId(chainListing.tokenId.toString()) : "";
-    const expectedTokenIdHex = typeof expectedTokenId === "string" ? expectedTokenId : "";
+    const expectedTokenIdHex = expectedTokenId == null ? "" : String(expectedTokenId);
     const tokenIdCheck = escrowTokenId && expectedTokenIdHex
       ? ` Escrow tokenId: ${escrowTokenId}; Registry-derived tokenId: ${expectedTokenIdHex}; match: ${escrowTokenId.toLowerCase() === expectedTokenIdHex.toLowerCase()}.`
       : "";
