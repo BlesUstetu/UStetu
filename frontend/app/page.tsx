@@ -91,6 +91,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState("");
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [lastKnownLiveListings, setLastKnownLiveListings] = useState<LiveListing[]>([]);
 
   const paymentTokenQuery = useReadContract({
     address: USTETU_ESCROW_ADDRESS,
@@ -299,7 +300,28 @@ export default function HomePage() {
       };
     }).filter((item): item is LiveListing => item !== null);
   }, [listings, tokenQueries.data, listingQueries.data, paymentTokenAddress, paymentDecimalsQuery.data, paymentSymbolQuery.data]);
-  const metadataConfigs = useMemo(() => liveListings.map((item) => ([
+  // Cache validated listing reads so a temporary RPC failure does not hide listings.
+  useEffect(() => {
+    if (liveListings.length === 0) return;
+    setLastKnownLiveListings((previous) => {
+      const byId = new Map(previous.map((item) => [item.listingId.toString(), item] as const));
+      for (const item of liveListings) {
+        const id = item.listingId.toString();
+        if (item.availableRaw > 0n) byId.set(id, item);
+        else byId.delete(id);
+      }
+      return Array.from(byId.values());
+    });
+  }, [liveListings]);
+
+  // Fresh validated reads take precedence over cached values.
+  const stableLiveListings = useMemo(() => {
+    const byId = new Map(lastKnownLiveListings.map((item) => [item.listingId.toString(), item] as const));
+    for (const item of liveListings) byId.set(item.listingId.toString(), item);
+    return Array.from(byId.values()).filter((item) => item.availableRaw > 0n);
+  }, [liveListings, lastKnownLiveListings]);
+
+  const metadataConfigs = useMemo(() => stableLiveListings.map((item) => ([
     { address: item.address, abi: erc20MetadataAbi, functionName: "name" as const },
     { address: item.address, abi: erc20MetadataAbi, functionName: "symbol" as const }
   ])).flat(), [liveListings]);
@@ -308,11 +330,11 @@ export default function HomePage() {
     query: { enabled: metadataConfigs.length > 0 }
   });
 
-  const enrichedListings = useMemo(() => liveListings.map((item, index) => ({
+  const enrichedListings = useMemo(() => stableLiveListings.map((item, index) => ({
     ...item,
     tokenName: String(metadataQueries.data?.[index * 2]?.result ?? "Token"),
     symbol: String(metadataQueries.data?.[index * 2 + 1]?.result ?? "TOKEN")
-  })), [liveListings, metadataQueries.data]);
+  })), [stableLiveListings, metadataQueries.data]);
 
 
 
