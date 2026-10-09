@@ -239,32 +239,32 @@ export default function SellerDashboard() {
       setSellerListings([]);
       return;
     }
-
-    if (!address || activeListingId !== null) return;
+    if (!address) return;
 
     let cancelled = false;
-    const selectMyLatestListing = (listings: Awaited<ReturnType<typeof discoverListingsOnChain>>) => {
+    const selectMyListings = (listings: Awaited<ReturnType<typeof discoverListingsOnChain>>) => {
       if (cancelled) return;
       const mine = listings.filter((item) => item.seller.toLowerCase() === address.toLowerCase());
-      const latest = mine.length ? mine[mine.length - 1] : undefined;
-      if (latest) setActiveListingId(BigInt(latest.listing_id));
+      setSellerListings(mine.map((item) => ({
+        listing_id: item.listing_id,
+        seller: item.seller,
+        token_contract: item.token_contract
+      })));
+      setActiveListingId((current) => {
+        if (current !== null && mine.some((item) => item.listing_id === current.toString())) return current;
+        return mine.length ? BigInt(mine[mine.length - 1].listing_id) : null;
+      });
     };
 
-    // Consume progressive results immediately. The discovery helper publishes
-    // known listing IDs before scanning historical blocks, so Seller Dashboard
-    // does not need to wait for the entire scan to finish before showing inventory.
-    void discoverListingsOnChain(selectMyLatestListing)
-      .then(selectMyLatestListing)
-      .catch(() => {
-        // Keep any listing already selected from progressive results.
-        // The seller can still use Create Listing if discovery is unavailable.
-      });
+    // Receive known/progressive results and the final complete discovery result.
+    void discoverListingsOnChain(selectMyListings).then(selectMyListings).catch(() => {
+      // Do not clear already discovered listings on temporary RPC failures.
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [registeredQuery.data, address, activeListingId]);
-
+  }, [registeredQuery.data, address]);
 
   useEffect(() => {
     if (listing) {
