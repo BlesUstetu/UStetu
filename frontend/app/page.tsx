@@ -116,11 +116,12 @@ export default function HomePage() {
   });
 
   const tokenConfigs = useMemo(
-    () => (listingQueries.data ?? []).map((entry) => {
-      const chainListing: any = entry?.result;
-      // Keep one registry read per listing index. Filtering failed listing
-      // reads here would shift tokenQueries.data indexes and attach token
-      // metadata to the wrong listing.
+    // Build exactly one Registry query per discovered listing, in the same
+    // stable order as listings. Do not derive array length from async RPC
+    // results: a temporarily short/stale getListing result array can shift
+    // Registry results onto the wrong listing and falsely report unregistered.
+    () => listings.map((_, index) => {
+      const chainListing: any = listingQueries.data?.[index]?.result;
       const tokenId = chainListing?.tokenId?.toString() ?? "0";
       return {
         address: USTETU_REGISTRY_ADDRESS,
@@ -129,7 +130,7 @@ export default function HomePage() {
         args: [hexTokenId(tokenId)] as const
       };
     }),
-    [listingQueries.data]
+    [listings, listingQueries.data]
   );
 
   const tokenQueries = useReadContracts({
