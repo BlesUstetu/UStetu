@@ -518,8 +518,7 @@ export default function SellerDashboard() {
 
         if (
           existing.seller.toLowerCase() === address.toLowerCase() &&
-          existing.tokenId.toString(16).padStart(64, "0").toLowerCase() === tokenId.slice(2).toLowerCase() &&
-          Number(existing.status) !== LISTING_STATUS.CLOSED
+          existing.tokenId.toString(16).padStart(64, "0").toLowerCase() === tokenId.slice(2).toLowerCase()
         ) {
           throw new Error(
             `You already have a listing for this token (Listing #${candidate.listing_id}). Use Inventory → Add Inventory to add more tokens to your existing listing.`
