@@ -1,6 +1,6 @@
 import { createPublicClient, fallback, http, parseAbiItem } from "viem";
 import { base } from "wagmi/chains";
-import { USTETU_ESCROW_ADDRESS, USTETU_BOOTSTRAP_LISTING_ID, USTETU_TOKEN_ADDRESS, USTETU_TOKEN_ID } from "@/lib/contracts";
+import { USTETU_ESCROW_ADDRESS, USTETU_BOOTSTRAP_LISTING_ID, USTETU_TOKEN_ADDRESS, USTETU_TOKEN_ID, escrowAbi } from "@/lib/contracts";
 
 export type DiscoveredListing = {
   listing_id: string;
@@ -111,6 +111,31 @@ export async function discoverListingsOnChain(
   // Publish known listing IDs before any RPC or deployment-block configuration
   // checks. Seller Dashboard can show/manage known listings even if the historical
   // scan cannot start; the Escrow read remains authoritative for listing details.
+  discoveryProgress = Array.from(discovered.values());
+  onProgress?.(discoveryProgress);
+
+  // The seller address attached to a historical seed may have been copied
+  // incorrectly. Resolve the seller from Escrow itself before relying on it
+  // for wallet-specific filtering in Seller Dashboard.
+  for (const listingId of [DNA_LISTING_ID, DNA_FIVE_LISTING_ID]) {
+    try {
+      const onchain = await client.readContract({
+        address: USTETU_ESCROW_ADDRESS,
+        abi: escrowAbi,
+        functionName: "getListing",
+        args: [BigInt(listingId)]
+      });
+      const seller = (onchain as { seller?: `0x${string}` }).seller;
+      const seeded = discovered.get(listingId);
+      if (seller && seeded) {
+        discovered.set(listingId, { ...seeded, seller });
+      }
+    } catch (error) {
+      // Keep the seed available if the RPC is temporarily unavailable; a later
+      // discovery pass will retry and historical event logs can correct it.
+      console.warn("[USTETU listing discovery] Could not hydrate known listing seller", listingId, error);
+    }
+  }
   discoveryProgress = Array.from(discovered.values());
   onProgress?.(discoveryProgress);
 
