@@ -489,6 +489,44 @@ export default function SellerDashboard() {
         throw new Error("Token is not registered in the USTETU Registry. Register the token first, then retry Create Listing.");
       }
 
+      // Prevent duplicate active listings for the same token by the same seller.
+      // A seller who already lists this token must use Inventory → Add Inventory.
+      // Fail closed if historical discovery is incomplete; otherwise a duplicate
+      // could slip through while the RPC is unable to verify existing listings.
+      let discoveredListings: Awaited<ReturnType<typeof discoverListingsOnChain>>;
+      try {
+        discoveredListings = await discoverListingsOnChain();
+      } catch {
+        throw new Error("Could not verify existing listings on Base. Please retry Create Listing after listing discovery completes; duplicate prevention is required.");
+      }
+
+      const tokenListings = discoveredListings.filter(
+        (item) => item.token_contract.toLowerCase() === token.toLowerCase()
+      );
+      for (const candidate of tokenListings) {
+        let existing;
+        try {
+          existing = await publicClient.readContract({
+            address: USTETU_ESCROW_ADDRESS,
+            abi: escrowAbi,
+            functionName: "getListing",
+            args: [BigInt(candidate.listing_id)]
+          });
+        } catch {
+          throw new Error("Could not verify an existing listing on Base. Create Listing was stopped to prevent a duplicate. Please retry.");
+        }
+
+        if (
+          existing.seller.toLowerCase() === address.toLowerCase() &&
+          existing.tokenId.toString(16).padStart(64, "0").toLowerCase() === tokenId.slice(2).toLowerCase() &&
+          Number(existing.status) !== LISTING_STATUS.CLOSED
+        ) {
+          throw new Error(
+            `You already have a listing for this token (Listing #${candidate.listing_id}). Use Inventory → Add Inventory to add more tokens to your existing listing.`
+          );
+        }
+      }
+
       const decimals = Number(registeredToken.decimalsSnapshot);
       if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) throw new Error("Token decimals from the Registry are invalid.");
 
