@@ -138,6 +138,26 @@ export default function HomePage() {
     query: { enabled: tokenConfigs.length > 0 }
   });
 
+  // Ask Registry to derive the canonical tokenId from the discovered ERC-20
+  // address. Comparing this with Escrow's stored tokenId pinpoints whether the
+  // hidden listing has a bad stored ID or a Registry read/indexing problem.
+  const expectedTokenIdConfigs = useMemo(
+    () => listings.flatMap((item) => {
+      const tokenAddress = normalizeAddress(item.token_contract);
+      return tokenAddress ? [{
+        address: USTETU_REGISTRY_ADDRESS,
+        abi: registryAbi,
+        functionName: "getTokenId" as const,
+        args: [8453n, tokenAddress] as const
+      }] : [];
+    }),
+    [listings]
+  );
+  const expectedTokenIdQueries = useReadContracts({
+    contracts: expectedTokenIdConfigs as never[],
+    query: { enabled: expectedTokenIdConfigs.length > 0, refetchInterval: 30000 }
+  });
+
   const paymentSymbolQuery = useReadContract({
     address: paymentTokenAddress,
     abi: erc20MetadataAbi,
@@ -347,7 +367,13 @@ export default function HomePage() {
     } else {
       reason = "listing failed a live validation check";
     }
-    return [{ id, token: item.token_contract ?? "unknown token", reason }];
+    const expectedTokenId = expectedTokenIdQueries.data?.[index]?.result;
+    const escrowTokenId = chainListing?.tokenId !== undefined ? hexTokenId(chainListing.tokenId.toString()) : "";
+    const expectedTokenIdHex = typeof expectedTokenId === "string" ? expectedTokenId : "";
+    const tokenIdCheck = escrowTokenId && expectedTokenIdHex
+      ? ` Escrow tokenId: ${escrowTokenId}; Registry-derived tokenId: ${expectedTokenIdHex}; match: ${escrowTokenId.toLowerCase() === expectedTokenIdHex.toLowerCase()}.`
+      : "";
+    return [{ id, token: item.token_contract ?? "unknown token", reason: reason + tokenIdCheck }];
   });
   const refreshMarketplace = async () => { await loadListings(); };
 
