@@ -80,6 +80,7 @@ export default function SellerDashboard() {
   });
 
   const [activeListingId, setActiveListingId] = useState<bigint | null>(null);
+  const [sellerListings, setSellerListings] = useState<Array<{ listing_id: string; seller: string; token_contract: string }>>([]);
   const [generatedListingId, setGeneratedListingId] = useState<bigint | null>(null);
   const [listingTokenAddress, setListingTokenAddress] = useState("");
   const [listingPrice, setListingPrice] = useState("");
