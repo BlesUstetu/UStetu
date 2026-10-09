@@ -24,6 +24,7 @@ const client = createPublicClient({
   chain: base,
   transport: fallback([
     http("https://mainnet.base.org", { timeout: 12_000, retryCount: 1 }),
+    http("https://base-rpc.publicnode.com", { timeout: 12_000, retryCount: 1 }),
     http("https://base.publicnode.com", { timeout: 12_000, retryCount: 1 })
   ])
 });
