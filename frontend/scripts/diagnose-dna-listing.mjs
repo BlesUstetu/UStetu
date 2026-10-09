@@ -19,12 +19,24 @@ const registryAbi = parseAbi([
   "function getToken(bytes32 tokenId) view returns ((uint256 chainId,address contractAddress,uint8 decimalsSnapshot,address registeredBy,uint64 registeredAt) token)"
 ]);
 
-const [chainId, listing, expectedId, receipt] = await Promise.all([
+const [chainId, listing, expectedId] = await Promise.all([
   client.getChainId(),
   client.readContract({ address: ESCROW, abi: escrowAbi, functionName: "getListing", args: [LISTING_ID] }),
-  client.readContract({ address: REGISTRY, abi: registryAbi, functionName: "getTokenId", args: [8453n, DNA] }),
-  client.getTransactionReceipt({ hash: TX })
+  client.readContract({ address: REGISTRY, abi: registryAbi, functionName: "getTokenId", args: [8453n, DNA] })
 ]);
+
+// Do not let a malformed copied transaction hash prevent the authoritative
+// Escrow and Registry state reads from completing.
+let receipt = null;
+if (/^0x[0-9a-fA-F]{64}$/.test(TX)) {
+  try {
+    receipt = await client.getTransactionReceipt({ hash: TX });
+  } catch (error) {
+    console.log("TX_RECEIPT_ERROR", String(error));
+  }
+} else {
+  console.log("TX_HASH_INVALID", JSON.stringify({ tx: TX, hexDigits: TX.startsWith("0x") ? TX.length - 2 : TX.length, expectedHexDigits: 64 }));
+}
 
 console.log("CHAIN_ID", chainId);
 console.log("ESCROW", ESCROW);
@@ -54,10 +66,12 @@ try {
 } catch (error) {
   console.log("REGISTRY_GET_TOKEN_ERROR", String(error));
 }
-console.log("TX_RECEIPT", JSON.stringify({
-  status: receipt.status,
-  blockNumber: receipt.blockNumber.toString(),
-  to: receipt.to,
-  from: receipt.from,
-  logs: receipt.logs.map((log) => ({ address: log.address, topics: log.topics, data: log.data }))
-}));
+if (receipt) {
+  console.log("TX_RECEIPT", JSON.stringify({
+    status: receipt.status,
+    blockNumber: receipt.blockNumber.toString(),
+    to: receipt.to,
+    from: receipt.from,
+    logs: receipt.logs.map((log) => ({ address: log.address, topics: log.topics, data: log.data }))
+  }));
+}
