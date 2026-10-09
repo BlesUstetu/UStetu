@@ -317,6 +317,36 @@ export default function HomePage() {
   const selected = selectedId === null ? null : availableListings.find((item) => item.listingId === selectedId) ?? null;
   const isLoading = loading || paymentTokenQuery.isLoading || paymentDecimalsQuery.isLoading || (listings.length > 0 && (tokenQueries.isLoading || listingQueries.isLoading));
   const hasError = Boolean(apiError) && listings.length === 0;
+
+  // Explain exactly why the verified DNA listing is filtered from the UI.
+  // This diagnostic is only rendered while that known listing is absent.
+  const dnaListingId = "153209047311743547595822967164959468753";
+  const dnaIndex = listings.findIndex((item) => item.listing_id === dnaListingId);
+  const dnaChainListing: any = dnaIndex >= 0 ? listingQueries.data?.[dnaIndex]?.result : undefined;
+  const dnaRegisteredToken: any = dnaIndex >= 0 ? tokenQueries.data?.[dnaIndex]?.result : undefined;
+  const dnaIsVisible = availableListings.some((item) => item.listingId.toString() === dnaListingId);
+  let dnaDiagnostic = "";
+  if (dnaIndex >= 0 && !dnaIsVisible) {
+    if (listingQueries.isLoading || tokenQueries.isLoading || paymentTokenQuery.isLoading || paymentDecimalsQuery.isLoading) {
+      dnaDiagnostic = "DNA listing found; checking Escrow and Registry data…";
+    } else if (!dnaChainListing) {
+      dnaDiagnostic = "DNA hidden: Escrow getListing read failed. Check the Base RPC response.";
+    } else if (!dnaRegisteredToken || !dnaRegisteredToken.contractAddress || /^0x0{40}$/i.test(dnaRegisteredToken.contractAddress)) {
+      dnaDiagnostic = "DNA hidden: Registry getToken returned no registered token for this listing tokenId.";
+    } else if (dnaRegisteredToken.contractAddress.toLowerCase() !== (listings[dnaIndex].token_contract ?? "").toLowerCase()) {
+      dnaDiagnostic = "DNA hidden: Registry token contract does not match the DNA contract in the listing.";
+    } else if (dnaChainListing.seller.toLowerCase() !== listings[dnaIndex].seller.toLowerCase()) {
+      dnaDiagnostic = "DNA hidden: seller address does not match between the listing record and Escrow.";
+    } else if (listings[dnaIndex].token_id && hexTokenId(listings[dnaIndex].token_id).toLowerCase() !== hexTokenId(dnaChainListing.tokenId.toString()).toLowerCase()) {
+      dnaDiagnostic = "DNA hidden: tokenId mismatch between discovery and Escrow.";
+    } else if (paymentTokenAddress && listings[dnaIndex].payment_token && listings[dnaIndex].payment_token.toLowerCase() !== paymentTokenAddress.toLowerCase()) {
+      dnaDiagnostic = "DNA hidden: listing payment token does not match Escrow paymentToken.";
+    } else if (BigInt(dnaChainListing.inventoryDeposited) <= BigInt(dnaChainListing.inventoryLocked)) {
+      dnaDiagnostic = "DNA listing is verified, but its available inventory is zero.";
+    } else {
+      dnaDiagnostic = "DNA listing passed basic checks but was filtered elsewhere; inspect the Registry response and query status.";
+    }
+  }
   const refreshMarketplace = async () => { await loadListings(); };
 
   return (
@@ -337,6 +367,7 @@ export default function HomePage() {
             <span className="status-dot"><i /> {t("live")}</span>
           </div>
           {apiError && <div className="listing-discovery-warning" role="status">{apiError}</div>}
+          {dnaDiagnostic && <div className="listing-discovery-warning" role="status">{dnaDiagnostic}</div>}
           <div className="listing-table-wrap">
             <table className="listing-table">
               <thead><tr><th>{t("token")}</th><th>{t("seller")}</th><th>{t("available")}</th><th>{t("price")}</th><th>{t("networkLabel")}</th><th /></tr></thead>
