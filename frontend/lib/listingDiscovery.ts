@@ -93,7 +93,7 @@ export async function discoverListingsOnChain(
   // Second DNA listing confirmed from the successful Base Mainnet transaction
   // at block 52063083. Its InventoryDeposited log exposes this listingId,
   // seller and DNA contract; getListing remains the source of truth for details.
-  const DNA_FIVE_LISTING_ID = "1217269210020521323519107504975999989";
+  const DNA_FIVE_LISTING_ID = "311620917765253618914393481587202290677";
   const DNA_FIVE_SELLER = "0x3e40eC993C9710F937F3ee8Ae7Fe5D225b9E97F0F" as const;
   discovered.set(DNA_FIVE_LISTING_ID, {
     listing_id: DNA_FIVE_LISTING_ID,
