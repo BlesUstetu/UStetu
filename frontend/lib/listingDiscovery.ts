@@ -37,7 +37,7 @@ const DISCOVERY_FROM_BLOCK_ENV = "NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOC
 // not remain blank while historical listings are being scanned.
 const CHUNK_SIZE = 10_000n;
 const MIN_RETRY_CHUNK_SIZE = 1n;
-const MAX_CONCURRENT_CHUNKS = 2;
+const MAX_CONCURRENT_CHUNKS = 4;
 const DISCOVERY_CACHE_MS = 45_000;
 let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
 let discoveryInFlight: Promise<DiscoveredListing[]> | null = null;
@@ -65,6 +65,7 @@ export async function discoverListingsOnChain(
   }
 
   const discovered = new Map<string, DiscoveredListing>();
+  const failedRanges: string[] = [];
 
   const ranges: Array<{ start: bigint; end: bigint }> = [];
   for (let start = fromBlock; start <= latest; start += CHUNK_SIZE) {
@@ -73,9 +74,13 @@ export async function discoverListingsOnChain(
       end: start + CHUNK_SIZE - 1n > latest ? latest : start + CHUNK_SIZE - 1n
     });
   }
-  // Scan newest blocks first so recently created listings become visible
-  // quickly while the remaining historical range continues in the background.
-  ranges.reverse();
+  // Prioritize the oldest 320k blocks first. The marketplace's known DNA
+  // listing was created shortly after Escrow deployment; scanning newest-first
+  // made the UI spend most of its time on unrelated recent blocks before
+  // reaching it. After the first 32 chunks, scan the remaining ranges newest-first.
+  const oldestPriority = ranges.slice(0, 32);
+  const newestPriority = ranges.slice(32).reverse();
+  ranges.splice(0, ranges.length, ...oldestPriority, ...newestPriority);
 
   for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
     const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
@@ -110,6 +115,7 @@ export async function discoverListingsOnChain(
           end.toString(),
           error
         );
+        failedRanges.push(`${start.toString()}-${end.toString()}`);
         return [];
       }
     }));
@@ -142,6 +148,14 @@ export async function discoverListingsOnChain(
     // Progressive rendering: callers can show listings already discovered
     // instead of waiting for the complete historical scan.
     onProgress?.(Array.from(discovered.values()));
+  }
+
+  // Do not cache an incomplete scan as if it were authoritative. A failed
+  // range is retried on the next refresh instead of silently hiding listings.
+  if (failedRanges.length > 0) {
+    throw new Error(
+      `Listing discovery could not read ${failedRanges.length} block range(s): ${failedRanges.slice(0, 3).join(", ")}. Retrying on refresh.`
+    );
   }
 
   if (!discovered.has(USTETU_BOOTSTRAP_LISTING_ID.toString())) {
