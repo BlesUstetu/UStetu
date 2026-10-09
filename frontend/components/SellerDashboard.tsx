@@ -235,6 +235,7 @@ export default function SellerDashboard() {
   useEffect(() => {
     if (!registeredQuery.data) {
       setActiveListingId(null);
+      setSellerListings([]);
       return;
     }
 
