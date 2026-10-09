@@ -90,6 +90,9 @@ export async function discoverListingsOnChain(
     status: "ACTIVE"
   });
 
+  // Publish the verified seed immediately. Do not make the user wait for the
+  // first historical eth_getLogs batch before the known listing is queried.
+  onProgress?.(Array.from(discovered.values()));
 
   const ranges: Array<{ start: bigint; end: bigint }> = [];
   for (let start = fromBlock; start <= latest; start += CHUNK_SIZE) {
