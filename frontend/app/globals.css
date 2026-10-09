@@ -682,3 +682,94 @@ html[data-theme="light"] .escrow-progress-bar {
   .mobile-listing-stats { gap: 6px; }
   .mobile-listing-stats > div > strong { font-size: 11px; }
 }
+
+
+/* USTETU Seller Center — dedicated laptop and mobile layouts */
+.seller-dashboard {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  min-width: 0;
+}
+.seller-head,
+.seller-overview-shell,
+.seller-card,
+.seller-two,
+.seller-grid,
+.seller-overview-listing,
+.seller-stats,
+.seller-form,
+.seller-form-grid,
+.seller-inline,
+.seller-actions {
+  min-width: 0;
+}
+@media (min-width: 1101px) {
+  .seller-dashboard { padding: 30px 28px 64px; }
+  .seller-head { align-items: flex-end; margin-bottom: 24px; }
+  .seller-head h1 { font-size: 30px; }
+  .seller-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .seller-overview-listing { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .seller-stats { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .seller-two { grid-template-columns: minmax(0,1.4fr) minmax(280px,.6fr); align-items: start; }
+  .seller-card { padding: 22px; }
+  .seller-actions { flex-direction: row; align-items: center; }
+}
+@media (min-width: 521px) and (max-width: 1100px) {
+  .seller-dashboard { padding: 24px 18px 46px; }
+  .seller-head { align-items: flex-start; gap: 14px; }
+  .seller-head h1 { font-size: 27px; }
+  .seller-two { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .seller-overview-listing { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .seller-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .seller-card { padding: 17px; }
+}
+@media (max-width: 520px) {
+  .seller-dashboard { padding: 18px 0 34px; }
+  .seller-head { display: flex; flex-direction: column; align-items: stretch; gap: 9px; margin-bottom: 16px; }
+  .seller-head h1 { margin: 3px 0 7px; font-size: 24px; line-height: 1.12; }
+  .seller-head p { font-size: 11px; line-height: 1.5; }
+  .seller-wallet { align-self: flex-start; max-width: 100%; overflow-wrap: anywhere; }
+  .seller-overview-shell { padding: 11px; border-radius: 15px; }
+  .seller-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; padding-bottom: 9px; }
+  .seller-summary-item { padding: 8px 6px; }
+  .seller-summary-item label { font-size: 7px; letter-spacing: .08em; }
+  .seller-summary-item .seller-value { font-size: 13px; overflow-wrap: anywhere; }
+  .seller-summary-item .seller-sub { font-size: 8px; line-height: 1.4; overflow-wrap: anywhere; }
+  .seller-overview { padding: 10px 0 0; }
+  .seller-overview-head { align-items: flex-start; gap: 8px; }
+  .seller-overview-head h2 { font-size: 13px; }
+  .seller-overview-listing { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+  .seller-overview-item { padding: 9px; min-width: 0; }
+  .seller-overview-item span { font-size: 8px; line-height: 1.4; }
+  .seller-overview-item strong { font-size: 11px; overflow-wrap: anywhere; }
+  .seller-overview-item small { font-size: 8px; overflow-wrap: anywhere; }
+  .seller-two { grid-template-columns: minmax(0,1fr) !important; gap: 10px; }
+  .seller-card { padding: 14px !important; border-radius: 15px !important; margin-bottom: 10px; }
+  .seller-section { margin-bottom: 10px !important; }
+  .seller-section h2 { font-size: 14px; margin-bottom: 10px; }
+  .seller-listing-top { align-items: flex-start; gap: 9px; }
+  .seller-token { gap: 9px; min-width: 0; }
+  .seller-token-mark { width: 36px; height: 36px; flex: 0 0 auto; font-size: 16px; }
+  .seller-token strong { font-size: 12px; overflow-wrap: anywhere; }
+  .seller-stats { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-top: 12px; }
+  .seller-stat { min-width: 0; padding: 9px; }
+  .seller-stat span { font-size: 8px; }
+  .seller-stat strong { font-size: 11px; overflow-wrap: anywhere; }
+  .seller-value { font-size: 21px; overflow-wrap: anywhere; }
+  .seller-form, .seller-form-grid, .seller-inline { grid-template-columns: minmax(0,1fr) !important; }
+  .seller-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-top: 12px; }
+  .seller-actions button, .seller-form button, .seller-card > button { width: 100%; min-width: 0; min-height: 42px; padding: 10px 8px; font-size: 10px; white-space: normal; }
+  .seller-actions button.primary { grid-column: 1 / -1; }
+  .seller-note, .seller-message, .seller-error { overflow-wrap: anywhere; font-size: 11px; line-height: 1.5; }
+  .seller-locked-order { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .seller-locked-order-action { align-items: flex-start; flex-wrap: wrap; }
+}
+@media (max-width: 370px) {
+  .seller-dashboard { padding-top: 14px; }
+  .seller-grid { grid-template-columns: minmax(0,1fr); }
+  .seller-overview-listing { grid-template-columns: minmax(0,1fr); }
+  .seller-stats { grid-template-columns: minmax(0,1fr); }
+  .seller-actions { grid-template-columns: minmax(0,1fr); }
+  .seller-actions button.primary { grid-column: auto; }
+}
