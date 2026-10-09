@@ -35,7 +35,7 @@ const DISCOVERY_FROM_BLOCK_ENV = "NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOC
 // Keep RPC requests bounded, but discover in parallel so the marketplace does
 // not remain blank while historical listings are being scanned.
 const CHUNK_SIZE = 10_000n;
-const MIN_RETRY_CHUNK_SIZE = 500n;
+const MIN_RETRY_CHUNK_SIZE = 1n;
 const MAX_CONCURRENT_CHUNKS = 2;
 const DISCOVERY_CACHE_MS = 45_000;
 let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
@@ -97,7 +97,21 @@ export async function discoverListingsOnChain(
         return [...left, ...right];
       }
     };
-    const results = await Promise.all(batch.map(({ start, end }) => readLogsAdaptive(start, end)));
+    // Isolate failures per range. One unavailable RPC slice must not abort
+    // the entire discovery job and hide every listing found in other slices.
+    const results = await Promise.all(batch.map(async ({ start, end }) => {
+      try {
+        return await readLogsAdaptive(start, end);
+      } catch (error) {
+        console.error(
+          "[USTETU listing discovery] Failed to read Escrow logs for blocks",
+          start.toString(),
+          end.toString(),
+          error
+        );
+        return [];
+      }
+    }));
 
     for (const logs of results) {
       for (const log of logs) {
