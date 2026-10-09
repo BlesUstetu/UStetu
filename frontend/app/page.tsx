@@ -417,7 +417,6 @@ export default function HomePage() {
             <span className="listing-count">{isLoading ? t("readingListings") : `${filteredListings.length} ${filteredListings.length === 1 ? t("listing") : t("listings")}`}</span>
             <span className="status-dot"><i /> {t("live")}</span>
           </div>
-          {apiError && <div className="listing-discovery-warning" role="status"><strong>Listing history is temporarily incomplete.</strong><span>Some older listings may not appear until discovery configuration is corrected.</span></div>}
           <div className="listing-table-wrap">
             <table className="listing-table">
               <thead><tr><th>{t("token")}</th><th>{t("seller")}</th><th>{t("available")}</th><th>{t("price")}</th><th>{t("networkLabel")}</th><th /></tr></thead>
