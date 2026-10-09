@@ -417,12 +417,11 @@ export default function HomePage() {
             <span className="listing-count">{isLoading ? t("readingListings") : `${filteredListings.length} ${filteredListings.length === 1 ? t("listing") : t("listings")}`}</span>
             <span className="status-dot"><i /> {t("live")}</span>
           </div>
-          {apiError && <div className="listing-discovery-warning" role="status">{apiError}</div>}
           <div className="listing-table-wrap">
             <table className="listing-table">
               <thead><tr><th>{t("token")}</th><th>{t("seller")}</th><th>{t("available")}</th><th>{t("price")}</th><th>{t("networkLabel")}</th><th /></tr></thead>
               <tbody>
-                {hasError ? <tr><td colSpan={6} className="empty-state">{apiError}</td></tr> :
+                {hasError ? <tr><td colSpan={6} className="empty-state">{t("noMatch")}</td></tr> :
                  isLoading ? <tr><td colSpan={6} className="empty-state">{t("readingListings")}</td></tr> :
                  filteredListings.length === 0 ? <tr><td colSpan={6} className="empty-state">{t("noMatch")}</td></tr> :
                  filteredListings.map((item) => (
@@ -430,11 +429,30 @@ export default function HomePage() {
                     <td><div className="token-cell"><TokenLogo address={item.address} chainId={item.chainId} name={item.tokenName} symbol={item.symbol} size={38} /><div><strong>{item.tokenName}</strong><span>{item.symbol}</span></div><span className="registered-badge">Registered</span></div></td>
                     <td className="mono">{item.seller.slice(0, 6)}…{item.seller.slice(-4)}</td>
                     <td>{item.available} {item.symbol}</td><td><strong>{item.price}</strong> {item.paymentSymbol}</td><td><span className="network-text">Base Mainnet</span></td>
-                    <td><button className="row-action" type="button">{t("view")}</button></td>
+                    <td><button className="row-action" type="button" onClick={(event) => { event.stopPropagation(); setSelectedId(item.listingId); }}>{t("view")}</button></td>
                   </tr>
                  ))}
               </tbody>
             </table>
+          </div>
+          <div className="listing-mobile-cards">
+            {hasError ? <p className="mobile-listing-empty">{t("noMatch")}</p> :
+             isLoading ? <p className="mobile-listing-empty">{t("readingListings")}</p> :
+             filteredListings.length === 0 ? <p className="mobile-listing-empty">{t("noMatch")}</p> :
+             filteredListings.map((item) => (
+              <article className="mobile-listing-card" key={item.listingId.toString()} onClick={() => setSelectedId(item.listingId)}>
+                <div className="mobile-listing-head">
+                  <div className="token-cell"><TokenLogo address={item.address} chainId={item.chainId} name={item.tokenName} symbol={item.symbol} size={34} /><div><strong>{item.tokenName}</strong><span>{item.symbol}</span></div></div>
+                  <button className="row-action" type="button" onClick={(event) => { event.stopPropagation(); setSelectedId(item.listingId); }}>{t("view")}</button>
+                </div>
+                <div className="mobile-listing-meta"><span>{t("seller")}</span><strong className="mono">{item.seller.slice(0, 6)}…{item.seller.slice(-4)}</strong></div>
+                <div className="mobile-listing-stats">
+                  <div><span>{t("available")}</span><strong>{item.available} {item.symbol}</strong></div>
+                  <div><span>{t("price")}</span><strong>{item.price} {item.paymentSymbol}</strong></div>
+                </div>
+                <div className="mobile-listing-network"><span className="network-text">Base Mainnet</span><span className="registered-badge">Registered</span></div>
+              </article>
+             ))}
           </div>
         </div>
       </section>

@@ -461,3 +461,224 @@ html[data-theme="light"] .escrow-progress-bar {
   color:#fff !important;
 }
 .language-option.is-active span{color:#8ff6ff;text-shadow:0 0 8px rgba(72,210,255,.55)}
+
+
+/* USTETU responsive system-wide refresh — leaf-green panel borders */
+:root {
+  --ustetu-leaf: #78b83f;
+  --ustetu-leaf-strong: #8bd64b;
+  --ustetu-leaf-border: rgba(120,184,63,.48);
+  --ustetu-leaf-soft: rgba(120,184,63,.10);
+  --line: rgba(120,184,63,.24);
+}
+
+/* Keep panels dark/glass while using a consistent leaf-green edge across routes. */
+.listing-glass,
+.search-glass,
+.token-drawer,
+.detail-grid,
+.drawer-listing-card,
+.escrow-progress,
+.seller-card,
+.seller-nav,
+.seller-tabs,
+.buyer-card,
+.buyer-panel,
+.buyer-section,
+.inventory-card,
+.orders-card,
+.settings-card,
+.earnings-card,
+.payout-card,
+.modal-panel,
+.dialog-panel {
+  border-color: var(--ustetu-leaf-border) !important;
+}
+.listing-glass,
+.seller-card,
+.buyer-card,
+.buyer-panel,
+.buyer-section,
+.inventory-card,
+.orders-card,
+.settings-card,
+.earnings-card,
+.payout-card {
+  background-image:
+    linear-gradient(145deg,rgba(7,14,29,.96),rgba(8,12,25,.98)) padding-box,
+    linear-gradient(135deg,rgba(120,184,63,.56),rgba(120,184,63,.22)) border-box !important;
+  box-shadow: 0 16px 44px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+.search-glass,
+.token-drawer,
+.drawer-listing-card,
+.escrow-progress,
+.detail-grid {
+  border-color: var(--ustetu-leaf-border) !important;
+}
+.listing-toolbar,
+.listing-table td,
+.detail-grid {
+  border-color: rgba(120,184,63,.19) !important;
+}
+.listing-row:hover {
+  background: linear-gradient(90deg,rgba(120,184,63,.065),rgba(120,184,63,.018)) !important;
+  box-shadow: inset 2px 0 0 rgba(139,214,75,.65) !important;
+}
+.row-action,
+.secondary-glass,
+.primary-glass,
+.icon-button,
+.language-control,
+.language-options {
+  background:
+    linear-gradient(145deg,rgba(10,20,30,.96),rgba(8,12,22,.98)) padding-box,
+    linear-gradient(135deg,rgba(120,184,63,.58),rgba(120,184,63,.24)) border-box !important;
+}
+.row-action,
+.secondary-glass,
+.primary-glass,
+.icon-button {
+  border-color: transparent !important;
+}
+.row-action:hover,
+.secondary-glass:hover,
+.primary-glass:hover:not(:disabled),
+.icon-button:hover {
+  box-shadow: 0 0 18px rgba(120,184,63,.10), inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+.eyebrow,
+.language-globe,
+.language-option.is-active span {
+  color: var(--ustetu-leaf-strong) !important;
+}
+.verified-badge {
+  border-color: rgba(120,184,63,.45) !important;
+  color: var(--ustetu-leaf-strong) !important;
+}
+
+/* Laptop: spacious grids and aligned page content. */
+@media (min-width: 1101px) {
+  .app-shell { padding: 24px clamp(28px,3vw,48px) 44px; }
+  .marketplace-shell { width: min(1240px,100%); }
+  .seller-two { grid-template-columns: minmax(0,1.35fr) minmax(260px,.65fr); }
+  .seller-card { border-radius: 18px; }
+}
+
+/* Tablet: compact header and panels without forcing desktop-width content. */
+@media (min-width: 521px) and (max-width: 1100px) {
+  .app-shell { padding: 18px 20px 34px; }
+  .marketplace-shell { width: 100%; margin-top: 38px; }
+  .marketplace-heading { gap: 20px; align-items: center; }
+  .marketplace-heading h1 { font-size: clamp(34px,4.5vw,48px); }
+  .listing-glass { border-radius: 18px; }
+  .listing-toolbar { padding: 13px 16px; }
+  .listing-table th { padding: 12px 13px; }
+  .listing-table td { padding: 15px 13px; }
+  .seller-two { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .seller-card { padding: 16px; }
+}
+
+/* Mobile: single-column forms, scroll-safe tables, and uncluttered controls. */
+@media (max-width: 520px) {
+  .app-shell { padding: 10px 10px 26px; }
+  .topbar { gap: 8px; min-height: 54px; }
+  .ustetu-header-brand,
+  .brand-block { display: none !important; }
+  .topbar-left { display: none !important; }
+  .topbar-right { margin-left: auto; }
+  .marketplace-shell { width: 100%; margin-top: 26px; }
+  .marketplace-heading { margin-bottom: 16px; }
+  .marketplace-heading h1 { font-size: clamp(29px,8vw,38px); line-height: 1.05; }
+  .marketplace-heading p { font-size: 12px; line-height: 1.5; }
+  .search-glass { margin-top: 14px; padding: 11px 12px; border-radius: 12px; }
+  .listing-glass { border-radius: 16px; }
+  .listing-toolbar { padding: 12px 13px; }
+  .listing-table-wrap { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .listing-table { min-width: 720px; }
+  .listing-table th { padding: 11px 10px; font-size: 9px; }
+  .listing-table td { padding: 13px 10px; font-size: 11px; }
+  .token-cell { min-width: 140px; gap: 8px; }
+  .token-cell strong { font-size: 12px; }
+  .token-mark { width: 30px; height: 30px; border-radius: 10px; }
+  .row-action { padding: 8px 11px; }
+  .seller-two,
+  .detail-grid,
+  .drawer-actions { grid-template-columns: minmax(0,1fr) !important; }
+  .seller-card { padding: 13px !important; border-radius: 14px !important; }
+  .seller-section { margin-bottom: 10px !important; }
+  .seller-listing-top { align-items: flex-start; flex-wrap: wrap; }
+  .seller-token { min-width: 0; }
+  .seller-actions { gap: 7px; }
+  .seller-actions button,
+  .seller-form button,
+  .seller-card > button { min-height: 42px; font-size: 11px; }
+  .seller-form,
+  .seller-form-grid,
+  .create-listing-grid,
+  .listing-form-grid,
+  .buyer-form-grid { grid-template-columns: minmax(0,1fr) !important; }
+  .detail-wide { grid-column: auto; }
+  input, select, textarea { max-width: 100%; }
+  .token-drawer { top: 7px; right: 7px; bottom: 7px; width: calc(100vw - 14px); padding: 17px 13px; border-radius: 17px; }
+}
+
+/* Small phones: reserve enough space for the wallet and menu buttons. */
+@media (max-width: 370px) {
+  .app-shell { padding-left: 7px; padding-right: 7px; }
+  .topbar { padding-left: 4px; padding-right: 4px; }
+  .topbar-right { gap: 4px; }
+  .marketplace-heading h1 { font-size: 29px; }
+  .listing-table { min-width: 680px; }
+}
+
+
+/* Mobile marketplace cards replace the wide data table on narrow screens. */
+.listing-mobile-cards { display: none; }
+.listing-discovery-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 16px;
+  color: #d5e5c9;
+  background: rgba(120,184,63,.08);
+  border-bottom: 1px solid rgba(120,184,63,.22);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.listing-discovery-warning strong { color: #a8df77; font-size: 12px; }
+.listing-discovery-warning span { color: #aab6a0; }
+@media (max-width: 600px) {
+  .listing-table-wrap { display: none !important; }
+  .listing-mobile-cards { display: grid; gap: 0; }
+  .mobile-listing-card {
+    display: grid;
+    gap: 12px;
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(120,184,63,.22);
+    background: linear-gradient(145deg,rgba(7,14,29,.88),rgba(8,12,25,.96));
+    cursor: pointer;
+    min-width: 0;
+  }
+  .mobile-listing-card:last-child { border-bottom: 0; }
+  .mobile-listing-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+  .mobile-listing-head .token-cell { min-width: 0; gap: 9px; }
+  .mobile-listing-head .token-cell strong { font-size: 13px; }
+  .mobile-listing-head .token-cell span { font-size: 10px; }
+  .mobile-listing-head .row-action { flex: 0 0 auto; min-height: 34px; padding: 7px 12px; }
+  .mobile-listing-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+  .mobile-listing-meta > span,
+  .mobile-listing-stats > div > span { color: #8794a8; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+  .mobile-listing-meta .mono { font-size: 10px; overflow-wrap: anywhere; text-align: right; }
+  .mobile-listing-stats { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
+  .mobile-listing-stats > div { display: grid; gap: 5px; min-width: 0; }
+  .mobile-listing-stats > div > strong { font-size: 12px; overflow-wrap: anywhere; }
+  .mobile-listing-network { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 10px; }
+  .mobile-listing-empty { padding: 18px 12px; margin: 0; color: #9ca8ba; font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .mobile-listing-card { padding: 12px 9px; }
+  .mobile-listing-stats { gap: 6px; }
+  .mobile-listing-stats > div > strong { font-size: 11px; }
+}
