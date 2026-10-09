@@ -583,7 +583,7 @@ html[data-theme="light"] .escrow-progress-bar {
 @media (max-width: 520px) {
   .app-shell { padding: 10px 10px 26px; }
   .topbar { gap: 8px; min-height: 54px; }
-  .ustetu-header-brand,
+  .ustetu-header-brand { display: flex !important; align-items: center; flex: 0 1 auto; min-width: 0; }
   .brand-block { display: none !important; }
   .topbar-left { display: none !important; }
   .topbar-right { margin-left: auto; }
