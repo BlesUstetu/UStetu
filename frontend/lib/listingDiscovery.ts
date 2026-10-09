@@ -47,9 +47,15 @@ export async function discoverListingsOnChain(
 ): Promise<DiscoveredListing[]> {
   const now = Date.now();
   if (discoveryCache && now - discoveryCache.at < DISCOVERY_CACHE_MS) {
+    onProgress?.(discoveryCache.listings);
     return discoveryCache.listings;
   }
-  if (discoveryInFlight) return discoveryInFlight;
+  if (discoveryInFlight) {
+    return discoveryInFlight.then((listings) => {
+      onProgress?.(listings);
+      return listings;
+    });
+  }
 
   discoveryInFlight = (async () => {
   const latest = await client.getBlockNumber();
