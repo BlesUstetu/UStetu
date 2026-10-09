@@ -1,4 +1,4 @@
-import { createPublicClient, http, parseAbi } from "viem";
+import { createPublicClient, http, parseAbi, parseAbiItem } from "viem";
 import { base } from "viem/chains";
 
 const ESCROW = "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae";
@@ -25,26 +25,49 @@ const [chainId, listing, expectedId] = await Promise.all([
   client.readContract({ address: REGISTRY, abi: registryAbi, functionName: "getTokenId", args: [8453n, DNA] })
 ]);
 
-// Locate the InventoryDeposited event at the reported block independently
-// of the malformed transaction hash, including the actual emitting address.
+// Search only for the indexed listing ID and event signature, avoiding an
+// unfiltered block query that public RPC endpoints may reject.
 const reportedBlock = 52063083n;
-const paddedListingId = `0x${LISTING_ID.toString(16).padStart(64, "0")}`;
-try {
-  const logs = await client.getLogs({
-    fromBlock: reportedBlock,
-    toBlock: reportedBlock,
-    topics: [null, paddedListingId]
-  });
-  console.log("BLOCK_LISTING_ID_LOGS", JSON.stringify(logs.map((log) => ({
-    address: log.address,
-    transactionHash: log.transactionHash,
-    blockNumber: log.blockNumber?.toString(),
-    topics: log.topics,
-    data: log.data
-  }))));
-} catch (error) {
-  console.log("BLOCK_LISTING_ID_LOGS_ERROR", String(error));
+const inventoryEvent = parseAbiItem(
+  "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)"
+);
+let eventLogs = null;
+for (const rpcUrl of [
+  "https://mainnet.base.org",
+  "https://base-rpc.publicnode.com",
+  "https://base.publicnode.com"
+]) {
+  try {
+    const rpcClient = createPublicClient({
+      chain: base,
+      transport: http(rpcUrl, { timeout: 20000, retryCount: 1 })
+    });
+    const logs = await rpcClient.getLogs({
+      address: ESCROW,
+      event: inventoryEvent,
+      args: { listingId: LISTING_ID },
+      fromBlock: reportedBlock,
+      toBlock: reportedBlock
+    });
+    eventLogs = logs;
+    console.log("EVENT_LOG_RPC", rpcUrl);
+    console.log("BLOCK_LISTING_ID_LOGS", JSON.stringify(logs.map((log) => ({
+      address: log.address,
+      transactionHash: log.transactionHash,
+      blockNumber: log.blockNumber?.toString(),
+      args: {
+        listingId: log.args.listingId?.toString(),
+        seller: log.args.seller,
+        token: log.args.token,
+        amount: log.args.amount?.toString()
+      }
+    }))));
+    break;
+  } catch (error) {
+    console.log("BLOCK_LISTING_ID_LOGS_RPC_ERROR", JSON.stringify({ rpcUrl, error: String(error) }));
+  }
 }
+if (eventLogs === null) console.log("BLOCK_LISTING_ID_LOGS_UNAVAILABLE", true);
 
 // Do not let a malformed copied transaction hash prevent the authoritative
 // Escrow and Registry state reads from completing.
