@@ -259,7 +259,8 @@ export default function HomePage() {
       const chainTokenId = hexTokenId(chainListing.tokenId.toString());
       const indexedTokenId = item.token_id ? hexTokenId(item.token_id) : chainTokenId;
       if (item.token_id && indexedTokenId.toLowerCase() !== chainTokenId.toLowerCase()) return null;
-      if (chainListing.seller.toLowerCase() !== item.seller.toLowerCase()) return null;
+      // Escrow is authoritative for seller identity. InventoryDeposited logs/indexer
+      // records are discovery hints and must not hide a valid on-chain listing.
 
       // The Escrow payment token is authoritative. The indexer is discovery-only.
       const indexedPaymentToken = normalizeAddress(item.payment_token);
@@ -356,8 +357,8 @@ export default function HomePage() {
       reason = "Registry getToken returned no registered token for Escrow tokenId";
     } else if (!item.token_contract || registeredToken.contractAddress.toLowerCase() !== item.token_contract.toLowerCase()) {
       reason = "Registry token contract does not match discovered token contract";
-    } else if (chainListing.seller.toLowerCase() !== item.seller.toLowerCase()) {
-      reason = "seller address does not match Escrow";
+    } else if (BigInt(chainListing.inventoryDeposited) <= BigInt(chainListing.inventoryLocked)) {
+      reason = "available inventory is zero";
     } else if (item.token_id && hexTokenId(item.token_id).toLowerCase() !== hexTokenId(chainListing.tokenId.toString()).toLowerCase()) {
       reason = "tokenId does not match Escrow";
     } else if (paymentTokenAddress && item.payment_token && item.payment_token.toLowerCase() !== paymentTokenAddress.toLowerCase()) {
