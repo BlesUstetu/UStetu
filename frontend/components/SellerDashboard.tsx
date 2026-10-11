@@ -1046,7 +1046,7 @@ export default function SellerDashboard() {
                     <div className="seller-actions">
                       <button
                         className="primary"
-                        disabled={disabled || chainId !== base.id || !createTokenRegistered || !!existingSellerTokenListing}
+                        disabled={disabled || !createTokenRegistered || !!existingSellerTokenListing}
                         onClick={() => void createListing()}
                       >
                         {busy === "Create listing" ? "Creating Listing…" : existingSellerTokenListing ? "Already Listed — Add Inventory" : "Create Listing"}
