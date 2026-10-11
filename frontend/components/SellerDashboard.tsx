@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SellerOrders from "@/components/SellerOrders";
-import { discoverListingsOnChain } from "@/lib/listingDiscovery";
+import { discoverListingsOnChain, discoverSellerTokenListingIds } from "@/lib/listingDiscovery";
 import { encodeAbiParameters, formatEther, formatUnits, isAddress, keccak256, parseUnits } from "viem";
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { base } from "wagmi/chains";
@@ -510,28 +510,25 @@ export default function SellerDashboard() {
       // A seller who already lists this token must use Inventory → Add Inventory.
       // Fail closed if historical discovery is incomplete; otherwise a duplicate
       // could slip through while the RPC is unable to verify existing listings.
-      setMessage("Checking existing listings on Base. This can take a little while…");
-      let discoveredListings: Awaited<ReturnType<typeof discoverListingsOnChain>>;
+      setMessage("Checking duplicate listings for this seller and token…");
+      let existingListingIds: string[];
       try {
-        discoveredListings = await discoverListingsOnChain();
+        existingListingIds = await discoverSellerTokenListingIds(address, token);
       } catch {
-        throw new Error("Could not verify existing listings on Base. Please retry Create Listing after listing discovery completes; duplicate prevention is required.");
+        throw new Error("Could not verify duplicate listings on Base. No transaction was sent. Please retry when the Base RPC is responsive.");
       }
 
-      const tokenListings = discoveredListings.filter(
-        (item) => item.token_contract.toLowerCase() === token.toLowerCase()
-      );
-      for (const candidate of tokenListings) {
+      for (const listingId of existingListingIds) {
         let existing;
         try {
           existing = await publicClient.readContract({
             address: USTETU_ESCROW_ADDRESS,
             abi: escrowAbi,
             functionName: "getListing",
-            args: [BigInt(candidate.listing_id)]
+            args: [BigInt(listingId)]
           });
         } catch {
-          throw new Error("Could not verify an existing listing on Base. Create Listing was stopped to prevent a duplicate. Please retry.");
+          throw new Error("Could not verify a matching listing on Base. Create Listing was stopped to prevent a duplicate. Please retry.");
         }
 
         if (
@@ -539,7 +536,7 @@ export default function SellerDashboard() {
           existing.tokenId.toString(16).padStart(64, "0").toLowerCase() === tokenId.slice(2).toLowerCase()
         ) {
           throw new Error(
-            `You already have a listing for this token (Listing #${candidate.listing_id}). Use Inventory → Add Inventory to add more tokens to your existing listing.`
+            `You already have a listing for this token (Listing #${listingId}). Use Inventory → Add Inventory to add more tokens to your existing listing.`
           );
         }
       }
