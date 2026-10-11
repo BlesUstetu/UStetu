@@ -293,11 +293,15 @@ export async function discoverSellerTokenListingIds(
     throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
   }
 
-  const chunkSize = 500_000n;
+  const chunkSize = 10_000n;
   const ranges: Array<{ start: bigint; end: bigint }> = [];
   for (let start = fromBlock; start <= latest; start += chunkSize) {
     ranges.push({ start, end: start + chunkSize - 1n > latest ? latest : start + chunkSize - 1n });
   }
+  // Search newest blocks first: duplicate listings are normally recent, so we
+  // can stop as soon as a matching seller+token event is found instead of
+  // waiting for a complete scan of the entire Escrow history.
+  ranges.reverse();
 
   const readRange = async (start: bigint, end: bigint): Promise<string[]> => {
     try {
@@ -327,6 +331,9 @@ export async function discoverSellerTokenListingIds(
     const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
     const results = await Promise.all(batch.map(({ start, end }) => readRange(start, end)));
     for (const batchIds of results) ids.push(...batchIds);
+    // The caller verifies every returned ID against Escrow and stops creation
+    // if the connected seller already has a listing for this token.
+    if (ids.length > 0) return Array.from(new Set(ids));
   }
-  return Array.from(new Set(ids));
+  return [];
 }
