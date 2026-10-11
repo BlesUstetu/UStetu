@@ -41,6 +41,14 @@ const tokenApprovalAbi = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] }
 ] as const;
 
+function normalizeListingAmount(value: string): string {
+  const trimmed = value.trim();
+  // Accept Indonesian/English thousands grouping (e.g. 1.000.000 or 1,000,000)
+  // while preserving ordinary decimals such as 0.01.
+  if (/^\\d{1,3}(?:\\.\\d{3})+$/.test(trimmed)) return trimmed.replace(/\\./g, "");
+  if (/^\\d{1,3}(?:,\\d{3})+$/.test(trimmed)) return trimmed.replace(/,/g, "");
+  return trimmed;
+}
 function short(value?: string) { return value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "—"; }
 function tokenIdFor(address: `0x${string}`) {
   return keccak256(encodeAbiParameters(
@@ -537,10 +545,10 @@ export default function SellerDashboard() {
 
       const symbol = await publicClient.readContract({ address: token, abi: erc20MetadataAbi, functionName: "symbol" });
       const balance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "balanceOf", args: [address] });
-      const price = parseUnits(listingPrice || "0", paymentDecimals);
-      const inventory = parseUnits(listingInventory || "0", decimals);
-      const min = parseUnits(listingMin || "0", decimals);
-      const max = parseUnits(listingMax || "0", decimals);
+      const price = parseUnits(normalizeListingAmount(listingPrice || "0"), paymentDecimals);
+      const inventory = parseUnits(normalizeListingAmount(listingInventory || "0"), decimals);
+      const min = parseUnits(normalizeListingAmount(listingMin || "0"), decimals);
+      const max = parseUnits(normalizeListingAmount(listingMax || "0"), decimals);
 
       if (price <= 0n) throw new Error(`Price must be greater than 0 ${paymentSymbol}.`);
       if (inventory <= 0n) throw new Error(`Inventory must be greater than 0 ${symbol}.`);
