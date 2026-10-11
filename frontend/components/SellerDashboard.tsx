@@ -1132,7 +1132,7 @@ export default function SellerDashboard() {
             </div>
           )}
 
-          {activeMenu === "settings" && !listing && (
+          {activeMenu === "settings" && !isListingOwner && (
             <div className="seller-card seller-section">
               <h2>Listing Settings</h2>
               <div className="seller-note">No listing is available for this wallet yet. Listing Settings will become available after a listing is discovered.</div>
