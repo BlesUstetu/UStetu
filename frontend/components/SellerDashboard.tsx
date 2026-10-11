@@ -489,11 +489,14 @@ export default function SellerDashboard() {
 
   const createListing = async () => {
     try {
+      setError("");
+      setMessage("Preparing listing — checking wallet and Base network…");
       await ensureSeller();
       if (!isAddress(listingTokenAddress)) throw new Error("Token contract address is invalid.");
       if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
 
       const token = listingTokenAddress as `0x${string}`;
+      setMessage("Checking token registration…");
       const tokenId = tokenIdFor(token);
 
       const registeredToken = await publicClient.readContract({
@@ -507,6 +510,7 @@ export default function SellerDashboard() {
       // A seller who already lists this token must use Inventory → Add Inventory.
       // Fail closed if historical discovery is incomplete; otherwise a duplicate
       // could slip through while the RPC is unable to verify existing listings.
+      setMessage("Checking existing listings on Base. This can take a little while…");
       let discoveredListings: Awaited<ReturnType<typeof discoverListingsOnChain>>;
       try {
         discoveredListings = await discoverListingsOnChain();
@@ -540,6 +544,7 @@ export default function SellerDashboard() {
         }
       }
 
+      setMessage("Checking token balance and listing amounts…");
       const decimals = Number(registeredToken.decimalsSnapshot);
       if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) throw new Error("Token decimals from the Registry are invalid.");
 
@@ -566,6 +571,7 @@ export default function SellerDashboard() {
       if (id === null) throw new Error("Failed to generate a unique Listing ID. Please try again.");
       setGeneratedListingId(id);
 
+      setMessage("Preparing token approval and wallet confirmation…");
       const allowance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
       if (allowance < inventory) {
         await transact("Approve listing inventory", () => writeContractAsync({ address: token, abi: tokenApprovalAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, inventory] }));
