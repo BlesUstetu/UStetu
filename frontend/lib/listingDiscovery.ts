@@ -273,3 +273,60 @@ export async function discoverListingsOnChain(
     discoveryInFlight = null;
   }
 }
+
+// Fast, seller-specific duplicate check for Create Listing.
+// InventoryDeposited indexes both seller and token, so RPC nodes return only
+// matching events instead of every marketplace listing. Every block range must
+// succeed; otherwise callers must fail closed and avoid creating a duplicate.
+export async function discoverSellerTokenListingIds(
+  seller: `0x${string}`,
+  token: `0x${string}`
+): Promise<string[]> {
+  const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
+  if (!configuredFrom || !/^\\d+$/.test(configuredFrom)) {
+    throw new Error(`Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`);
+  }
+
+  const fromBlock = BigInt(configuredFrom);
+  const latest = await client.getBlockNumber();
+  if (fromBlock > latest) {
+    throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
+  }
+
+  const chunkSize = 500_000n;
+  const ranges: Array<{ start: bigint; end: bigint }> = [];
+  for (let start = fromBlock; start <= latest; start += chunkSize) {
+    ranges.push({ start, end: start + chunkSize - 1n > latest ? latest : start + chunkSize - 1n });
+  }
+
+  const readRange = async (start: bigint, end: bigint): Promise<string[]> => {
+    try {
+      const logs = await client.getLogs({
+        address: USTETU_ESCROW_ADDRESS,
+        event,
+        args: { seller, token },
+        fromBlock: start,
+        toBlock: end,
+        strict: true
+      });
+      return logs.map((log) => log.args.listingId.toString());
+    } catch (error) {
+      if (start === end) throw error;
+      const middle = start + (end - start) / 2n;
+      const [left, right] = await Promise.all([
+        readRange(start, middle),
+        readRange(middle + 1n, end)
+      ]);
+      return [...left, ...right];
+    }
+  };
+
+  const ids: string[] = [];
+  // Keep RPC concurrency bounded while avoiding a slow, sequential full scan.
+  for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
+    const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
+    const results = await Promise.all(batch.map(({ start, end }) => readRange(start, end)));
+    for (const batchIds of results) ids.push(...batchIds);
+  }
+  return Array.from(new Set(ids));
+}
