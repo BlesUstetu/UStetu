@@ -274,16 +274,17 @@ export async function discoverListingsOnChain(
   }
 }
 
-// Fast, seller-specific duplicate check for Create Listing.
-// InventoryDeposited indexes both seller and token, so RPC nodes return only
-// matching events instead of every marketplace listing. Every block range must
-// succeed; otherwise callers must fail closed and avoid creating a duplicate.
+// Seller-specific duplicate check for Create Listing.
+// The event indexes both seller and token. Query the broad history first so
+// compatible RPCs can answer in one request; if the provider rejects the range,
+// split it recursively and inspect newer blocks first. Any matching event is
+// enough to block a duplicate, while a no-match result requires complete coverage.
 export async function discoverSellerTokenListingIds(
   seller: `0x${string}`,
   token: `0x${string}`
 ): Promise<string[]> {
   const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
-  if (!configuredFrom || !/^\d+$/.test(configuredFrom)) {
+  if (!configuredFrom || !/^\\d+$/.test(configuredFrom)) {
     throw new Error(`Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`);
   }
 
@@ -292,16 +293,6 @@ export async function discoverSellerTokenListingIds(
   if (fromBlock > latest) {
     throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
   }
-
-  const chunkSize = 10_000n;
-  const ranges: Array<{ start: bigint; end: bigint }> = [];
-  for (let start = fromBlock; start <= latest; start += chunkSize) {
-    ranges.push({ start, end: start + chunkSize - 1n > latest ? latest : start + chunkSize - 1n });
-  }
-  // Search newest blocks first: duplicate listings are normally recent, so we
-  // can stop as soon as a matching seller+token event is found instead of
-  // waiting for a complete scan of the entire Escrow history.
-  ranges.reverse();
 
   const readRange = async (start: bigint, end: bigint): Promise<string[]> => {
     try {
@@ -317,23 +308,13 @@ export async function discoverSellerTokenListingIds(
     } catch (error) {
       if (start === end) throw error;
       const middle = start + (end - start) / 2n;
-      const [left, right] = await Promise.all([
-        readRange(start, middle),
-        readRange(middle + 1n, end)
-      ]);
-      return [...left, ...right];
+      // Search the newer half first. A duplicate found there means the caller
+      // can stop immediately without reading older history.
+      const newerIds = await readRange(middle + 1n, end);
+      if (newerIds.length > 0) return newerIds;
+      return readRange(start, middle);
     }
   };
 
-  const ids: string[] = [];
-  // Keep RPC concurrency bounded while avoiding a slow, sequential full scan.
-  for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
-    const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
-    const results = await Promise.all(batch.map(({ start, end }) => readRange(start, end)));
-    for (const batchIds of results) ids.push(...batchIds);
-    // The caller verifies every returned ID against Escrow and stops creation
-    // if the connected seller already has a listing for this token.
-    if (ids.length > 0) return Array.from(new Set(ids));
-  }
-  return [];
+  return Array.from(new Set(await readRange(fromBlock, latest)));
 }
