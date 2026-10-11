@@ -21,7 +21,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "viem": "^2.38.0",
-    "wagmi": "^2.19.0"
+    "wagmi": "^2.19.0",
+    "@supabase/supabase-js": "^2.56.0"
   },
   "overrides": {
     "qr": "0.5.5"
