@@ -89,9 +89,12 @@ export async function GET(request: Request) {
     let to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
     let logs: Log[] = [];
     let rangeSize = to - from + 1;
-    const MIN_BLOCKS_PER_QUERY = 25;
+    const MIN_BLOCKS_PER_QUERY = 1;
+    let singleBlockRateLimitRetries = 0;
+    const MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES = 4;
 
     while (true) {
+      to = Math.min(from + rangeSize - 1, target);
       try {
         logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock: from, toBlock: to });
         break;
@@ -111,17 +114,29 @@ export async function GET(request: Request) {
           errorText.includes("-32005") ||
           errorText.includes("-32011");
 
-        if (!isLimitError || rangeSize <= MIN_BLOCKS_PER_QUERY) {
+        if (!isLimitError) throw rpcError;
+
+        if (rangeSize > MIN_BLOCKS_PER_QUERY) {
+          rangeSize = Math.max(MIN_BLOCKS_PER_QUERY, Math.floor(rangeSize / 2));
+          console.warn(
+            "Base RPC limited eth_getLogs; retrying with smaller block range",
+            JSON.stringify({ fromBlock: from, toBlock: Math.min(from + rangeSize - 1, target), rangeSize })
+          );
+          await new Promise((resolve) => setTimeout(resolve, 750));
+          continue;
+        }
+
+        if (singleBlockRateLimitRetries >= MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES) {
           throw rpcError;
         }
 
-        rangeSize = Math.max(MIN_BLOCKS_PER_QUERY, Math.floor(rangeSize / 2));
-        to = Math.min(from + rangeSize - 1, target);
+        singleBlockRateLimitRetries += 1;
+        const backoffMs = 1500 * (2 ** (singleBlockRateLimitRetries - 1));
         console.warn(
-          "Base RPC limited eth_getLogs; retrying with smaller block range",
-          JSON.stringify({ fromBlock: from, toBlock: to, rangeSize })
+          "Base RPC is still rate-limiting a single-block eth_getLogs query; backing off before retry",
+          JSON.stringify({ fromBlock: from, retries: singleBlockRateLimitRetries, backoffMs })
         );
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
 
