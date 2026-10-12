@@ -155,9 +155,21 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ ok: true, fromBlock: from, toBlock: to, latestBlock: latest, logsFound: logs.length, eventsProcessed: processed, caughtUp: to >= target });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Indexer failed";
-    console.error("UStetu cron indexer failed", message);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const candidate = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown; status?: unknown };
+    const message = error instanceof Error
+      ? error.message
+      : typeof candidate?.message === "string"
+        ? candidate.message
+        : JSON.stringify(error) || "Indexer failed";
+    const details = {
+      message,
+      code: candidate?.code ?? null,
+      details: candidate?.details ?? null,
+      hint: candidate?.hint ?? null,
+      status: candidate?.status ?? null
+    };
+    console.error("UStetu cron indexer failed", JSON.stringify(details));
+    return NextResponse.json({ ok: false, error: message, code: details.code, details: details.details, hint: details.hint }, { status: 500 });
   } finally {
     provider.destroy();
   }
