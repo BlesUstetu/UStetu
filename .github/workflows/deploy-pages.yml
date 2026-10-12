@@ -50,6 +50,21 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # GitHub Pages is a static host and cannot serve Next.js request-time API
+      # routes. Exclude this server-only route from the Pages build workspace
+      # only; the tracked source remains available to the separate Vercel build.
+      - name: Exclude server-only indexer API from static export
+        shell: bash
+        run: |
+          set -euo pipefail
+          route="app/api/indexer/cron/route.ts"
+          if [ -f "$route" ]; then
+            rm "$route"
+            echo "Excluded $route from the GitHub Pages static export only."
+          else
+            echo "No server-only indexer route found; continuing."
+          fi
+
       - name: Build frontend
         run: npm run build
 
