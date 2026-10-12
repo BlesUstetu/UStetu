@@ -84,8 +84,47 @@ export async function GET(request: Request) {
     if (from > target) {
       return NextResponse.json({ ok: true, message: "Already caught up", fromBlock: from, latestBlock: latest, indexedThrough: state?.last_scanned_block ?? null });
     }
-    const to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
-    const logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock: from, toBlock: to });
+    // RPC providers may impose eth_getLogs range or request-rate limits.
+    // Start with the normal range, then shrink it adaptively on explicit limit errors.
+    let to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
+    let logs: Log[] = [];
+    let rangeSize = to - from + 1;
+    const MIN_BLOCKS_PER_QUERY = 25;
+
+    while (true) {
+      try {
+        logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock: from, toBlock: to });
+        break;
+      } catch (rpcError) {
+        const errorText = (() => {
+          try {
+            return JSON.stringify(rpcError).toLowerCase() + " " + String(rpcError).toLowerCase();
+          } catch {
+            return String(rpcError).toLowerCase();
+          }
+        })();
+        const isLimitError =
+          errorText.includes("request limit reached") ||
+          errorText.includes("too many requests") ||
+          errorText.includes("rate limit") ||
+          errorText.includes("429") ||
+          errorText.includes("-32005") ||
+          errorText.includes("-32011");
+
+        if (!isLimitError || rangeSize <= MIN_BLOCKS_PER_QUERY) {
+          throw rpcError;
+        }
+
+        rangeSize = Math.max(MIN_BLOCKS_PER_QUERY, Math.floor(rangeSize / 2));
+        to = Math.min(from + rangeSize - 1, target);
+        console.warn(
+          "Base RPC limited eth_getLogs; retrying with smaller block range",
+          JSON.stringify({ fromBlock: from, toBlock: to, rangeSize })
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+
     const finalizedThrough = Math.max(0, to - confirmations);
     let processed = 0;
 
