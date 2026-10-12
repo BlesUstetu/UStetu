@@ -45,8 +45,8 @@ function normalizeListingAmount(value: string): string {
   const trimmed = value.trim();
   // Accept grouped thousands (1.000.000 or 1,000,000) while preserving
   // decimal values such as 0.01. Commas are supported as thousands separators.
-  if (/^\d{1,3}(?:\.\d{3})+$/.test(trimmed)) return trimmed.replace(/\./g, "");
-  if (/^\d{1,3}(?:,\d{3})+$/.test(trimmed)) return trimmed.replace(/,/g, "");
+  if (/^[1-9]\d{0,2}(?:\.\d{3})+$/.test(trimmed)) return trimmed.replace(/\./g, "");
+  if (/^[1-9]\d{0,2}(?:,\d{3})+$/.test(trimmed)) return trimmed.replace(/,/g, "");
   return trimmed;
 }
 function short(value?: string) { return value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "—"; }
