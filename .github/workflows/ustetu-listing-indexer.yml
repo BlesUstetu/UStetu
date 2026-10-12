@@ -38,7 +38,7 @@ jobs:
             --write-out "%{http_code}" \
             --request GET \
             --header "Authorization: Bearer ${CRON_SECRET}" \
-            "https://ustetu.dev/api/indexer/cron")"
+            "https://www.ustetu.dev/api/indexer/cron")"
           cat "$response_file"
           rm -f "$response_file"
           if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
