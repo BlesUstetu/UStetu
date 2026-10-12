@@ -1,0 +1,47 @@
+name: UStetu listing indexer
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ustetu-listing-indexer
+  cancel-in-progress: false
+
+jobs:
+  index:
+    name: Scan Base listing events
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check required secret
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Missing repository Actions secret CRON_SECRET."
+            exit 1
+          fi
+
+      - name: Call production indexer
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 75 \
+            --output "$response_file" \
+            --write-out "%{http_code}" \
+            --request GET \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "https://ustetu.dev/api/indexer/cron")"
+          cat "$response_file"
+          rm -f "$response_file"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error::Indexer returned HTTP $status."
+            exit 1
+          fi
