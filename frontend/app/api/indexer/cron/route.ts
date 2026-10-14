@@ -10,8 +10,18 @@ const START_BLOCK = 51_811_281;
 const ESCROW_ADDRESS = "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae";
 const REGISTRY_ADDRESS = "0x237023EC6A39e59CEbd1D231777308c354ba542F";
 const CONFIRMATIONS = 12;
-const MAX_BLOCKS_PER_RUN = 1_600;
+const MAX_BLOCKS_PER_RUN = 800;
 const RPC_LOG_CHUNK_SIZE = 8;
+const RPC_REQUEST_DELAY_MS = 200;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /429|rate.?limit|compute units per second|request limit reached/i.test(message);
+}
 
 type IndexedLog = {
   blockNumber: number;
@@ -38,11 +48,20 @@ async function fetchRpcLogs(
         if (Number(network.chainId) !== CHAIN_ID) {
           throw new Error(`RPC endpoint returned wrong chain ID: ${network.chainId}`);
         }
-        result = await provider.getLogs({
-          address: ESCROW_ADDRESS,
-          fromBlock: start,
-          toBlock: end
-        });
+        // Pace requests and retry rate-limited calls with exponential backoff.
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            result = await provider.getLogs({
+              address: ESCROW_ADDRESS,
+              fromBlock: start,
+              toBlock: end
+            });
+            break;
+          } catch (error) {
+            if (!isRateLimitError(error) || attempt === 3) throw error;
+            await wait(500 * (2 ** attempt));
+          }
+        }
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -52,6 +71,8 @@ async function fetchRpcLogs(
     if (!result) {
       throw new Error(`All Base RPC providers failed for blocks ${start}-${end}. ${providerErrors.join(" | ")}`);
     }
+    // Keep request rate below common free-tier RPC burst limits.
+    await wait(RPC_REQUEST_DELAY_MS);
     allLogs.push(...result.map((log) => ({
       blockNumber: log.blockNumber,
       blockHash: log.blockHash,
