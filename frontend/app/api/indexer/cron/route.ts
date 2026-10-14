@@ -10,9 +10,8 @@ const START_BLOCK = 51_811_281;
 const ESCROW_ADDRESS = "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae";
 const REGISTRY_ADDRESS = "0x237023EC6A39e59CEbd1D231777308c354ba542F";
 const CONFIRMATIONS = 12;
-const MAX_BLOCKS_PER_RUN = 50_000;
-const BASESCAN_API_URL = "https://api.basescan.org/api";
-const MAX_LOGS_PER_QUERY = 1_000;
+const MAX_BLOCKS_PER_RUN = 5_000;
+const RPC_LOG_CHUNK_SIZE = 500;
 
 type IndexedLog = {
   blockNumber: number;
@@ -23,84 +22,47 @@ type IndexedLog = {
   data: string;
 };
 
-type BaseScanLogResponse = {
-  status?: string;
-  message?: string;
-  result?: string | Array<Record<string, unknown>>;
-};
-
-function parseExplorerNumber(value: unknown): number {
-  if (typeof value === "number") return value;
-  const text = String(value ?? "");
-  return text.startsWith("0x") ? Number.parseInt(text, 16) : Number(text);
-}
-
-async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: string): Promise<IndexedLog[]> {
-  const params = new URLSearchParams({
-    module: "logs", action: "getLogs", address: ESCROW_ADDRESS,
-    fromBlock: String(fromBlock), toBlock: String(toBlock), page: "1",
-    offset: String(MAX_LOGS_PER_QUERY), apikey: apiKey
-  });
-  // BaseScan's standard API rate limit is 5 requests/second; leave headroom for retries.
-  await new Promise((resolve) => setTimeout(resolve, 250));
-  const response = await fetch(`${BASESCAN_API_URL}?${params.toString()}`, {
-    method: "GET", cache: "no-store", signal: AbortSignal.timeout(15_000)
-  });
-  // Read the response body even on HTTP errors; BaseScan often explains 403 in its body.
-  // Never include the request URL in logs because it contains the API key.
-  const responseText = await response.text();
-  if (!response.ok) {
-    const safeBody = responseText.slice(0, 500).replace(/(apikey|api_key|apiKey)(["\\s:=]+)([^&\\s]+)/gi, "$1$2[REDACTED]");
-    throw new Error(`BaseScan logs API returned HTTP ${response.status}: ${safeBody || response.statusText}`);
-  }
-  let payload: BaseScanLogResponse;
-  try {
-    payload = JSON.parse(responseText) as BaseScanLogResponse;
-  } catch {
-    throw new Error(`BaseScan logs API returned non-JSON response (HTTP ${response.status}).`);
-  }
-  const message = String(payload.message ?? "").toLowerCase();
-  const resultText = typeof payload.result === "string" ? payload.result.toLowerCase() : "";
-
-  if (payload.status === "1" && Array.isArray(payload.result)) {
-    const rawLogs = payload.result;
-    // BaseScan caps a page at 1,000 records. Split dense ranges so no logs are silently lost.
-    if (rawLogs.length >= MAX_LOGS_PER_QUERY && fromBlock === toBlock) {
-      throw new Error(`BaseScan returned the maximum 1,000 logs for single block ${fromBlock}; refusing to advance an incomplete index.`);
+async function fetchRpcLogs(
+  fromBlock: number,
+  toBlock: number,
+  providers: JsonRpcProvider[]
+): Promise<IndexedLog[]> {
+  const allLogs: IndexedLog[] = [];
+  for (let start = fromBlock; start <= toBlock; start += RPC_LOG_CHUNK_SIZE) {
+    const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, toBlock);
+    let result: Awaited<ReturnType<JsonRpcProvider["getLogs"]>> | undefined;
+    let lastError: unknown;
+    for (const provider of providers) {
+      try {
+        const network = await provider.getNetwork();
+        if (Number(network.chainId) !== CHAIN_ID) {
+          throw new Error(`RPC endpoint returned wrong chain ID: ${network.chainId}`);
+        }
+        result = await provider.getLogs({
+          address: ESCROW_ADDRESS,
+          fromBlock: start,
+          toBlock: end
+        });
+        lastError = undefined;
+        break;
+      } catch (error) {
+        lastError = error;
+      }
     }
-    if (rawLogs.length >= MAX_LOGS_PER_QUERY && fromBlock < toBlock) {
-      const middle = Math.floor((fromBlock + toBlock) / 2);
-      const left = await fetchBaseScanLogs(fromBlock, middle, apiKey);
-      const right = await fetchBaseScanLogs(middle + 1, toBlock, apiKey);
-      return [...left, ...right];
+    if (!result) {
+      const message = lastError instanceof Error ? lastError.message : "Unknown RPC getLogs error";
+      throw new Error(`All Base RPC providers failed for blocks ${start}-${end}: ${message}`);
     }
-    return rawLogs.map((raw) => {
-      const topics = Array.isArray(raw.topics)
-        ? raw.topics.map(String)
-        : [raw.topic0, raw.topic1, raw.topic2, raw.topic3].filter((item) => item != null).map(String);
-      return {
-        blockNumber: parseExplorerNumber(raw.blockNumber),
-        blockHash: String(raw.blockHash ?? ""),
-        transactionHash: String(raw.transactionHash ?? ""),
-        index: parseExplorerNumber(raw.logIndex ?? raw.index),
-        topics,
-        data: String(raw.data ?? "0x")
-      };
-    });
+    allLogs.push(...result.map((log) => ({
+      blockNumber: log.blockNumber,
+      blockHash: log.blockHash,
+      transactionHash: log.transactionHash,
+      index: log.index,
+      topics: [...log.topics],
+      data: log.data
+    })));
   }
-
-  if (message.includes("no records") || resultText.includes("no records found")) return [];
-  const detail = `${message} ${resultText}`;
-  if (fromBlock < toBlock && (
-    detail.includes("too many") || detail.includes("maximum") || detail.includes("query timeout") ||
-    detail.includes("result window") || detail.includes("more than 1000")
-  )) {
-    const middle = Math.floor((fromBlock + toBlock) / 2);
-    const left = await fetchBaseScanLogs(fromBlock, middle, apiKey);
-    const right = await fetchBaseScanLogs(middle + 1, toBlock, apiKey);
-    return [...left, ...right];
-  }
-  throw new Error(`BaseScan logs API error (${payload.status ?? "unknown"}): ${String(payload.result ?? payload.message ?? "Unexpected response")}`);
+  return allLogs;
 }
 
 const ESCROW_ABI = [
@@ -148,11 +110,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing Supabase server configuration" }, { status: 503 });
   }
 
-  const baseScanApiKey = process.env.BASESCAN_API_KEY;
-  if (!baseScanApiKey) {
-    return NextResponse.json({ ok: false, error: "Missing BASESCAN_API_KEY. Configure a BaseScan API key in Vercel environment variables to index historical events without archive RPC access." }, { status: 503 });
-  }
-
   const rpcUrls = [
     process.env.BASE_RPC_URL || "https://mainnet.base.org",
     process.env.BASE_RPC_FALLBACK_URL || "https://base-rpc.publicnode.com",
@@ -185,10 +142,10 @@ export async function GET(request: Request) {
     if (from > target) {
       return NextResponse.json({ ok: true, message: "Already caught up", fromBlock: from, latestBlock: latest, indexedThrough: state?.last_scanned_block ?? null });
     }
-    // Historical event logs come from BaseScan's indexed API, not archive eth_getLogs RPC.
-    // Keep each run bounded while allowing a much faster initial backfill.
+    // Query event logs in bounded RPC chunks and try configured fallback providers on failures.
+    // Keep each run bounded to avoid provider range limits and Vercel timeouts.
     let to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
-    let logs: IndexedLog[] = await fetchBaseScanLogs(from, to, baseScanApiKey);
+    let logs: IndexedLog[] = await fetchRpcLogs(from, to, providers);
     const finalizedThrough = Math.max(0, to - confirmations);
     let processed = 0;
 
