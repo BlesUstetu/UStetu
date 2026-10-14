@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   const rpcUrls = [
     process.env.BASE_RPC_URL || "https://mainnet.base.org",
     process.env.BASE_RPC_FALLBACK_URL || "https://base-rpc.publicnode.com",
-    process.env.BASE_RPC_FALLBACK_URL_2 || "https://base.publicnode.com"
+    process.env.BASE_RPC_FALLBACK_URL_2 || "https://1rpc.io/base"
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
   const providers = rpcUrls.map((url) => new JsonRpcProvider(url, CHAIN_ID));
