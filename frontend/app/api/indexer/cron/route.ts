@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Contract, JsonRpcProvider, type Log } from "ethers";
+import { Contract, JsonRpcProvider } from "ethers";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -10,7 +10,86 @@ const START_BLOCK = 51_811_281;
 const ESCROW_ADDRESS = "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae";
 const REGISTRY_ADDRESS = "0x237023EC6A39e59CEbd1D231777308c354ba542F";
 const CONFIRMATIONS = 12;
-const MAX_BLOCKS_PER_RUN = 2_000;
+const MAX_BLOCKS_PER_RUN = 20_000;
+const BASESCAN_API_URL = "https://api.basescan.org/api";
+const MAX_LOGS_PER_QUERY = 1_000;
+
+type IndexedLog = {
+  blockNumber: number;
+  blockHash: string;
+  transactionHash: string;
+  index: number;
+  topics: string[];
+  data: string;
+};
+
+type BaseScanLogResponse = {
+  status?: string;
+  message?: string;
+  result?: string | Array<Record<string, unknown>>;
+};
+
+function parseExplorerNumber(value: unknown): number {
+  if (typeof value === "number") return value;
+  const text = String(value ?? "");
+  return text.startsWith("0x") ? Number.parseInt(text, 16) : Number(text);
+}
+
+async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: string): Promise<IndexedLog[]> {
+  const params = new URLSearchParams({
+    module: "logs", action: "getLogs", address: ESCROW_ADDRESS,
+    fromBlock: String(fromBlock), toBlock: String(toBlock), page: "1",
+    offset: String(MAX_LOGS_PER_QUERY), apikey: apiKey
+  });
+  const response = await fetch(`${BASESCAN_API_URL}?${params.toString()}`, {
+    method: "GET", cache: "no-store", signal: AbortSignal.timeout(15_000)
+  });
+  if (!response.ok) throw new Error(`BaseScan logs API returned HTTP ${response.status}`);
+  const payload = await response.json() as BaseScanLogResponse;
+  const message = String(payload.message ?? "").toLowerCase();
+  const resultText = typeof payload.result === "string" ? payload.result.toLowerCase() : "";
+
+  if (payload.status === "1" && Array.isArray(payload.result)) {
+    const rawLogs = payload.result;
+    // BaseScan caps a page at 1,000 records. Split dense ranges so no logs are silently lost.
+    if (rawLogs.length >= MAX_LOGS_PER_QUERY && fromBlock < toBlock) {
+      const middle = Math.floor((fromBlock + toBlock) / 2);
+      const [left, right] = await Promise.all([
+        fetchBaseScanLogs(fromBlock, middle, apiKey),
+        fetchBaseScanLogs(middle + 1, toBlock, apiKey)
+      ]);
+      return [...left, ...right];
+    }
+    return rawLogs.map((raw) => {
+      const topics = [raw.topics, raw.topic0, raw.topic1, raw.topic2, raw.topic3]
+        .flatMap((item) => Array.isArray(item) ? item : item == null ? [] : [item])
+        .map(String);
+      return {
+        blockNumber: parseExplorerNumber(raw.blockNumber),
+        blockHash: String(raw.blockHash ?? ""),
+        transactionHash: String(raw.transactionHash ?? ""),
+        index: parseExplorerNumber(raw.logIndex ?? raw.index),
+        topics,
+        data: String(raw.data ?? "0x")
+      };
+    });
+  }
+
+  if (message.includes("no records") || resultText.includes("no records found")) return [];
+  const detail = `${message} ${resultText}`;
+  if (fromBlock < toBlock && (
+    detail.includes("too many") || detail.includes("maximum") || detail.includes("query timeout") ||
+    detail.includes("result window") || detail.includes("more than 1000")
+  )) {
+    const middle = Math.floor((fromBlock + toBlock) / 2);
+    const [left, right] = await Promise.all([
+      fetchBaseScanLogs(fromBlock, middle, apiKey),
+      fetchBaseScanLogs(middle + 1, toBlock, apiKey)
+    ]);
+    return [...left, ...right];
+  }
+  throw new Error(`BaseScan logs API error (${payload.status ?? "unknown"}): ${String(payload.result ?? payload.message ?? "Unexpected response")}`);
+}
 
 const ESCROW_ABI = [
   "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)",
@@ -57,6 +136,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing Supabase server configuration" }, { status: 503 });
   }
 
+  const baseScanApiKey = process.env.BASESCAN_API_KEY;
+  if (!baseScanApiKey) {
+    return NextResponse.json({ ok: false, error: "Missing BASESCAN_API_KEY. Configure a BaseScan API key in Vercel environment variables to index historical events without archive RPC access." }, { status: 503 });
+  }
+
   const rpcUrls = [
     process.env.BASE_RPC_URL || "https://mainnet.base.org",
     process.env.BASE_RPC_FALLBACK_URL || "https://base-rpc.publicnode.com",
@@ -64,20 +148,9 @@ export async function GET(request: Request) {
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
   const providers = rpcUrls.map((url) => new JsonRpcProvider(url, CHAIN_ID));
-  let activeRpcIndex = 0;
-  let provider = providers[activeRpcIndex];
-  let escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, provider);
-  let registry = new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
-  const useRpc = async (index: number) => {
-    activeRpcIndex = index;
-    provider = providers[activeRpcIndex];
-    escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, provider);
-    registry = new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
-    const network = await provider.getNetwork();
-    if (Number(network.chainId) !== CHAIN_ID) {
-      throw new Error(`RPC chain ${network.chainId} does not match Base Mainnet`);
-    }
-  };
+  const provider = providers[0];
+  const escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, provider);
+  const registry = new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
   const db = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
@@ -100,140 +173,10 @@ export async function GET(request: Request) {
     if (from > target) {
       return NextResponse.json({ ok: true, message: "Already caught up", fromBlock: from, latestBlock: latest, indexedThrough: state?.last_scanned_block ?? null });
     }
-    // RPC providers may impose eth_getLogs range or request-rate limits.
-    // Start with the normal range, then shrink it adaptively on explicit limit errors.
+    // Historical event logs come from BaseScan's indexed API, not archive eth_getLogs RPC.
+    // Keep each run bounded while allowing a much faster initial backfill.
     let to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
-    let logs: Log[] = [];
-    let rangeSize = to - from + 1;
-    const initialRangeSize = rangeSize;
-    let singleBlockRateLimitRetries = 0;
-    const MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES = 2;
-
-    while (true) {
-      to = Math.min(from + rangeSize - 1, target);
-      try {
-        logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock: from, toBlock: to });
-        break;
-      } catch (rpcError) {
-        // Ethers v6 provider errors often keep the JSON-RPC body under nested
-        // `info.error` / `info.responseBody` fields that JSON.stringify(Error)
-        // omits. Collect the relevant nested messages so 401/403 archive errors
-        // reliably trigger RPC rotation instead of being treated as unknown errors.
-        const errorText = (() => {
-          const parts: string[] = [];
-          const seen = new Set<unknown>();
-          const collect = (value: unknown, depth = 0) => {
-            if (value == null || depth > 5 || seen.has(value)) return;
-            if (typeof value === "string") {
-              parts.push(value);
-              const trimmed = value.trim();
-              if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && depth < 5) {
-                try { collect(JSON.parse(trimmed), depth + 1); } catch { /* plain text */ }
-              }
-              return;
-            }
-            if (typeof value !== "object") {
-              parts.push(String(value));
-              return;
-            }
-            seen.add(value);
-            const record = value as Record<string, unknown>;
-            for (const key of ["message", "shortMessage", "code", "status", "statusCode", "responseBody", "body", "error", "info", "cause"]) {
-              if (key in record) collect(record[key], depth + 1);
-            }
-          };
-          collect(rpcError);
-          return parts.join(" ").toLowerCase();
-        })();
-        const isLimitError =
-          errorText.includes("request limit reached") ||
-          errorText.includes("too many requests") ||
-          errorText.includes("rate limit") ||
-          errorText.includes("429") ||
-          errorText.includes("-32005") ||
-          errorText.includes("-32011");
-        const isEndpointAccessError =
-          errorText.includes("403") ||
-          errorText.includes("forbidden") ||
-          errorText.includes("archive requests require a personal token") ||
-          errorText.includes("unauthorized") ||
-          errorText.includes("401");
-
-        // Archive/RPC access errors indicate this endpoint cannot serve the query.
-        // Move to another endpoint instead of retrying the same URL or shrinking the range.
-        if (isEndpointAccessError && activeRpcIndex + 1 < providers.length) {
-          const nextRpcIndex = activeRpcIndex + 1;
-          console.warn(
-            "Base RPC endpoint rejected historical log access; switching RPC endpoint",
-            JSON.stringify({ fromBlock: from, toBlock: to, fromRpcIndex: activeRpcIndex, toRpcIndex: nextRpcIndex })
-          );
-          let switched = false;
-          for (let candidateIndex = nextRpcIndex; candidateIndex < providers.length; candidateIndex++) {
-            try {
-              await useRpc(candidateIndex);
-              switched = true;
-              break;
-            } catch (switchError) {
-              console.warn("Base RPC fallback failed network validation", JSON.stringify({
-                rpcIndex: candidateIndex,
-                error: switchError instanceof Error ? switchError.message : String(switchError)
-              }));
-            }
-          }
-          if (!switched) throw rpcError;
-          rangeSize = initialRangeSize;
-          singleBlockRateLimitRetries = 0;
-          continue;
-        }
-
-        if (!isLimitError) throw rpcError;
-
-        if (rangeSize > 1) {
-          rangeSize = Math.max(1, Math.floor(rangeSize / 2));
-          console.warn(
-            "Base RPC limited eth_getLogs; retrying with smaller block range",
-            JSON.stringify({ fromBlock: from, toBlock: Math.min(from + rangeSize - 1, target), rangeSize })
-          );
-          await new Promise((resolve) => setTimeout(resolve, 750));
-          continue;
-        }
-
-        if (singleBlockRateLimitRetries < MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES) {
-          singleBlockRateLimitRetries += 1;
-          const backoffMs = 1500 * (2 ** (singleBlockRateLimitRetries - 1));
-          console.warn(
-            "Base RPC rate-limited a single-block eth_getLogs query; backing off before retry",
-            JSON.stringify({ rpcIndex: activeRpcIndex, fromBlock: from, retries: singleBlockRateLimitRetries, backoffMs })
-          );
-          await new Promise((resolve) => setTimeout(resolve, backoffMs));
-          continue;
-        }
-
-        if (activeRpcIndex + 1 < providers.length) {
-          const nextRpcIndex = activeRpcIndex + 1;
-          console.warn(
-            "Base RPC remains rate-limited; switching RPC endpoint",
-            JSON.stringify({ fromBlock: from, fromRpcIndex: activeRpcIndex, toRpcIndex: nextRpcIndex })
-          );
-          try {
-            await useRpc(nextRpcIndex);
-          } catch (switchError) {
-            console.warn("Could not use fallback Base RPC endpoint", JSON.stringify({
-              rpcIndex: nextRpcIndex,
-              error: switchError instanceof Error ? switchError.message : String(switchError)
-            }));
-            if (nextRpcIndex + 1 >= providers.length) throw switchError;
-            await useRpc(nextRpcIndex + 1);
-          }
-          rangeSize = initialRangeSize;
-          singleBlockRateLimitRetries = 0;
-          continue;
-        }
-
-        throw rpcError;
-      }
-    }
-
+    let logs: IndexedLog[] = await fetchBaseScanLogs(from, to, baseScanApiKey);
     const finalizedThrough = Math.max(0, to - confirmations);
     let processed = 0;
 
