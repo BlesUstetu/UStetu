@@ -52,6 +52,9 @@ async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: str
   if (payload.status === "1" && Array.isArray(payload.result)) {
     const rawLogs = payload.result;
     // BaseScan caps a page at 1,000 records. Split dense ranges so no logs are silently lost.
+    if (rawLogs.length >= MAX_LOGS_PER_QUERY && fromBlock === toBlock) {
+      throw new Error(`BaseScan returned the maximum 1,000 logs for single block ${fromBlock}; refusing to advance an incomplete index.`);
+    }
     if (rawLogs.length >= MAX_LOGS_PER_QUERY && fromBlock < toBlock) {
       const middle = Math.floor((fromBlock + toBlock) / 2);
       const [left, right] = await Promise.all([
@@ -61,9 +64,9 @@ async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: str
       return [...left, ...right];
     }
     return rawLogs.map((raw) => {
-      const topics = [raw.topics, raw.topic0, raw.topic1, raw.topic2, raw.topic3]
-        .flatMap((item) => Array.isArray(item) ? item : item == null ? [] : [item])
-        .map(String);
+      const topics = Array.isArray(raw.topics)
+        ? raw.topics.map(String)
+        : [raw.topic0, raw.topic1, raw.topic2, raw.topic3].filter((item) => item != null).map(String);
       return {
         blockNumber: parseExplorerNumber(raw.blockNumber),
         blockHash: String(raw.blockHash ?? ""),
