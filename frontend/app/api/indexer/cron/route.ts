@@ -57,14 +57,30 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing Supabase server configuration" }, { status: 503 });
   }
 
-  const rpcUrl = process.env.BASE_RPC_URL || "https://mainnet.base.org";
+  const rpcUrls = [
+    process.env.BASE_RPC_URL || "https://mainnet.base.org",
+    process.env.BASE_RPC_FALLBACK_URL || "https://base-rpc.publicnode.com",
+    process.env.BASE_RPC_FALLBACK_URL_2 || "https://1rpc.io/base"
+  ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
-  const provider = new JsonRpcProvider(rpcUrl, CHAIN_ID);
+  const providers = rpcUrls.map((url) => new JsonRpcProvider(url, CHAIN_ID));
+  let activeRpcIndex = 0;
+  let provider = providers[activeRpcIndex];
+  let escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, provider);
+  let registry = new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
+  const useRpc = async (index: number) => {
+    activeRpcIndex = index;
+    provider = providers[activeRpcIndex];
+    escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, provider);
+    registry = new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== CHAIN_ID) {
+      throw new Error(`RPC chain ${network.chainId} does not match Base Mainnet`);
+    }
+  };
   const db = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
-  const escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, provider);
-  const registry = new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
 
   try {
     const network = await provider.getNetwork();
@@ -89,9 +105,9 @@ export async function GET(request: Request) {
     let to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
     let logs: Log[] = [];
     let rangeSize = to - from + 1;
-    const MIN_BLOCKS_PER_QUERY = 1;
+    const initialRangeSize = rangeSize;
     let singleBlockRateLimitRetries = 0;
-    const MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES = 4;
+    const MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES = 2;
 
     while (true) {
       to = Math.min(from + rangeSize - 1, target);
@@ -116,8 +132,8 @@ export async function GET(request: Request) {
 
         if (!isLimitError) throw rpcError;
 
-        if (rangeSize > MIN_BLOCKS_PER_QUERY) {
-          rangeSize = Math.max(MIN_BLOCKS_PER_QUERY, Math.floor(rangeSize / 2));
+        if (rangeSize > 1) {
+          rangeSize = Math.max(1, Math.floor(rangeSize / 2));
           console.warn(
             "Base RPC limited eth_getLogs; retrying with smaller block range",
             JSON.stringify({ fromBlock: from, toBlock: Math.min(from + rangeSize - 1, target), rangeSize })
@@ -126,17 +142,39 @@ export async function GET(request: Request) {
           continue;
         }
 
-        if (singleBlockRateLimitRetries >= MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES) {
-          throw rpcError;
+        if (singleBlockRateLimitRetries < MAX_SINGLE_BLOCK_RATE_LIMIT_RETRIES) {
+          singleBlockRateLimitRetries += 1;
+          const backoffMs = 1500 * (2 ** (singleBlockRateLimitRetries - 1));
+          console.warn(
+            "Base RPC rate-limited a single-block eth_getLogs query; backing off before retry",
+            JSON.stringify({ rpcIndex: activeRpcIndex, fromBlock: from, retries: singleBlockRateLimitRetries, backoffMs })
+          );
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+          continue;
         }
 
-        singleBlockRateLimitRetries += 1;
-        const backoffMs = 1500 * (2 ** (singleBlockRateLimitRetries - 1));
-        console.warn(
-          "Base RPC is still rate-limiting a single-block eth_getLogs query; backing off before retry",
-          JSON.stringify({ fromBlock: from, retries: singleBlockRateLimitRetries, backoffMs })
-        );
-        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        if (activeRpcIndex + 1 < providers.length) {
+          const nextRpcIndex = activeRpcIndex + 1;
+          console.warn(
+            "Base RPC remains rate-limited; switching RPC endpoint",
+            JSON.stringify({ fromBlock: from, fromRpcIndex: activeRpcIndex, toRpcIndex: nextRpcIndex })
+          );
+          try {
+            await useRpc(nextRpcIndex);
+          } catch (switchError) {
+            console.warn("Could not use fallback Base RPC endpoint", JSON.stringify({
+              rpcIndex: nextRpcIndex,
+              error: switchError instanceof Error ? switchError.message : String(switchError)
+            }));
+            if (nextRpcIndex + 1 >= providers.length) throw switchError;
+            await useRpc(nextRpcIndex + 1);
+          }
+          rangeSize = initialRangeSize;
+          singleBlockRateLimitRetries = 0;
+          continue;
+        }
+
+        throw rpcError;
       }
     }
 
@@ -225,6 +263,6 @@ export async function GET(request: Request) {
     console.error("UStetu cron indexer failed", JSON.stringify(details));
     return NextResponse.json({ ok: false, error: message, code: details.code, details: details.details, hint: details.hint }, { status: 500 });
   } finally {
-    provider.destroy();
+    for (const rpcProvider of providers) rpcProvider.destroy();
   }
 }
