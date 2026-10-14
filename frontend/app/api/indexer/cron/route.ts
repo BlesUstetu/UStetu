@@ -31,7 +31,7 @@ async function fetchRpcLogs(
   for (let start = fromBlock; start <= toBlock; start += RPC_LOG_CHUNK_SIZE) {
     const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, toBlock);
     let result: Awaited<ReturnType<JsonRpcProvider["getLogs"]>> | undefined;
-    let lastError: unknown;
+    const providerErrors: string[] = [];
     for (const provider of providers) {
       try {
         const network = await provider.getNetwork();
@@ -43,15 +43,14 @@ async function fetchRpcLogs(
           fromBlock: start,
           toBlock: end
         });
-        lastError = undefined;
         break;
       } catch (error) {
-        lastError = error;
+        const message = error instanceof Error ? error.message : String(error);
+        providerErrors.push(`${provider._getConnection().url}: ${message.slice(0, 220)}`);
       }
     }
     if (!result) {
-      const message = lastError instanceof Error ? lastError.message : "Unknown RPC getLogs error";
-      throw new Error(`All Base RPC providers failed for blocks ${start}-${end}: ${message}`);
+      throw new Error(`All Base RPC providers failed for blocks ${start}-${end}. ${providerErrors.join(" | ")}`);
     }
     allLogs.push(...result.map((log) => ({
       blockNumber: log.blockNumber,
@@ -113,7 +112,7 @@ export async function GET(request: Request) {
   const rpcUrls = [
     process.env.BASE_RPC_URL || "https://mainnet.base.org",
     process.env.BASE_RPC_FALLBACK_URL || "https://base-rpc.publicnode.com",
-    process.env.BASE_RPC_FALLBACK_URL_2 || "https://1rpc.io/base"
+    process.env.BASE_RPC_FALLBACK_URL_2
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
   const providers = rpcUrls.map((url) => new JsonRpcProvider(url, CHAIN_ID));
