@@ -515,7 +515,7 @@ export default function SellerDashboard() {
       try {
         existingListingIds = await discoverSellerTokenListingIds(address, token);
       } catch {
-        throw new Error("Could not verify duplicate listings on Base. No transaction was sent. Please retry when the Base RPC is responsive.");
+        throw new Error("Could not verify duplicate listings because the Supabase index is unavailable or stale. No transaction was sent. Please retry after the listing index is current.");
       }
 
       for (const listingId of existingListingIds) {
