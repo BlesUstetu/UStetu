@@ -129,6 +129,39 @@ export async function GET(request: Request) {
           errorText.includes("429") ||
           errorText.includes("-32005") ||
           errorText.includes("-32011");
+        const isEndpointAccessError =
+          errorText.includes("403") ||
+          errorText.includes("forbidden") ||
+          errorText.includes("archive requests require a personal token") ||
+          errorText.includes("unauthorized") ||
+          errorText.includes("401");
+
+        // Archive/RPC access errors indicate this endpoint cannot serve the query.
+        // Move to another endpoint instead of retrying the same URL or shrinking the range.
+        if (isEndpointAccessError && activeRpcIndex + 1 < providers.length) {
+          const nextRpcIndex = activeRpcIndex + 1;
+          console.warn(
+            "Base RPC endpoint rejected historical log access; switching RPC endpoint",
+            JSON.stringify({ fromBlock: from, toBlock: to, fromRpcIndex: activeRpcIndex, toRpcIndex: nextRpcIndex })
+          );
+          let switched = false;
+          for (let candidateIndex = nextRpcIndex; candidateIndex < providers.length; candidateIndex++) {
+            try {
+              await useRpc(candidateIndex);
+              switched = true;
+              break;
+            } catch (switchError) {
+              console.warn("Base RPC fallback failed network validation", JSON.stringify({
+                rpcIndex: candidateIndex,
+                error: switchError instanceof Error ? switchError.message : String(switchError)
+              }));
+            }
+          }
+          if (!switched) throw rpcError;
+          rangeSize = initialRangeSize;
+          singleBlockRateLimitRetries = 0;
+          continue;
+        }
 
         if (!isLimitError) throw rpcError;
 
