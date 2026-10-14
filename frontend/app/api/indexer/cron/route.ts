@@ -57,10 +57,8 @@ async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: str
     }
     if (rawLogs.length >= MAX_LOGS_PER_QUERY && fromBlock < toBlock) {
       const middle = Math.floor((fromBlock + toBlock) / 2);
-      const [left, right] = await Promise.all([
-        fetchBaseScanLogs(fromBlock, middle, apiKey),
-        fetchBaseScanLogs(middle + 1, toBlock, apiKey)
-      ]);
+      const left = await fetchBaseScanLogs(fromBlock, middle, apiKey);
+      const right = await fetchBaseScanLogs(middle + 1, toBlock, apiKey);
       return [...left, ...right];
     }
     return rawLogs.map((raw) => {
@@ -85,10 +83,8 @@ async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: str
     detail.includes("result window") || detail.includes("more than 1000")
   )) {
     const middle = Math.floor((fromBlock + toBlock) / 2);
-    const [left, right] = await Promise.all([
-      fetchBaseScanLogs(fromBlock, middle, apiKey),
-      fetchBaseScanLogs(middle + 1, toBlock, apiKey)
-    ]);
+    const left = await fetchBaseScanLogs(fromBlock, middle, apiKey);
+    const right = await fetchBaseScanLogs(middle + 1, toBlock, apiKey);
     return [...left, ...right];
   }
   throw new Error(`BaseScan logs API error (${payload.status ?? "unknown"}): ${String(payload.result ?? payload.message ?? "Unexpected response")}`);
