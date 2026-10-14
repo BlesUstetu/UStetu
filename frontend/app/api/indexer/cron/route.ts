@@ -43,7 +43,6 @@ async function fetchRpcLogs(
           fromBlock: start,
           toBlock: end
         });
-        lastError = undefined;
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
