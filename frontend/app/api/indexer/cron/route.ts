@@ -297,7 +297,8 @@ export async function GET(request: Request) {
       chain_id: CHAIN_ID,
       contract_address: ESCROW_ADDRESS.toLowerCase(),
       last_scanned_block: to,
-      last_finalized_block: finalizedThrough
+      last_finalized_block: finalizedThrough,
+      updated_at: new Date().toISOString()
     }, { onConflict: "chain_id,contract_address" });
     if (saveError) throw saveError;
 
