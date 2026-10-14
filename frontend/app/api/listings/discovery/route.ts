@@ -7,6 +7,21 @@ export const dynamic = "force-dynamic";
 const CHAIN_ID = 8453;
 const ESCROW_ADDRESS = "0x0ffe00bae47d6b4ad9d6a12ec649dd8866f130ae";
 const INDEXER_MAX_AGE_MS = 10 * 60 * 1000;
+const CONFIRMATIONS = 12;
+
+async function getLatestBaseBlock(apiKey: string): Promise<number> {
+  const params = new URLSearchParams({ module: "proxy", action: "eth_blockNumber", apikey: apiKey });
+  const response = await fetch(`https://api.basescan.org/api?${params.toString()}`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(10_000)
+  });
+  if (!response.ok) throw new Error(`BaseScan block API returned HTTP ${response.status}`);
+  const payload = await response.json() as { status?: string; result?: string; message?: string };
+  if (payload.status !== "1" || !payload.result || !payload.result.startsWith("0x")) {
+    throw new Error(`Could not verify latest Base block: ${payload.message ?? "invalid response"}`);
+  }
+  return Number.parseInt(payload.result, 16);
+}
 
 type ListingRow = {
   listing_id: string;
@@ -27,8 +42,9 @@ type ListingRow = {
 export async function GET(request: Request) {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) {
-    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured." }, { status: 503 });
+  const baseScanApiKey = process.env.BASESCAN_API_KEY;
+  if (!supabaseUrl || !serviceKey || !baseScanApiKey) {
+    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured. Check SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and BASESCAN_API_KEY." }, { status: 503 });
   }
 
   const db = createClient(supabaseUrl, serviceKey, {
@@ -43,10 +59,13 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     if (stateError) throw stateError;
+    const latestBlock = await getLatestBaseBlock(baseScanApiKey);
+    const requiredThrough = Math.max(0, latestBlock - CONFIRMATIONS);
+    const indexedThrough = Number(state?.last_scanned_block ?? 0);
     const updatedAt = state?.updated_at ? Date.parse(state.updated_at) : 0;
     const ready = Boolean(
       state &&
-      Number(state.last_scanned_block) > 0 &&
+      indexedThrough >= requiredThrough &&
       Number.isFinite(updatedAt) &&
       Date.now() - updatedAt <= INDEXER_MAX_AGE_MS
     );
@@ -57,6 +76,8 @@ export async function GET(request: Request) {
         ready: false,
         error: "Listing index is not current. Duplicate checks are temporarily unavailable.",
         indexedThrough: state?.last_scanned_block ?? null,
+        requiredThrough,
+        latestBlock,
         lastUpdatedAt: state?.updated_at ?? null,
         listings: []
       }, { headers: { "Cache-Control": "no-store" } });
@@ -83,7 +104,7 @@ export async function GET(request: Request) {
       const page = (data ?? []) as ListingRow[];
       rows.push(...page);
       if (page.length < pageSize) break;
-      if (rows.length >= 5000) {
+      if (rows.length > 5000) {
         return NextResponse.json({ ok: false, ready: false, error: "Listing index result exceeds safe response size." }, { status: 503 });
       }
     }
