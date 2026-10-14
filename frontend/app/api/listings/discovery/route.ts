@@ -9,16 +9,18 @@ const ESCROW_ADDRESS = "0x0ffe00bae47d6b4ad9d6a12ec649dd8866f130ae";
 const INDEXER_MAX_AGE_MS = 10 * 60 * 1000;
 const CONFIRMATIONS = 12;
 
-async function getLatestBaseBlock(apiKey: string): Promise<number> {
-  const params = new URLSearchParams({ module: "proxy", action: "eth_blockNumber", apikey: apiKey });
-  const response = await fetch(`https://api.basescan.org/api?${params.toString()}`, {
+async function getLatestBaseBlock(): Promise<number> {
+  const response = await fetch(process.env.BASE_RPC_URL || "https://mainnet.base.org", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
     cache: "no-store",
     signal: AbortSignal.timeout(10_000)
   });
-  if (!response.ok) throw new Error(`BaseScan block API returned HTTP ${response.status}`);
-  const payload = await response.json() as { status?: string; result?: string; message?: string };
-  if (payload.status !== "1" || !payload.result || !payload.result.startsWith("0x")) {
-    throw new Error(`Could not verify latest Base block: ${payload.message ?? "invalid response"}`);
+  if (!response.ok) throw new Error(`Base RPC block-number request returned HTTP ${response.status}`);
+  const payload = await response.json() as { result?: string; error?: { message?: string } };
+  if (!payload.result || !payload.result.startsWith("0x")) {
+    throw new Error(`Could not verify latest Base block: ${payload.error?.message ?? "invalid response"}`);
   }
   return Number.parseInt(payload.result, 16);
 }
@@ -42,9 +44,8 @@ type ListingRow = {
 export async function GET(request: Request) {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const baseScanApiKey = process.env.BASESCAN_API_KEY;
-  if (!supabaseUrl || !serviceKey || !baseScanApiKey) {
-    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured. Check SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and BASESCAN_API_KEY." }, { status: 503 });
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." }, { status: 503 });
   }
 
   const db = createClient(supabaseUrl, serviceKey, {
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     if (stateError) throw stateError;
-    const latestBlock = await getLatestBaseBlock(baseScanApiKey);
+    const latestBlock = await getLatestBaseBlock();
     const requiredThrough = Math.max(0, latestBlock - CONFIRMATIONS);
     const indexedThrough = Number(state?.last_scanned_block ?? 0);
     const updatedAt = state?.updated_at ? Date.parse(state.updated_at) : 0;
