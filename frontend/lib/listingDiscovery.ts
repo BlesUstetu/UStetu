@@ -1,7 +1,3 @@
-import { createPublicClient, fallback, http, parseAbiItem } from "viem";
-import { base } from "wagmi/chains";
-import { USTETU_ESCROW_ADDRESS, USTETU_BOOTSTRAP_LISTING_ID, USTETU_TOKEN_ADDRESS, USTETU_TOKEN_ID, escrowAbi } from "@/lib/contracts";
-
 export type DiscoveredListing = {
   listing_id: string;
   seller: `0x${string}`;
@@ -16,305 +12,98 @@ export type DiscoveredListing = {
   status: "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED";
 };
 
-const event = parseAbiItem(
-  "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)"
-);
+type ListingIndexResponse = {
+  ok: boolean;
+  ready: boolean;
+  error?: string;
+  indexedThrough?: number | string | null;
+  lastUpdatedAt?: string | null;
+  listings?: Array<Record<string, unknown>>;
+};
 
-const client = createPublicClient({
-  chain: base,
-  transport: fallback([
-    http("https://mainnet.base.org", { timeout: 12_000, retryCount: 1 }),
-    http("https://base-rpc.publicnode.com", { timeout: 12_000, retryCount: 1 }),
-    http("https://base.publicnode.com", { timeout: 12_000, retryCount: 1 })
-  ])
-});
+const INDEX_URL = "/api/listings/discovery";
+const CACHE_MS = 10_000;
+let cached: { at: number; listings: DiscoveredListing[] } | null = null;
+let inFlight: Promise<DiscoveredListing[]> | null = null;
 
-// Historical discovery is permanently anchored to the UStetuEscrow deployment
-// block. This prevents older listings from disappearing merely because they
-// fall outside a rolling block window.
-const DISCOVERY_FROM_BLOCK_ENV = "NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK";
-// Keep RPC requests bounded, but discover in parallel so the marketplace does
-// not remain blank while historical listings are being scanned.
-const CHUNK_SIZE = 10_000n;
-const MIN_RETRY_CHUNK_SIZE = 1n;
-const MAX_CONCURRENT_CHUNKS = 4;
-const DISCOVERY_CACHE_MS = 45_000;
-let discoveryCache: { at: number; listings: DiscoveredListing[] } | null = null;
-let discoveryInFlight: Promise<DiscoveredListing[]> | null = null;
-let discoveryProgress: DiscoveredListing[] = [];
+function normalizeListing(row: Record<string, unknown>): DiscoveredListing {
+  return {
+    listing_id: String(row.listing_id ?? ""),
+    seller: String(row.seller ?? "").toLowerCase() as `0x${string}`,
+    token_id: String(row.token_id ?? ""),
+    token_contract: String(row.token_contract ?? "").toLowerCase() as `0x${string}`,
+    payment_token: String(row.payment_token ?? "").toLowerCase(),
+    price: String(row.price ?? ""),
+    inventory_deposited: String(row.inventory_deposited ?? "0"),
+    inventory_locked: String(row.inventory_locked ?? "0"),
+    min_order_amount: String(row.min_order_amount ?? "0"),
+    max_order_amount: String(row.max_order_amount ?? "0"),
+    status: row.status === "ACTIVE" || row.status === "PAUSED" || row.status === "CLOSED"
+      ? row.status
+      : "UNKNOWN"
+  };
+}
 
+async function readIndex(params: Record<string, string> = {}): Promise<ListingIndexResponse> {
+  const url = new URL(INDEX_URL, window.location.origin);
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  const response = await fetch(url.toString(), { method: "GET", cache: "no-store" });
+  const result = await response.json().catch(() => null) as ListingIndexResponse | null;
+  if (!response.ok || !result?.ok) {
+    throw new Error(result?.error || "Could not read the Supabase listing index.");
+  }
+  if (!result.ready) {
+    throw new Error(result.error || "Listing index is not current; duplicate check is blocked.");
+  }
+  return result;
+}
+
+/**
+ * Listing discovery reads the server-side Supabase projection instead of
+ * scanning the entire Base event history in every browser session.
+ * The endpoint fails closed whenever the indexer cursor is missing or stale.
+ */
 export async function discoverListingsOnChain(
   onProgress?: (listings: DiscoveredListing[]) => void
 ): Promise<DiscoveredListing[]> {
   const now = Date.now();
-  if (discoveryCache && now - discoveryCache.at < DISCOVERY_CACHE_MS) {
-    onProgress?.(discoveryCache.listings);
-    return discoveryCache.listings;
+  if (cached && now - cached.at < CACHE_MS) {
+    onProgress?.(cached.listings);
+    return cached.listings;
   }
-  if (discoveryInFlight) {
-    // Publish the latest partial results while another consumer scans history.
-    onProgress?.(discoveryProgress);
-    return discoveryInFlight.then((listings) => {
-      onProgress?.(listings);
-      return listings;
-    });
+  if (inFlight) {
+    const listings = await inFlight;
+    onProgress?.(listings);
+    return listings;
   }
 
-  discoveryInFlight = (async () => {
-  const discovered = new Map<string, DiscoveredListing>();
-  const failedRanges: string[] = [];
-
-  // Known live DNA listing verified directly against Base Mainnet:
-  // getListing(153209047311743547595822967164959468753) returned the seller,
-  // tokenId, ACTIVE status, and 10 DNA inventory shown in the transaction audit.
-  // Seed it before historical RPC scanning so RPC log-range failures cannot
-  // make this existing listing disappear from the marketplace.
-  const DNA_LISTING_ID = "153209047311743547595822967164959468753";
-  const DNA_SELLER = "0x73f10c9FcD5A28644c5e39e3B58a970D8696A522" as const;
-  const DNA_TOKEN_ADDRESS = "0xDff883676E664E3DBF8ad5F8c00171340efe84FF" as const;
-  discovered.set(DNA_LISTING_ID, {
-    listing_id: DNA_LISTING_ID,
-    seller: DNA_SELLER,
-    // InventoryDeposited does not emit tokenId; Escrow getListing is authoritative.
-    token_id: "",
-    token_contract: DNA_TOKEN_ADDRESS,
-    payment_token: "",
-    price: "",
-    inventory_deposited: "",
-    inventory_locked: "",
-    min_order_amount: "",
-    max_order_amount: "",
-    status: "ACTIVE"
-  });
-
-  // Second DNA listing confirmed from the successful Base Mainnet transaction
-  // at block 52063083. Its InventoryDeposited log exposes this listingId,
-  // seller and DNA contract; getListing remains the source of truth for details.
-  const DNA_FIVE_LISTING_ID = "311620917765253618914393481587202290677";
-  const DNA_FIVE_SELLER = "0x3e40eC993C9710F937F3ee8Ae7Fe5D225b9E97F0F" as const;
-  discovered.set(DNA_FIVE_LISTING_ID, {
-    listing_id: DNA_FIVE_LISTING_ID,
-    seller: DNA_FIVE_SELLER,
-    token_id: "",
-    token_contract: DNA_TOKEN_ADDRESS,
-    payment_token: "",
-    price: "",
-    inventory_deposited: "",
-    inventory_locked: "",
-    min_order_amount: "",
-    max_order_amount: "",
-    status: "ACTIVE"
-  });
-
-  // Publish the verified seeds immediately. Do not make the user wait for the
-  // first historical eth_getLogs batch before known listings are queried.
-  // Publish known listing IDs before any RPC or deployment-block configuration
-  // checks. Seller Dashboard can show/manage known listings even if the historical
-  // scan cannot start; the Escrow read remains authoritative for listing details.
-  discoveryProgress = Array.from(discovered.values());
-  onProgress?.(discoveryProgress);
-
-  // The seller address attached to a historical seed may have been copied
-  // incorrectly. Resolve the seller from Escrow itself before relying on it
-  // for wallet-specific filtering in Seller Dashboard.
-  for (const listingId of [DNA_LISTING_ID, DNA_FIVE_LISTING_ID]) {
-    try {
-      const onchain = await client.readContract({
-        address: USTETU_ESCROW_ADDRESS,
-        abi: escrowAbi,
-        functionName: "getListing",
-        args: [BigInt(listingId)]
-      });
-      const seller = (onchain as { seller?: `0x${string}` }).seller;
-      const seeded = discovered.get(listingId);
-      if (seller && seeded) {
-        discovered.set(listingId, { ...seeded, seller });
-      }
-    } catch (error) {
-      // Keep the seed available if the RPC is temporarily unavailable; a later
-      // discovery pass will retry and historical event logs can correct it.
-      console.warn("[USTETU listing discovery] Could not hydrate known listing seller", listingId, error);
-    }
-  }
-  discoveryProgress = Array.from(discovered.values());
-  onProgress?.(discoveryProgress);
-
-  const latest = await client.getBlockNumber();
-  const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
-  if (!configuredFrom || !/^\d+$/.test(configuredFrom)) {
-    throw new Error(
-      `Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`
-    );
-  }
-  const fromBlock = BigInt(configuredFrom);
-  if (fromBlock > latest) {
-    throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
-  }
-
-
-  const ranges: Array<{ start: bigint; end: bigint }> = [];
-  for (let start = fromBlock; start <= latest; start += CHUNK_SIZE) {
-    ranges.push({
-      start,
-      end: start + CHUNK_SIZE - 1n > latest ? latest : start + CHUNK_SIZE - 1n
-    });
-  }
-  // Prioritize the oldest 320k blocks first. The marketplace's known DNA
-  // listing was created shortly after Escrow deployment; scanning newest-first
-  // made the UI spend most of its time on unrelated recent blocks before
-  // reaching it. After the first 32 chunks, scan the remaining ranges newest-first.
-  const oldestPriority = ranges.slice(0, 32);
-  const newestPriority = ranges.slice(32).reverse();
-  ranges.splice(0, ranges.length, ...oldestPriority, ...newestPriority);
-
-  for (let offset = 0; offset < ranges.length; offset += MAX_CONCURRENT_CHUNKS) {
-    const batch = ranges.slice(offset, offset + MAX_CONCURRENT_CHUNKS);
-    const readLogsAdaptive = async (start: bigint, end: bigint): Promise<Awaited<ReturnType<typeof client.getLogs>>> => {
-      try {
-        return await client.getLogs({
-          address: USTETU_ESCROW_ADDRESS,
-          event,
-          fromBlock: start,
-          toBlock: end
-        });
-      } catch (error) {
-        // Public RPC providers impose different eth_getLogs range limits.
-        // Recursively split failing ranges; a single oversized range should
-        // never abort the complete historical discovery scan.
-        if (end - start + 1n <= MIN_RETRY_CHUNK_SIZE) throw error;
-        const middle = start + (end - start) / 2n;
-        const left = await readLogsAdaptive(start, middle);
-        const right = await readLogsAdaptive(middle + 1n, end);
-        return [...left, ...right];
-      }
-    };
-    // Isolate failures per range. One unavailable RPC slice must not abort
-    // the entire discovery job and hide every listing found in other slices.
-    const results = await Promise.all(batch.map(async ({ start, end }) => {
-      try {
-        return await readLogsAdaptive(start, end);
-      } catch (error) {
-        console.error(
-          "[USTETU listing discovery] Failed to read Escrow logs for blocks",
-          start.toString(),
-          end.toString(),
-          error
-        );
-        failedRanges.push(`${start.toString()}-${end.toString()}`);
-        return [];
-      }
-    }));
-
-    for (const logs of results) {
-      for (const log of logs) {
-        // viem's adaptive recursive helper widens the inferred log type; the
-        // runtime event decoder still supplies args for this typed event.
-        const args = (log as typeof log & { args: { listingId?: bigint; seller?: `0x${string}`; token?: `0x${string}` } }).args;
-        const listingId = args.listingId?.toString();
-        const seller = args.seller;
-        const token = args.token;
-        if (!listingId || !seller || !token) continue;
-        const knownListing = discovered.get(listingId);
-        discovered.set(listingId, {
-          listing_id: listingId,
-          seller,
-          // The event has no tokenId field. Resolve it from Escrow getListing.
-          token_id: "",
-          token_contract: token,
-          payment_token: "",
-          price: "",
-          inventory_deposited: "",
-          inventory_locked: "",
-          min_order_amount: "",
-          max_order_amount: "",
-          status: "ACTIVE"
-        });
-      }
-    }
-
-    // Progressive rendering: callers can show listings already discovered
-    // instead of waiting for the complete historical scan.
-    discoveryProgress = Array.from(discovered.values());
-    onProgress?.(discoveryProgress);
-  }
-
-  // Do not cache an incomplete scan as if it were authoritative. A failed
-  // range is retried on the next refresh instead of silently hiding listings.
-  if (failedRanges.length > 0) {
-    throw new Error(
-      `Listing discovery could not read ${failedRanges.length} block range(s): ${failedRanges.slice(0, 3).join(", ")}. Retrying on refresh.`
-    );
-  }
-
-  if (!discovered.has(USTETU_BOOTSTRAP_LISTING_ID.toString())) {
-    discovered.set(USTETU_BOOTSTRAP_LISTING_ID.toString(), {
-      listing_id: USTETU_BOOTSTRAP_LISTING_ID.toString(),
-      seller: "0x52dF1Ff4c9CD41869a691627cb1c903e68a3863b",
-      token_id: USTETU_TOKEN_ID,
-      token_contract: USTETU_TOKEN_ADDRESS,
-      payment_token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      price: "200000",
-      inventory_deposited: "10000000000000000000000000",
-      inventory_locked: "0",
-      min_order_amount: "1000000000000000000",
-      max_order_amount: "10000000000000000000000000",
-      status: "ACTIVE"
-    });
-  }
-
-  const result = Array.from(discovered.values());
-    discoveryProgress = result;
-    discoveryCache = { at: Date.now(), listings: result };
-    return result;
+  inFlight = (async () => {
+    const result = await readIndex();
+    const listings = (result.listings ?? []).map(normalizeListing);
+    cached = { at: Date.now(), listings };
+    return listings;
   })();
+
   try {
-    return await discoveryInFlight;
+    const listings = await inFlight;
+    onProgress?.(listings);
+    return listings;
   } finally {
-    discoveryInFlight = null;
+    inFlight = null;
   }
 }
 
-// Seller-specific duplicate check for Create Listing.
-// The event indexes both seller and token. Query the broad history first so
-// compatible RPCs can answer in one request; if the provider rejects the range,
-// split it recursively and inspect newer blocks first. Any matching event is
-// enough to block a duplicate, while a no-match result requires complete coverage.
+/**
+ * Returns existing listing IDs for an exact seller + token contract pair.
+ * The index must be fresh; otherwise the request throws and callers must
+ * block Create Listing rather than risk creating a duplicate.
+ */
 export async function discoverSellerTokenListingIds(
   seller: `0x${string}`,
   token: `0x${string}`
 ): Promise<string[]> {
-  const configuredFrom = process.env.NEXT_PUBLIC_USTETU_LISTING_DISCOVERY_FROM_BLOCK;
-  if (!configuredFrom || !/^\d+$/.test(configuredFrom)) {
-    throw new Error(`Missing or invalid ${DISCOVERY_FROM_BLOCK_ENV}. Set it to the UStetuEscrow deployment block.`);
-  }
-
-  const fromBlock = BigInt(configuredFrom);
-  const latest = await client.getBlockNumber();
-  if (fromBlock > latest) {
-    throw new Error(`${DISCOVERY_FROM_BLOCK_ENV} is greater than the current Base Mainnet block.`);
-  }
-
-  const readRange = async (start: bigint, end: bigint): Promise<string[]> => {
-    try {
-      const logs = await client.getLogs({
-        address: USTETU_ESCROW_ADDRESS,
-        event,
-        args: { seller, token },
-        fromBlock: start,
-        toBlock: end,
-        strict: true
-      });
-      return logs.map((log) => log.args.listingId.toString());
-    } catch (error) {
-      if (start === end) throw error;
-      const middle = start + (end - start) / 2n;
-      // Search the newer half first. A duplicate found there means the caller
-      // can stop immediately without reading older history.
-      const newerIds = await readRange(middle + 1n, end);
-      if (newerIds.length > 0) return newerIds;
-      return readRange(start, middle);
-    }
-  };
-
-  return Array.from(new Set(await readRange(fromBlock, latest)));
+  const result = await readIndex({ seller: seller.toLowerCase(), token: token.toLowerCase() });
+  return (result.listings ?? [])
+    .map((row) => String(row.listing_id ?? ""))
+    .filter((id) => /^\d+$/.test(id));
 }
