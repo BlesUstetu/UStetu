@@ -115,12 +115,35 @@ export async function GET(request: Request) {
         logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock: from, toBlock: to });
         break;
       } catch (rpcError) {
+        // Ethers v6 provider errors often keep the JSON-RPC body under nested
+        // `info.error` / `info.responseBody` fields that JSON.stringify(Error)
+        // omits. Collect the relevant nested messages so 401/403 archive errors
+        // reliably trigger RPC rotation instead of being treated as unknown errors.
         const errorText = (() => {
-          try {
-            return JSON.stringify(rpcError).toLowerCase() + " " + String(rpcError).toLowerCase();
-          } catch {
-            return String(rpcError).toLowerCase();
-          }
+          const parts: string[] = [];
+          const seen = new Set<unknown>();
+          const collect = (value: unknown, depth = 0) => {
+            if (value == null || depth > 5 || seen.has(value)) return;
+            if (typeof value === "string") {
+              parts.push(value);
+              const trimmed = value.trim();
+              if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && depth < 5) {
+                try { collect(JSON.parse(trimmed), depth + 1); } catch { /* plain text */ }
+              }
+              return;
+            }
+            if (typeof value !== "object") {
+              parts.push(String(value));
+              return;
+            }
+            seen.add(value);
+            const record = value as Record<string, unknown>;
+            for (const key of ["message", "shortMessage", "code", "status", "statusCode", "responseBody", "body", "error", "info", "cause"]) {
+              if (key in record) collect(record[key], depth + 1);
+            }
+          };
+          collect(rpcError);
+          return parts.join(" ").toLowerCase();
         })();
         const isLimitError =
           errorText.includes("request limit reached") ||
