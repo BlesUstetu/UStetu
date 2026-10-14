@@ -10,7 +10,7 @@ const START_BLOCK = 51_811_281;
 const ESCROW_ADDRESS = "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae";
 const REGISTRY_ADDRESS = "0x237023EC6A39e59CEbd1D231777308c354ba542F";
 const CONFIRMATIONS = 12;
-const MAX_BLOCKS_PER_RUN = 20_000;
+const MAX_BLOCKS_PER_RUN = 50_000;
 const BASESCAN_API_URL = "https://api.basescan.org/api";
 const MAX_LOGS_PER_QUERY = 1_000;
 
@@ -41,6 +41,8 @@ async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: str
     fromBlock: String(fromBlock), toBlock: String(toBlock), page: "1",
     offset: String(MAX_LOGS_PER_QUERY), apikey: apiKey
   });
+  // BaseScan's standard API rate limit is 5 requests/second; leave headroom for retries.
+  await new Promise((resolve) => setTimeout(resolve, 250));
   const response = await fetch(`${BASESCAN_API_URL}?${params.toString()}`, {
     method: "GET", cache: "no-store", signal: AbortSignal.timeout(15_000)
   });
