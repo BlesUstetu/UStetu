@@ -46,8 +46,19 @@ async function fetchBaseScanLogs(fromBlock: number, toBlock: number, apiKey: str
   const response = await fetch(`${BASESCAN_API_URL}?${params.toString()}`, {
     method: "GET", cache: "no-store", signal: AbortSignal.timeout(15_000)
   });
-  if (!response.ok) throw new Error(`BaseScan logs API returned HTTP ${response.status}`);
-  const payload = await response.json() as BaseScanLogResponse;
+  // Read the response body even on HTTP errors; BaseScan often explains 403 in its body.
+  // Never include the request URL in logs because it contains the API key.
+  const responseText = await response.text();
+  if (!response.ok) {
+    const safeBody = responseText.slice(0, 500).replace(/(apikey|api_key|apiKey)(["\\s:=]+)([^&\\s]+)/gi, "$1$2[REDACTED]");
+    throw new Error(`BaseScan logs API returned HTTP ${response.status}: ${safeBody || response.statusText}`);
+  }
+  let payload: BaseScanLogResponse;
+  try {
+    payload = JSON.parse(responseText) as BaseScanLogResponse;
+  } catch {
+    throw new Error(`BaseScan logs API returned non-JSON response (HTTP ${response.status}).`);
+  }
   const message = String(payload.message ?? "").toLowerCase();
   const resultText = typeof payload.result === "string" ? payload.result.toLowerCase() : "";
 
