@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Contract, JsonRpcProvider } from "ethers";
+import { Contract, JsonRpcProvider, toBeHex, zeroPadValue } from "ethers";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -198,7 +198,8 @@ export async function GET(request: Request) {
       if (eventError) throw eventError;
 
       const raw = await escrow.getListing(listingId);
-      const token = await registry.getToken(raw.tokenId);
+      const tokenIdBytes32 = zeroPadValue(toBeHex(BigInt(raw.tokenId.toString())), 32);
+      const token = await registry.getToken(tokenIdBytes32);
       const paymentToken = await escrow.paymentToken();
       const { error: listingError } = await db.from("listings").upsert({
         chain_id: CHAIN_ID,
