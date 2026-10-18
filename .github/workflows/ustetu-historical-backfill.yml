@@ -1,0 +1,83 @@
+name: UStetu historical listing backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      batches:
+        description: "Number of sequential 800-block batches (5–20)"
+        required: true
+        default: "10"
+        type: choice
+        options:
+          - "5"
+          - "10"
+          - "15"
+          - "20"
+
+permissions:
+  contents: read
+
+# Share the same concurrency group as the routine indexer so both never advance
+# the same cursor concurrently.
+concurrency:
+  group: ustetu-listing-indexer
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    name: Run bounded historical batches
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check required secret
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Missing repository Actions secret CRON_SECRET."
+            exit 1
+          fi
+
+      - name: Advance indexer in bounded batches
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BATCHES: ${{ inputs.batches }}
+        run: |
+          set -euo pipefail
+          case "$BATCHES" in
+            5|10|15|20) ;;
+            *) echo "::error::Unsupported batch count."; exit 1 ;;
+          esac
+
+          for ((i=1; i<=BATCHES; i++)); do
+            response_file="$(mktemp)"
+            status="$(curl --silent --show-error --location --max-redirs 3 --max-time 75 \
+              --output "$response_file" \
+              --write-out "%{http_code}" \
+              --request GET \
+              --header "Authorization: Bearer ${CRON_SECRET}" \
+              "https://www.ustetu.dev/api/indexer/cron")" || {
+                cat "$response_file"
+                rm -f "$response_file"
+                echo "::error::Indexer request failed at batch $i."
+                exit 1
+              }
+
+            echo "Backfill batch $i/$BATCHES returned HTTP $status"
+            cat "$response_file"
+
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              rm -f "$response_file"
+              echo "::error::Indexer returned HTTP $status at batch $i."
+              exit 1
+            fi
+
+            if ! jq -e '.ok == true' "$response_file" >/dev/null; then
+              rm -f "$response_file"
+              echo "::error::Indexer response was not successful at batch $i; stopping without advancing further."
+              exit 1
+            fi
+
+            rm -f "$response_file"
+            sleep 2
+          done
