@@ -89,6 +89,7 @@ export default function SellerDashboard() {
 
   const [activeListingId, setActiveListingId] = useState<bigint | null>(null);
   const [sellerListings, setSellerListings] = useState<Array<{ listing_id: string; seller: string; token_contract: string }>>([]);
+  const [listingDiscoveryState, setListingDiscoveryState] = useState<"idle" | "loading" | "ready" | "stale">("idle");
   const [generatedListingId, setGeneratedListingId] = useState<bigint | null>(null);
   const [listingTokenAddress, setListingTokenAddress] = useState("");
   const [listingPrice, setListingPrice] = useState("");
@@ -252,10 +253,14 @@ export default function SellerDashboard() {
     if (!address) {
       setActiveListingId(null);
       setSellerListings([]);
+      setListingDiscoveryState("idle");
       return;
     }
 
     let cancelled = false;
+    setListingDiscoveryState("loading");
+    setSellerListings([]);
+    setActiveListingId(null);
     const selectMyListings = (listings: Awaited<ReturnType<typeof discoverListingsOnChain>>) => {
       if (cancelled) return;
       const mine = listings.filter((item) => item.seller.toLowerCase() === address.toLowerCase());
@@ -271,8 +276,12 @@ export default function SellerDashboard() {
     };
 
     // Receive known/progressive results and the final complete discovery result.
-    void discoverListingsOnChain(selectMyListings).then(selectMyListings).catch(() => {
-      // Do not clear already discovered listings on temporary RPC failures.
+    void discoverListingsOnChain(selectMyListings).then((listings) => {
+      selectMyListings(listings);
+      if (!cancelled) setListingDiscoveryState("ready");
+    }).catch(() => {
+      // Keep discovery failure distinct from a genuinely empty seller inventory.
+      if (!cancelled) setListingDiscoveryState("stale");
     });
 
     return () => {
@@ -1123,7 +1132,7 @@ export default function SellerDashboard() {
           {activeMenu === "inventory" && !listing && (
             <div className="seller-card seller-section">
               <h2>Inventory</h2>
-              <div className="seller-note">No listing is available for this wallet yet. Create a listing first or wait for listing discovery to complete.</div>
+              <div className="seller-note">{listingDiscoveryState === "loading" ? "Checking this wallet’s listings on Base Mainnet…" : listingDiscoveryState === "stale" ? "Listing history is still syncing or temporarily unavailable. Your existing listings may not appear yet. Please wait for indexing to catch up; do not create a replacement listing." : listingDiscoveryState === "ready" ? "No listing was found for this wallet in the current indexed results." : "Connect a wallet to check its listings."}</div>
             </div>
           )}
 
