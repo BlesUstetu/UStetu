@@ -43,10 +43,10 @@ const tokenApprovalAbi = [
 
 function normalizeListingAmount(value: string): string {
   const trimmed = value.trim();
-  // Accept Indonesian/English thousands grouping (e.g. 1.000.000 or 1,000,000)
-  // while preserving ordinary decimals such as 0.01.
-  if (/^\\d{1,3}(?:\\.\\d{3})+$/.test(trimmed)) return trimmed.replace(/\\./g, "");
-  if (/^\\d{1,3}(?:,\\d{3})+$/.test(trimmed)) return trimmed.replace(/,/g, "");
+  // Accept grouped thousands (1.000.000 or 1,000,000) while preserving
+  // decimal values such as 0.01. Commas are supported as thousands separators.
+  if (/^[1-9]\d{0,2}(?:\.\d{3})+$/.test(trimmed)) return trimmed.replace(/\./g, "");
+  if (/^[1-9]\d{0,2}(?:,\d{3})+$/.test(trimmed)) return trimmed.replace(/,/g, "");
   return trimmed;
 }
 function short(value?: string) { return value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "—"; }
@@ -591,8 +591,22 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!listing || !tokenAddress || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
-      const raw = parseUnits(amount || "0", tokenDecimals);
+      if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
+      const raw = parseUnits(normalizeListingAmount(amount || "0"), tokenDecimals);
       if (raw <= 0n) throw new Error("Inventory amount must be greater than 0.");
+
+      // Read the current wallet balance immediately before approval/deposit.
+      // This avoids relying on a possibly stale React Query balance snapshot.
+      const walletBalance = await publicClient.readContract({
+        address: tokenAddress,
+        abi: tokenApprovalAbi,
+        functionName: "balanceOf",
+        args: [address]
+      });
+      if (walletBalance < raw) {
+        throw new Error("Insufficient token balance. Required: " + formatUnits(raw, tokenDecimals) + " " + tokenSymbol + "; available: " + formatUnits(walletBalance, tokenDecimals) + " " + tokenSymbol + ".");
+      }
+
       if (tokenAllowance < raw) {
         await transact("Approve inventory", () => writeContractAsync({
           address: tokenAddress,
@@ -616,8 +630,11 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
-      const raw = parseUnits(amount || "0", tokenDecimals);
-      if (raw <= 0n || raw > available) throw new Error("Withdrawal amount exceeds available inventory.");
+      const raw = parseUnits(normalizeListingAmount(amount || "0"), tokenDecimals);
+      if (raw <= 0n) throw new Error("Withdrawal amount must be greater than 0.");
+      if (raw > available) {
+        throw new Error("Withdrawal exceeds available inventory. Maximum: " + formatUnits(available, tokenDecimals) + " " + tokenSymbol + "; " + formatUnits(listing.inventoryLocked, tokenDecimals) + " " + tokenSymbol + " is locked by active orders.");
+      }
       await transact("Withdraw inventory", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
