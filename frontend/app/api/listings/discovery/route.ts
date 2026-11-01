@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { JsonRpcProvider } from "ethers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,19 +11,25 @@ const INDEXER_MAX_AGE_MS = 10 * 60 * 1000;
 const CONFIRMATIONS = 12;
 
 async function getLatestBaseBlock(): Promise<number> {
-  const response = await fetch(process.env.BASE_RPC_URL || "https://mainnet.base.org", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000)
-  });
-  if (!response.ok) throw new Error(`Base RPC block-number request returned HTTP ${response.status}`);
-  const payload = await response.json() as { result?: string; error?: { message?: string } };
-  if (!payload.result || !payload.result.startsWith("0x")) {
-    throw new Error(`Could not verify latest Base block: ${payload.error?.message ?? "invalid response"}`);
+  const urls = [
+    process.env.BASE_RPC_URL || "https://mainnet.base.org",
+    process.env.BASE_RPC_FALLBACK_URL || "https://base-rpc.publicnode.com",
+    process.env.BASE_RPC_FALLBACK_URL_2
+  ].filter((url, index, all): url is string => Boolean(url) && all.indexOf(url) === index);
+  const errors: string[] = [];
+  for (const url of urls) {
+    const provider = new JsonRpcProvider(url, CHAIN_ID);
+    try {
+      const network = await provider.getNetwork();
+      if (Number(network.chainId) !== CHAIN_ID) throw new Error(`Wrong chain ID: ${network.chainId}`);
+      return await provider.getBlockNumber();
+    } catch (error) {
+      errors.push(`${url}: ${error instanceof Error ? error.message.slice(0, 180) : String(error)}`);
+    } finally {
+      provider.destroy();
+    }
   }
-  return Number.parseInt(payload.result, 16);
+  throw new Error(`All Base RPC providers failed to verify the latest block. ${errors.join(" | ")}`);
 }
 
 type ListingRow = {
