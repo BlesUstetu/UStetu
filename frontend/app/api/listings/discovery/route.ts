@@ -17,14 +17,14 @@ async function getLatestBaseBlock(): Promise<number> {
     process.env.BASE_RPC_FALLBACK_URL_2
   ].filter((url, index, all): url is string => Boolean(url) && all.indexOf(url) === index);
   const errors: string[] = [];
-  for (const url of urls) {
+  for (const [providerIndex, url] of urls.entries()) {
     const provider = new JsonRpcProvider(url, CHAIN_ID);
     try {
       const network = await provider.getNetwork();
       if (Number(network.chainId) !== CHAIN_ID) throw new Error(`Wrong chain ID: ${network.chainId}`);
       return await provider.getBlockNumber();
     } catch (error) {
-      errors.push(`${url}: ${error instanceof Error ? error.message.slice(0, 180) : String(error)}`);
+      errors.push(`provider #${providerIndex + 1}: ${error instanceof Error ? error.message.slice(0, 180) : String(error)}`);
     } finally {
       provider.destroy();
     }
