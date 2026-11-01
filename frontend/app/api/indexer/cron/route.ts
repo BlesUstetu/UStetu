@@ -157,6 +157,7 @@ export async function GET(request: Request) {
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
   const providers = rpcUrls.map((url) => new JsonRpcProvider(url, CHAIN_ID));
+  const escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, providers[0]);
   const db = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
