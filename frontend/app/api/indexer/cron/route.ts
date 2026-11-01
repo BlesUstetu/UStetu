@@ -24,14 +24,14 @@ async function withRpcFallback<T>(
   operation: (provider: JsonRpcProvider) => Promise<T>
 ): Promise<T> {
   const errors: string[] = [];
-  for (const provider of providers) {
+  for (const [providerIndex, provider] of providers.entries()) {
     try {
       const network = await provider.getNetwork();
       if (Number(network.chainId) !== CHAIN_ID) throw new Error(`RPC endpoint returned wrong chain ID: ${network.chainId}`);
       return await operation(provider);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      errors.push(`${provider._getConnection().url}: ${message.slice(0, 220)}`);
+      errors.push(`provider #${providerIndex + 1}: ${message.slice(0, 220)}`);
     }
   }
   throw new Error(`All Base RPC providers failed for ${label}. ${errors.join(" | ")}`);
@@ -61,7 +61,7 @@ async function fetchRpcLogs(
     const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, toBlock);
     let result: Awaited<ReturnType<JsonRpcProvider["getLogs"]>> | undefined;
     const providerErrors: string[] = [];
-    for (const provider of providers) {
+    for (const [providerIndex, provider] of providers.entries()) {
       try {
         const network = await provider.getNetwork();
         if (Number(network.chainId) !== CHAIN_ID) {
@@ -84,7 +84,7 @@ async function fetchRpcLogs(
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        providerErrors.push(`${provider._getConnection().url}: ${message.slice(0, 220)}`);
+        providerErrors.push(`provider #${providerIndex + 1}: ${message.slice(0, 220)}`);
       }
     }
     if (!result) {
