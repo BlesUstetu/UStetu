@@ -18,6 +18,25 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function withRpcFallback<T>(
+  providers: JsonRpcProvider[],
+  label: string,
+  operation: (provider: JsonRpcProvider) => Promise<T>
+): Promise<T> {
+  const errors: string[] = [];
+  for (const [providerIndex, provider] of providers.entries()) {
+    try {
+      const network = await provider.getNetwork();
+      if (Number(network.chainId) !== CHAIN_ID) throw new Error(`RPC endpoint returned wrong chain ID: ${network.chainId}`);
+      return await operation(provider);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      errors.push(`provider #${providerIndex + 1}: ${message.slice(0, 220)}`);
+    }
+  }
+  throw new Error(`All Base RPC providers failed for ${label}. ${errors.join(" | ")}`);
+}
+
 function isRateLimitError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /429|rate.?limit|compute units per second|request limit reached/i.test(message);
@@ -42,7 +61,7 @@ async function fetchRpcLogs(
     const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, toBlock);
     let result: Awaited<ReturnType<JsonRpcProvider["getLogs"]>> | undefined;
     const providerErrors: string[] = [];
-    for (const provider of providers) {
+    for (const [providerIndex, provider] of providers.entries()) {
       try {
         const network = await provider.getNetwork();
         if (Number(network.chainId) !== CHAIN_ID) {
@@ -65,7 +84,7 @@ async function fetchRpcLogs(
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        providerErrors.push(`${provider._getConnection().url}: ${message.slice(0, 220)}`);
+        providerErrors.push(`provider #${providerIndex + 1}: ${message.slice(0, 220)}`);
       }
     }
     if (!result) {
@@ -119,8 +138,9 @@ function statusName(value: unknown): "ACTIVE" | "PAUSED" | "CLOSED" | "UNKNOWN" 
 }
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  const secrets = [process.env.INDEXER_CRON_SECRET, process.env.CRON_SECRET].filter(Boolean);
+  const authorization = request.headers.get("authorization");
+  if (secrets.length === 0 || !authorization || !secrets.some((secret) => authorization === `Bearer ${secret}`)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
@@ -137,18 +157,13 @@ export async function GET(request: Request) {
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
   const providers = rpcUrls.map((url) => new JsonRpcProvider(url, CHAIN_ID));
-  const provider = providers[0];
-  const escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, provider);
-  const registry = new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
+  const escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, providers[0]);
   const db = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
   try {
-    const network = await provider.getNetwork();
-    if (Number(network.chainId) !== CHAIN_ID) throw new Error(`Wrong RPC chain: ${network.chainId}`);
-
-    const latest = await provider.getBlockNumber();
+    const latest = await withRpcFallback(providers, "latest block number", (rpc) => rpc.getBlockNumber());
     const target = latest - confirmations;
     const { data: state, error: stateError } = await db
       .from("indexer_state")
@@ -166,7 +181,8 @@ export async function GET(request: Request) {
     // Keep each run bounded to avoid provider range limits and Vercel timeouts.
     let to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
     let logs: IndexedLog[] = await fetchRpcLogs(from, to, providers);
-    const finalizedThrough = Math.max(0, to - confirmations);
+    // "to" is already capped at latest - confirmations, so every scanned block is finalized.
+    const finalizedThrough = to;
     let processed = 0;
 
     for (const log of logs) {
@@ -179,7 +195,9 @@ export async function GET(request: Request) {
       let listingId: bigint;
       if (name === "OrderCreated") listingId = parsed.args[1] as bigint;
       else if (name === "OrderCompleted" || name === "OrderExpired" || name === "AutoReleased") {
-        const order = await escrow.getOrder(parsed.args[0] as bigint);
+        const order = await withRpcFallback(providers, "getOrder", (rpc) =>
+          new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getOrder(parsed.args[0] as bigint)
+        );
         listingId = order.listingId as bigint;
       } else listingId = parsed.args[0] as bigint;
 
@@ -197,10 +215,16 @@ export async function GET(request: Request) {
       }, { onConflict: "chain_id,contract_address,transaction_hash,log_index", ignoreDuplicates: true });
       if (eventError) throw eventError;
 
-      const raw = await escrow.getListing(listingId);
+      const raw = await withRpcFallback(providers, "getListing", (rpc) =>
+        new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getListing(listingId)
+      );
       const tokenIdBytes32 = zeroPadValue(toBeHex(BigInt(raw.tokenId.toString())), 32);
-      const token = await registry.getToken(tokenIdBytes32);
-      const paymentToken = await escrow.paymentToken();
+      const token = await withRpcFallback(providers, "registry getToken", (rpc) =>
+        new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, rpc).getToken(tokenIdBytes32)
+      );
+      const paymentToken = await withRpcFallback(providers, "paymentToken", (rpc) =>
+        new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).paymentToken()
+      );
       const { error: listingError } = await db.from("listings").upsert({
         chain_id: CHAIN_ID,
         contract_address: ESCROW_ADDRESS.toLowerCase(),
