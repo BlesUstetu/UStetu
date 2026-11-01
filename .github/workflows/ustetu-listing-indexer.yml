@@ -31,19 +31,21 @@ jobs:
         run: |
           set -euo pipefail
           response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
           status="$(curl --silent --show-error --location --max-redirs 3 --max-time 75 \
             --output "$response_file" \
             --write-out "%{http_code}" \
             --request GET \
             --header "Authorization: Bearer ${CRON_SECRET}" \
             "https://www.ustetu.dev/api/indexer/cron")"
-          cat "$response_file"
-          rm -f "$response_file"
           if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            cat "$response_file"
             echo "::error::Indexer returned HTTP $status."
             exit 1
           fi
           if ! jq -e '.ok == true' "$response_file" >/dev/null; then
+            cat "$response_file"
             echo "::error::Indexer response was not successful."
             exit 1
           fi
+          cat "$response_file"
