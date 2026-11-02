@@ -1677,3 +1677,182 @@ body,.app-shell {
   .mobile-listing-network .network-text { font-size:11px !important; }
   .row-action { min-width:82px; font-size:14px !important; }
 }
+
+/* USTETU — extend the approved neon-cyan visual system to ALL application panels */
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.seller-summary-item,.seller-stat,
+  .seller-overview-item,.seller-locked-order,.seller-wallet-status,
+  .seller-earnings-meta,.inventory-card,.inventory-action-card,
+  .orders-card,.orders-panel,.orders-summary>div,.settings-card,.earnings-card,
+  .payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .registry-detail,.modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,
+  .detail-grid,.escrow-progress,.seller-note,.seller-panel-intro,
+  .seller-listing-top,.seller-token,.seller-two,.seller-form-grid,
+  .buyer-form-grid,.create-listing-grid,.listing-form-grid
+) {
+  border-color:rgba(0,191,255,.68) !important;
+  background-color:#030a12 !important;
+  background-image:
+    radial-gradient(ellipse at 10% 0%,rgba(0,174,255,.13),transparent 38%),
+    linear-gradient(180deg,#0a1b2a 0%,#06111c 42%,#02070d 100%) !important;
+  box-shadow:
+    0 0 0 1px rgba(0,174,255,.12),
+    0 0 16px rgba(0,174,255,.13),
+    0 8px 22px rgba(0,0,0,.72),
+    inset 0 1px 0 rgba(128,220,255,.18),
+    inset 0 -5px 12px rgba(0,0,0,.82) !important;
+}
+
+/* Smaller nested information tiles use the same cyan edge, with less glow. */
+:is(
+  .seller-summary-item,.seller-stat,.seller-overview-item,.seller-locked-order,
+  .seller-wallet-status,.seller-earnings-meta,.inventory-action-card,
+  .orders-summary>div,.registry-detail,.detail-grid>div,.escrow-progress,
+  .seller-note
+) {
+  border:1px solid rgba(0,174,255,.42) !important;
+  border-radius:14px;
+  background:
+    linear-gradient(180deg,rgba(10,35,54,.92),rgba(2,8,14,.98)) !important;
+  box-shadow:0 0 9px rgba(0,174,255,.09),inset 0 1px 0 rgba(128,220,255,.12),inset 0 -3px 6px rgba(0,0,0,.76) !important;
+}
+
+/* Shared headings, labels, data and helper text across Seller, Buyer and Orders. */
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,
+  .buyer-section,.registry-panel,.registry-detail,.modal-panel,.dialog-panel,
+  .token-drawer,.drawer-listing-card,.detail-grid
+) :where(h1,h2,h3,h4,h5,h6,p,label,span,strong,b,small,dt,dd,th,td,li,a,legend) {
+  text-shadow:
+    0 1px 0 rgba(220,240,255,.62),
+    0 2px 0 rgba(0,0,0,.98),
+    0 4px 6px rgba(0,0,0,.94) !important;
+}
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,
+  .buyer-section,.registry-panel,.modal-panel,.dialog-panel,.token-drawer
+) :where(h1,h2,h3,h4,h5,h6) {
+  color:#f2f8ff !important;
+  font-weight:800 !important;
+}
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,
+  .buyer-section,.registry-panel,.modal-panel,.dialog-panel,.token-drawer
+) :where(.eyebrow,.seller-menu-label,.seller-panel-intro strong) {
+  color:#ff9a16 !important;
+  text-shadow:0 1px 0 #ffd19a,0 2px 0 #783400,0 4px 7px #000 !important;
+}
+
+/* Navigation, tabs, filters and secondary actions: raised cyan controls. */
+:is(
+  .seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,
+  .payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer
+) :where(button:not(.primary):not(.primary-glass),[role="tab"],.orders-filter,.seller-view-orders) {
+  border:1px solid rgba(0,174,255,.72) !important;
+  border-radius:12px !important;
+  background:linear-gradient(180deg,#0c2a40 0%,#061522 55%,#020910 100%) !important;
+  color:#f1f9ff !important;
+  box-shadow:0 0 10px rgba(0,174,255,.14),inset 0 1px 0 rgba(150,225,255,.18),inset 0 -3px 6px rgba(0,0,0,.82) !important;
+  text-shadow:0 1px 0 rgba(220,240,255,.58),0 2px 0 #000,0 4px 6px #000 !important;
+}
+:is(
+  .seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,
+  .payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer
+) :where(button:not(:disabled):hover,[role="tab"]:hover,.orders-filter:hover) {
+  border-color:#54d9ff !important;
+  filter:brightness(1.13);
+  box-shadow:0 0 15px rgba(0,191,255,.26),inset 0 1px 0 rgba(190,240,255,.24) !important;
+}
+
+/* Main transaction actions retain orange as the primary action color. */
+:is(
+  .seller-dashboard,.seller-orders,.seller-menu,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,
+  .buyer-section,.registry-panel,.modal-panel,.dialog-panel,.token-drawer
+) :where(button.primary,button.primary-glass,.primary,.registry-button,[data-variant="primary"]) {
+  border:1px solid #ff9a35 !important;
+  border-radius:12px !important;
+  background:linear-gradient(180deg,#ffad4d 0%,#f07820 45%,#a83b08 100%) !important;
+  color:#fff8ef !important;
+  box-shadow:0 4px 0 #682507,0 7px 14px rgba(255,112,24,.2),inset 0 1px 0 rgba(255,226,190,.42),inset 0 -2px 0 rgba(91,28,0,.55) !important;
+  text-shadow:0 1px 0 rgba(255,235,211,.65),0 2px 0 rgba(83,28,0,.92),0 4px 6px rgba(0,0,0,.8) !important;
+}
+
+/* All form controls remain dark, clearly bordered and free of embossed text. */
+:is(
+  .seller-dashboard,.seller-orders,.seller-menu,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,
+  .buyer-section,.registry-panel,.modal-panel,.dialog-panel,.token-drawer
+) :where(input,textarea,select) {
+  border:1px solid rgba(0,174,255,.58) !important;
+  border-radius:10px !important;
+  background:linear-gradient(180deg,#02070c,#081725) !important;
+  color:#f1f8ff !important;
+  box-shadow:inset 0 3px 8px rgba(0,0,0,.82),0 1px 0 rgba(120,215,255,.10) !important;
+  -webkit-text-stroke:0 !important;
+  text-shadow:none !important;
+}
+:is(
+  .seller-dashboard,.seller-orders,.seller-menu,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,
+  .buyer-section,.registry-panel,.modal-panel,.dialog-panel,.token-drawer
+) :where(input,textarea,select):focus {
+  outline:none !important;
+  border-color:#4bd8ff !important;
+  box-shadow:0 0 0 2px rgba(0,191,255,.14),0 0 13px rgba(0,191,255,.18),inset 0 3px 8px rgba(0,0,0,.82) !important;
+}
+:is(
+  .seller-dashboard,.seller-orders,.seller-menu,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,
+  .buyer-section,.registry-panel,.modal-panel,.dialog-panel,.token-drawer
+) :where(input,textarea,select)::placeholder {
+  color:#8298aa !important;
+}
+
+/* Orders and inventory tables follow the Marketplace row treatment. */
+:is(.seller-dashboard,.seller-orders,.orders-card,.orders-panel,.inventory-card) :where(table) {
+  border-collapse:separate !important;
+  border-spacing:0 8px !important;
+}
+:is(.seller-dashboard,.seller-orders,.orders-card,.orders-panel,.inventory-card) :where(thead th) {
+  color:#ff9a16 !important;
+  border-bottom:1px solid rgba(0,174,255,.46) !important;
+  text-shadow:0 1px 0 #ffd19a,0 2px 0 #783400,0 4px 7px #000 !important;
+}
+:is(.seller-dashboard,.seller-orders,.orders-card,.orders-panel,.inventory-card) :where(tbody tr) {
+  background:linear-gradient(180deg,#0c1b29,#030a11) !important;
+  box-shadow:0 0 0 1px rgba(0,174,255,.34),0 4px 9px rgba(0,0,0,.58) !important;
+}
+:is(.seller-dashboard,.seller-orders,.orders-card,.orders-panel,.inventory-card) :where(tbody td) {
+  border-top:1px solid rgba(0,174,255,.16) !important;
+  border-bottom:1px solid rgba(0,174,255,.16) !important;
+  color:#e8f4ff !important;
+}
+
+/* Dialog overlays and drawers retain the same deep-black/cyan frame. */
+.token-drawer,.modal-panel,.dialog-panel {
+  border:1px solid rgba(0,191,255,.76) !important;
+  background:radial-gradient(ellipse at 10% 0%,rgba(0,174,255,.16),transparent 36%),linear-gradient(180deg,#0b1d2c,#030a12 62%,#02060b) !important;
+  box-shadow:0 0 22px rgba(0,174,255,.18),0 24px 70px rgba(0,0,0,.82),inset 0 1px 0 rgba(128,220,255,.2) !important;
+}
