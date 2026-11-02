@@ -2137,3 +2137,18 @@ body,.app-shell {
     inset 0 1px 0 rgba(126,225,255,.16),
     inset 0 -12px 24px rgba(0,0,0,.9) !important;
 }
+
+/* Marketplace column headings — clearly raised, embossed orange lettering */
+.listing-glass .listing-table thead th,
+.listing-glass .listing-table thead th:first-child {
+  color:#ffad59 !important;
+  -webkit-text-stroke:.28px rgba(255,231,204,.82) !important;
+  text-shadow:
+    0 -1px 0 rgba(255,239,220,.92),
+    0 1px 0 rgba(255,190,126,.92),
+    0 2px 0 rgba(151,70,17,.98),
+    0 3px 0 rgba(75,31,7,.98),
+    0 5px 1px rgba(0,0,0,.98),
+    0 7px 9px rgba(0,0,0,.94) !important;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.72));
+}
