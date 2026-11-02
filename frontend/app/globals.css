@@ -2761,3 +2761,52 @@ html body .buy-modal-overlay > .buy-modal {
     max-height:calc(100dvh - 24px) !important;
   }
 }
+
+/* Token information drawer: prioritize crisp, high-contrast typography over emboss shadows. */
+.token-drawer,
+.token-drawer * {
+  -webkit-font-smoothing:antialiased !important;
+  -moz-osx-font-smoothing:grayscale !important;
+  text-rendering:optimizeLegibility;
+  filter:none;
+}
+.token-drawer :is(h1,h2,h3,h4,p,span,strong,b,label,small,dt,dd,div,a,button) {
+  text-shadow:none !important;
+  -webkit-text-stroke:0 !important;
+  opacity:1;
+}
+.token-drawer .drawer-token-head h2,
+.token-drawer .detail-grid strong,
+.token-drawer .drawer-listing-title,
+.token-drawer .drawer-price strong,
+.token-drawer .drawer-available strong {
+  color:#f3f7fc !important;
+  font-weight:750 !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.72) !important;
+}
+.token-drawer .detail-grid > div > span,
+.token-drawer .drawer-token-head > div > span,
+.token-drawer .drawer-listing-title,
+.token-drawer .drawer-available {
+  color:#b8c9da !important;
+  font-weight:550 !important;
+}
+.token-drawer .address-value {
+  color:#eaf3fc !important;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace !important;
+  font-size:11px !important;
+  letter-spacing:0 !important;
+  overflow-wrap:anywhere;
+  word-break:break-all;
+}
+.token-drawer .detail-grid,
+.token-drawer .detail-grid > div,
+.token-drawer .drawer-listing-card {
+  opacity:1 !important;
+  filter:none !important;
+}
+.token-drawer button,
+.token-drawer a {
+  text-shadow:none !important;
+  filter:none !important;
+}
