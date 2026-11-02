@@ -6,8 +6,7 @@ import { useAccount, usePublicClient } from "wagmi";
 import { USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 
 const USDC_DECIMALS = 6;
-const MAX_ORDER_ID_SCAN = 5000;
-const ORDER_BATCH_SIZE = 100;
+const ORDER_BATCH_SIZE = 50;
 const AUTO_REFRESH_MS = 30000;
 
 const tokenMetadataAbi = [
@@ -76,63 +75,62 @@ export default function SellerOrders() {
   const [error, setError] = useState("");
   const [lastScan, setLastScan] = useState("");
   const [filter, setFilter] = useState<OrderFilter>("ALL");
+  const [indexReady, setIndexReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    let loadingNow = false;
 
     const load = async () => {
-      if (!address || !publicClient) {
-        setOrders([]);
+      if (!address || !publicClient || loadingNow) {
+        if (!address) setOrders([]);
         return;
       }
-
+      loadingNow = true;
       setLoading(true);
       setError("");
       try {
+        const response = await fetch(`/api/orders/seller?seller=${address.toLowerCase()}`, { cache: "no-store" });
+        const index = await response.json() as { ok?: boolean; ready?: boolean; orderIds?: string[]; indexedThrough?: number | string; error?: string };
+        if (!response.ok || !index.ok) throw new Error(index.error || "Seller order index is unavailable.");
+        const ids = (index.orderIds ?? []).filter((id) => /^\\d+$/.test(id)).map(BigInt);
         const sellerOrders: SellerOrder[] = [];
+        const metadata = new Map<string, { symbol: string; decimals: number }>();
 
-        // Avoid eth_getLogs: some Base RPC endpoints require an archive token
-        // for historical log scans. Read order state directly in multicall batches.
-        for (let startId = 1; startId <= MAX_ORDER_ID_SCAN; startId += ORDER_BATCH_SIZE) {
+        for (let offset = 0; offset < ids.length; offset += ORDER_BATCH_SIZE) {
           if (cancelled) return;
-
-          const ids = Array.from(
-            { length: Math.min(ORDER_BATCH_SIZE, MAX_ORDER_ID_SCAN - startId + 1) },
-            (_, index) => BigInt(startId + index)
-          );
-
+          const batch = ids.slice(offset, offset + ORDER_BATCH_SIZE);
           const results = await publicClient.multicall({
-            contracts: ids.map((orderId) => ({
+            contracts: batch.map((orderId) => ({
               address: USTETU_ESCROW_ADDRESS,
               abi: orderAbi,
               functionName: "getOrder" as const,
-              args: [orderId],
+              args: [orderId]
             })),
-            allowFailure: true,
+            allowFailure: true
           });
 
-          for (let index = 0; index < results.length; index += 1) {
-            const result = results[index];
+          for (let i = 0; i < results.length; i += 1) {
+            const result = results[i];
             if (result.status !== "success" || !result.result) continue;
-
             const order = result.result;
             if (order.seller.toLowerCase() !== address.toLowerCase() || order.tokenAmount === 0n) continue;
-
-            let tokenSymbol = "TOKEN";
-            let tokenDecimals = 18;
-            try {
-              const [symbol, decimals] = await Promise.all([
-                publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "symbol" }),
-                publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "decimals" }),
-              ]);
-              tokenSymbol = symbol || tokenSymbol;
-              tokenDecimals = Number(decimals);
-            } catch {
-              // Keep a safe fallback for non-standard ERC-20 metadata.
+            const tokenKey = order.token.toLowerCase();
+            let tokenMeta = metadata.get(tokenKey);
+            if (!tokenMeta) {
+              try {
+                const [symbol, decimals] = await Promise.all([
+                  publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "symbol" }),
+                  publicClient.readContract({ address: order.token, abi: tokenMetadataAbi, functionName: "decimals" })
+                ]);
+                tokenMeta = { symbol: symbol || "TOKEN", decimals: Number(decimals) };
+              } catch {
+                tokenMeta = { symbol: "TOKEN", decimals: 18 };
+              }
+              metadata.set(tokenKey, tokenMeta);
             }
-
             sellerOrders.push({
-              id: ids[index],
+              id: batch[i],
               listingId: order.listingId,
               buyer: order.buyer,
               tokenAmount: order.tokenAmount,
@@ -144,8 +142,8 @@ export default function SellerOrders() {
               paidAt: order.paidAt,
               completedAt: order.completedAt,
               expiresAt: order.expiresAt,
-              tokenSymbol,
-              tokenDecimals,
+              tokenSymbol: tokenMeta.symbol,
+              tokenDecimals: tokenMeta.decimals
             });
           }
         }
@@ -153,21 +151,22 @@ export default function SellerOrders() {
         sellerOrders.sort((a, b) => (a.id > b.id ? -1 : a.id < b.id ? 1 : 0));
         if (!cancelled) {
           setOrders(sellerOrders);
-          setLastScan(`Order #1 → #${MAX_ORDER_ID_SCAN}`);
+          setIndexReady(Boolean(index.ready));
+          setLastScan(`Indexed through Base block ${index.indexedThrough ?? "—"} · ${ids.length} indexed orders`);
+          if (!index.ready) setError("Order index is catching up. Some of the newest orders may not appear yet.");
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       } finally {
+        loadingNow = false;
         if (!cancelled) setLoading(false);
       }
     };
 
     void load();
-
+    const interval = window.setInterval(() => { void load(); }, AUTO_REFRESH_MS);
     const refresh = () => { void load(); };
-    const interval = window.setInterval(refresh, AUTO_REFRESH_MS);
     window.addEventListener("focus", refresh);
-
     return () => {
       cancelled = true;
       window.clearInterval(interval);
@@ -292,7 +291,7 @@ export default function SellerOrders() {
             <div className="orders-empty-icon" aria-hidden="true">⌁</div>
             <strong>No seller orders yet</strong>
             <span>A listing you create is not an order. New orders appear after a buyer creates an order for your listing in Escrow.</span>
-            <small>Auto-refresh every 30 seconds · Current direct scan: Order #1–#5,000. Older orders may not appear until indexed order history is available.</small>
+            <small>Auto-refresh every 30 seconds · Full discovered order history is loaded from the event index.</small>
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="orders-empty"><strong>No {filterLabels[filter].toLowerCase()} orders</strong><span>No orders with this status in the currently scanned order range.</span></div>
