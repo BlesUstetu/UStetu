@@ -112,6 +112,12 @@ export default function SellerDashboard() {
   }>>([]);
   const [lockedOrdersLoading, setLockedOrdersLoading] = useState(false);
   const [activeMenu, setActiveMenu] = useState<"create" | "inventory" | "settings" | "orders" | "earnings" | "wallet">("create");
+  const [clockNow, setClockNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const registeredQuery = useReadContract({
     address: USTETU_SELLER_REGISTRY_ADDRESS,
@@ -242,7 +248,7 @@ export default function SellerDashboard() {
   const pendingWallet = pendingWalletQuery.data as `0x${string}` | undefined;
   const effectiveAt = seller?.withdrawalWalletChangeEffectiveAt ? Number(seller.withdrawalWalletChangeEffectiveAt) : 0;
   const pendingActive = !!pendingWallet && pendingWallet !== ZERO;
-  const canActivate = pendingActive && effectiveAt > 0 && Date.now() >= effectiveAt * 1000;
+  const canActivate = pendingActive && effectiveAt > 0 && clockNow >= effectiveAt * 1000;
   const isListingOwner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
 
   useEffect(() => {
@@ -329,20 +335,20 @@ export default function SellerDashboard() {
       setLockedOrdersLoading(true);
       setError("");
       const matches: typeof lockedOrders = [];
-
-      // PublicNode/Base RPC dapat menolak eth_getLogs untuk event filters.
-      // Untuk lookup ini kita baca order state langsung agar tidak bergantung pada archive/log indexing.
-      const MAX_ORDER_ID_SCAN = 200;
+      const response = await fetch(
+        `/api/orders/seller?seller=${address!.toLowerCase()}&listingId=${activeListingId.toString()}`,
+        { cache: "no-store" }
+      );
+      const index = await response.json() as { ok?: boolean; orderIds?: string[]; error?: string };
+      if (!response.ok || !index.ok) throw new Error(index.error || "Could not load indexed orders for this listing.");
+      const ids = (index.orderIds ?? []).filter((id) => /^\d+$/.test(id)).map(BigInt);
       const BATCH_SIZE = 50;
+      const metadata = new Map<string, { symbol: string; decimals: number }>();
 
-      for (let startId = 1; startId <= MAX_ORDER_ID_SCAN; startId += BATCH_SIZE) {
-        const ids = Array.from(
-          { length: Math.min(BATCH_SIZE, MAX_ORDER_ID_SCAN - startId + 1) },
-          (_, i) => BigInt(startId + i)
-        );
-
+      for (let offset = 0; offset < ids.length; offset += BATCH_SIZE) {
+        const batch = ids.slice(offset, offset + BATCH_SIZE);
         const results = await publicClient.multicall({
-          contracts: ids.map((orderId) => ({
+          contracts: batch.map((orderId) => ({
             address: USTETU_ESCROW_ADDRESS,
             abi: orderLookupAbi,
             functionName: "getOrder" as const,
@@ -354,43 +360,32 @@ export default function SellerDashboard() {
         for (let i = 0; i < results.length; i += 1) {
           const result = results[i];
           if (result.status !== "success" || !result.result) continue;
-
           const order = result.result;
-          if (
-            order.listingId !== activeListingId ||
-            order.seller.toLowerCase() !== address!.toLowerCase() ||
-            order.tokenAmount === 0n ||
-            order.state === 2 ||
-            order.state === 3
-          ) continue;
+          if (order.listingId !== activeListingId || order.seller.toLowerCase() !== address!.toLowerCase()
+            || order.tokenAmount === 0n || order.state === 2 || order.state === 3) continue;
 
-          let tokenSymbol = "UST";
-          let tokenDecimals = 18;
-          try {
-            const [symbol, decimals] = await Promise.all([
-              publicClient.readContract({
-                address: order.token,
-                abi: tokenMetadataLookupAbi,
-                functionName: "symbol"
-              }),
-              publicClient.readContract({
-                address: order.token,
-                abi: tokenMetadataLookupAbi,
-                functionName: "decimals"
-              })
-            ]);
-            tokenSymbol = symbol || tokenSymbol;
-            tokenDecimals = Number(decimals);
-          } catch {}
-
+          const tokenKey = order.token.toLowerCase();
+          let tokenMeta = metadata.get(tokenKey);
+          if (!tokenMeta) {
+            try {
+              const [symbol, decimals] = await Promise.all([
+                publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "symbol" }),
+                publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "decimals" })
+              ]);
+              tokenMeta = { symbol: symbol || "TOKEN", decimals: Number(decimals) };
+            } catch {
+              tokenMeta = { symbol: "TOKEN", decimals: 18 };
+            }
+            metadata.set(tokenKey, tokenMeta);
+          }
           matches.push({
-            id: ids[i],
+            id: batch[i],
             buyer: order.buyer,
             tokenAmount: order.tokenAmount,
             state: Number(order.state),
             expiresAt: order.expiresAt,
-            tokenSymbol,
-            tokenDecimals
+            tokenSymbol: tokenMeta.symbol,
+            tokenDecimals: tokenMeta.decimals
           });
         }
       }
@@ -399,7 +394,7 @@ export default function SellerDashboard() {
       setLockedOrders(matches);
 
       if (!matches.length) {
-        setMessage("No active orders were found for this USTETU listing in the first 200 Order IDs.");
+        setMessage("No active orders were found for this listing in the indexed order history.");
       }
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
@@ -889,6 +884,10 @@ export default function SellerDashboard() {
 
       {!isConnected ? (
         <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect your wallet to open Seller Center.</p></div>
+      ) : registeredQuery.isLoading ? (
+        <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Checking seller registration on Base…</p></div>
+      ) : registeredQuery.isError ? (
+        <div className="seller-card"><h2>Seller status unavailable</h2><p className="seller-note">The Seller Registry could not be read. Your wallet registration has not been changed.</p><button onClick={() => void registeredQuery.refetch()}>Retry status check</button></div>
       ) : !registeredQuery.data ? (
         <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">This wallet is not registered. Seller registration is permissionless and requires a small amount of ETH on Base for gas.</p>
           <div className="seller-gas-status">
@@ -901,7 +900,7 @@ export default function SellerDashboard() {
           </div>
           <button
             onClick={() => void register()}
-            disabled={disabled || chainId !== base.id || baseBalanceQuery.isLoading || (baseBalanceQuery.data?.value ?? 0n) <= 0n}
+            disabled={disabled || baseBalanceQuery.isLoading || (baseBalanceQuery.data?.value ?? 0n) <= 0n}
           >
             {busy || "Register Seller"}
           </button>
