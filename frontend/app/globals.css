@@ -3716,3 +3716,56 @@ html body .topbar {
     padding-right: 9px !important;
   }
 }
+
+
+/* Search bar refinement: one outer cyan outline with a recessed inner surface. */
+.search-glass {
+  box-sizing: border-box !important;
+  border: 1px solid #00c8ff !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, #07131d 0%, #02070c 100%) !important;
+  box-shadow:
+    inset 0 5px 12px rgba(0, 0, 0, .88),
+    inset 0 1px 0 rgba(0, 0, 0, .9),
+    inset 0 -1px 0 rgba(25, 92, 119, .16),
+    0 0 14px rgba(0, 174, 255, .10) !important;
+}
+
+.search-glass input,
+.search-glass input:focus {
+  box-sizing: border-box !important;
+  min-height: 40px !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #edfaff !important;
+}
+
+.search-glass:focus-within {
+  border-color: #35d5ff !important;
+  box-shadow:
+    inset 0 5px 12px rgba(0, 0, 0, .9),
+    inset 0 1px 0 rgba(0, 0, 0, .92),
+    0 0 0 1px rgba(0, 200, 255, .12),
+    0 0 17px rgba(0, 174, 255, .18) !important;
+}
+
+.search-glass input::placeholder {
+  color: #c5d5e1 !important;
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .search-glass {
+    min-height: 58px !important;
+    padding: 9px 15px !important;
+    border-radius: 18px !important;
+  }
+  .search-glass input {
+    min-width: 0 !important;
+    font-size: 14px !important;
+  }
+}
