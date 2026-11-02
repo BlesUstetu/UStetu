@@ -92,7 +92,7 @@ export default function SellerOrders() {
         const response = await fetch(`/api/orders/seller?seller=${address.toLowerCase()}`, { cache: "no-store" });
         const index = await response.json() as { ok?: boolean; ready?: boolean; orderIds?: string[]; indexedThrough?: number | string; error?: string };
         if (!response.ok || !index.ok) throw new Error(index.error || "Seller order index is unavailable.");
-        const ids = (index.orderIds ?? []).filter((id) => /^\\d+$/.test(id)).map(BigInt);
+        const ids = (index.orderIds ?? []).filter((id) => /^\d+$/.test(id)).map(BigInt);
         const sellerOrders: SellerOrder[] = [];
         const metadata = new Map<string, { symbol: string; decimals: number }>();
 
