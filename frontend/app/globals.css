@@ -1930,3 +1930,16 @@ body,.app-shell {
 @media (prefers-reduced-motion:reduce) {
   :is(.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,.modal-panel,.dialog-panel,.token-drawer) :where(button,[role="tab"],.orders-filter,.seller-view-orders,.row-action) { transition:none !important; }
 }
+
+/* Remove the visible blue rectangular outline around listing rows.
+   Keep the raised 3D extrusion and soft depth shadow. */
+.listing-table tbody tr.listing-row {
+  outline:none !important;
+  outline-offset:0 !important;
+  box-shadow:0 3px 0 rgba(0,28,45,.98),0 7px 12px rgba(0,0,0,.84),inset 0 2px 0 rgba(185,235,255,.12),inset 0 -2px 0 rgba(0,0,0,.9) !important;
+}
+.listing-table tbody tr.listing-row:hover,
+.listing-table tbody tr.listing-row:focus-within {
+  outline:none !important;
+  box-shadow:0 3px 0 rgba(133,58,9,.98),0 8px 15px rgba(0,0,0,.88),0 0 12px rgba(255,138,24,.18),inset 0 2px 0 rgba(255,224,190,.16),inset 0 -2px 0 rgba(0,0,0,.9) !important;
+}
