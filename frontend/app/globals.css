@@ -2722,3 +2722,42 @@ body,.app-shell {
   .buy-modal-overlay { padding:10px !important; }
   .buy-modal { max-height:calc(100dvh - 20px) !important; }
 }
+
+/* Explicit flex centering for the purchase dialog (portal is mounted under body). */
+html body .buy-modal-overlay {
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:24px !important;
+  margin:0 !important;
+  overflow:auto !important;
+  z-index:2147483000 !important;
+}
+html body .buy-modal-overlay > .buy-modal {
+  position:relative !important;
+  inset:auto !important;
+  flex:0 1 720px !important;
+  width:min(720px,100%) !important;
+  max-width:720px !important;
+  max-height:calc(100dvh - 48px) !important;
+  margin:auto !important;
+  transform:none !important;
+  align-self:center !important;
+}
+@media (max-width:600px) {
+  html body .buy-modal-overlay {
+    padding:12px !important;
+  }
+  html body .buy-modal-overlay > .buy-modal {
+    width:100% !important;
+    max-width:100% !important;
+    max-height:calc(100dvh - 24px) !important;
+  }
+}
