@@ -2009,3 +2009,37 @@ body,.app-shell {
     inset 0 5px 9px rgba(0,0,0,.28),
     inset 0 -4px 7px rgba(0,0,0,.76) !important;
 }
+
+/* Final cleanup: remove per-cell edges entirely; depth belongs to the row as one surface. */
+.listing-table tbody tr.listing-row {
+  background:
+    linear-gradient(180deg,rgba(105,192,225,.13) 0%,rgba(17,48,68,.06) 20%,transparent 52%,rgba(0,0,0,.28) 100%),
+    linear-gradient(180deg,#0a1c2a 0%,#030b13 56%,#010407 100%) !important;
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:
+    0 3px 0 rgba(0,20,34,.98),
+    0 8px 13px rgba(0,0,0,.9),
+    inset 0 2px 0 rgba(170,225,246,.15),
+    inset 0 -4px 8px rgba(0,0,0,.82) !important;
+}
+.listing-table tbody tr.listing-row > td,
+.listing-table tbody tr.listing-row > td:first-child,
+.listing-table tbody tr.listing-row > td:last-child {
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.listing-table tbody tr.listing-row:hover,
+.listing-table tbody tr.listing-row:focus-within {
+  background:
+    linear-gradient(180deg,rgba(255,202,145,.17) 0%,rgba(100,47,13,.08) 22%,transparent 54%,rgba(0,0,0,.3) 100%),
+    linear-gradient(180deg,#21170f 0%,#100b08 56%,#030303 100%) !important;
+  box-shadow:
+    0 3px 0 rgba(92,39,8,.98),
+    0 9px 15px rgba(0,0,0,.92),
+    0 0 13px rgba(255,138,24,.17),
+    inset 0 2px 0 rgba(255,224,190,.18),
+    inset 0 -4px 8px rgba(0,0,0,.84) !important;
+}
