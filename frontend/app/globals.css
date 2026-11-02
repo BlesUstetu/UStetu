@@ -2666,3 +2666,59 @@ body,.app-shell {
   .escrow-step { grid-template-columns: 25px minmax(0,1fr); }
   .escrow-step>b { grid-column: 2; max-width: none; text-align: left; }
 }
+
+/* Keep token information and Buy panels centered in the viewport as modal drawers. */
+.drawer-backdrop {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:1190 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  background:rgba(0,0,0,.78) !important;
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+}
+.token-drawer {
+  position:fixed !important;
+  z-index:1200 !important;
+  top:50% !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:translate(-50%,-50%) !important;
+  width:min(500px,calc(100vw - 32px)) !important;
+  height:auto !important;
+  max-height:calc(100dvh - 40px) !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain;
+  margin:0 !important;
+}
+.buy-modal-overlay {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:1400 !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:20px !important;
+  overflow-y:auto !important;
+}
+.buy-modal {
+  position:relative !important;
+  margin:auto !important;
+  max-height:calc(100dvh - 40px) !important;
+  transform:none !important;
+}
+@media (max-width:600px) {
+  .token-drawer {
+    top:50% !important;
+    left:50% !important;
+    right:auto !important;
+    bottom:auto !important;
+    transform:translate(-50%,-50%) !important;
+    width:calc(100vw - 24px) !important;
+    max-height:calc(100dvh - 24px) !important;
+    padding:18px 14px !important;
+  }
+  .buy-modal-overlay { padding:10px !important; }
+  .buy-modal { max-height:calc(100dvh - 20px) !important; }
+}
