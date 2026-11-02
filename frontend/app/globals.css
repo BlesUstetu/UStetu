@@ -1178,3 +1178,114 @@ body,.app-shell {
   background:linear-gradient(145deg,#17243a,#080d16) !important;
   border-color:rgba(65,101,153,.40) !important;
 }
+
+
+/* USTETU — embossed typography for panel depth */
+.listing-toolbar .listing-count,
+.listing-toolbar .status-dot,
+.listing-table th,
+.listing-table td,
+.listing-table td *,
+.seller-card h1,.seller-card h2,.seller-card h3,
+.buyer-card h1,.buyer-card h2,.buyer-card h3,
+.buyer-panel h1,.buyer-panel h2,.buyer-panel h3,
+.seller-overview strong,.seller-summary-item strong,
+.seller-stat strong,.seller-value,.orders-summary strong {
+  text-shadow:
+    0 1px 0 rgba(65,101,153,.30),
+    0 2px 3px rgba(0,0,0,.82),
+    0 -1px 0 rgba(0,0,0,.45);
+}
+.listing-table th {
+  color:#ffad67 !important;
+  font-weight:800 !important;
+  letter-spacing:.10em !important;
+  text-shadow:
+    0 1px 0 rgba(255,194,139,.20),
+    0 2px 0 rgba(93,39,8,.82),
+    0 4px 7px rgba(0,0,0,.85) !important;
+}
+.listing-table td {
+  color:#c4d0e0 !important;
+  text-shadow:
+    0 1px 0 rgba(57,86,129,.24),
+    0 2px 3px rgba(0,0,0,.9) !important;
+}
+.token-cell strong,
+.listing-table td strong,
+.seller-card strong,.buyer-card strong,.buyer-panel strong,
+.seller-overview strong,.seller-summary-item strong,
+.seller-stat strong,.seller-value,.orders-summary strong {
+  color:#f0f4fb !important;
+  font-weight:750 !important;
+  text-shadow:
+    0 1px 0 rgba(88,119,164,.30),
+    0 2px 0 rgba(0,0,0,.72),
+    0 4px 6px rgba(0,0,0,.88) !important;
+}
+.token-cell span,.mono,.address-value,.network-text,
+.listing-toolbar .listing-count,.listing-toolbar .status-dot {
+  text-shadow:0 1px 0 rgba(0,0,0,.88),0 0 7px rgba(36,58,91,.16) !important;
+}
+.verified-badge,.seller-wallet-status,.approved {
+  text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 5px rgba(75,190,125,.12) !important;
+}
+.row-action,.secondary-glass,.primary-glass,
+.seller-dashboard button,.seller-orders button {
+  text-shadow:0 1px 0 rgba(90,120,164,.22),0 2px 3px rgba(0,0,0,.9) !important;
+}
+.drawer-token-head h2,.drawer-listing-title,.drawer-price strong,
+.drawer-available strong,.detail-grid strong,.detail-grid span {
+  text-shadow:0 1px 0 rgba(65,101,153,.22),0 2px 4px rgba(0,0,0,.86) !important;
+}
+@media (prefers-reduced-motion:reduce) {
+  .listing-table th,.listing-table td,.listing-table td *,
+  .token-cell strong,.row-action,.secondary-glass,.primary-glass {
+    text-shadow:0 1px 2px rgba(0,0,0,.7) !important;
+  }
+}
+
+
+/* USTETU — consistent embossed text across every dashboard and Seller Center panel */
+:is(
+  .listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+  .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,
+  .detail-grid,.escrow-progress,.orders-panel
+) :is(
+  h1,h2,h3,h4,h5,h6,p,label,span,strong,b,small,dt,dd,th,td,
+  li,a,button,legend
+):not(input):not(textarea):not(select) {
+  text-shadow:
+    0 1px 0 rgba(58,91,145,.22),
+    0 2px 3px rgba(0,0,0,.78) !important;
+}
+:is(.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+    .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+    .seller-section,.seller-content) :is(h1,h2,h3,h4) {
+  color:#edf3fc !important;
+  font-weight:750;
+  text-shadow:
+    0 1px 0 rgba(73,105,151,.30),
+    0 2px 0 rgba(0,0,0,.78),
+    0 4px 7px rgba(0,0,0,.82) !important;
+}
+:is(.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+    .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+    .seller-section,.seller-content) :is(.seller-menu-label,.eyebrow) {
+  color:#ffad67 !important;
+  text-shadow:0 1px 0 rgba(111,45,8,.72),0 2px 4px rgba(0,0,0,.8) !important;
+}
+@media (prefers-reduced-motion:reduce) {
+  :is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+      .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+      .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+      .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+      .buyer-card,.buyer-panel,.buyer-section,.registry-panel)
+  :is(h1,h2,h3,h4,h5,h6,p,label,span,strong,b,small,dt,dd,th,td,li,a,button) {
+    text-shadow:0 1px 2px rgba(0,0,0,.65) !important;
+  }
+}
