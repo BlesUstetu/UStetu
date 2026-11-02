@@ -104,8 +104,12 @@ export async function GET(request: Request) {
       .select("listing_id,seller,token_id,token_contract,payment_token,price,inventory_deposited,inventory_locked,min_order_amount,max_order_amount,status,finalized,available_inventory")
       .eq("chain_id", CHAIN_ID)
       .eq("contract_address", ESCROW_ADDRESS)
-      .eq("finalized", true)
       .order("last_block_number", { ascending: false });
+
+    // Marketplace display only needs finalized rows. Duplicate checks pass both
+    // seller and token and must also see the indexer's recent, not-yet-finalized
+    // projection rows to avoid allowing a duplicate during the confirmation lag.
+    if (!(seller && token)) query = query.eq("finalized", true);
 
     if (seller) query = query.eq("seller", seller);
     if (token) query = query.eq("token_contract", token);
