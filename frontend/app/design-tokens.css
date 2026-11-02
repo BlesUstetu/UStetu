@@ -1,0 +1,25 @@
+/* USTETU design tokens — Phase 1
+   Central source of truth for the dark marketplace palette and shared surfaces.
+   Component styles should consume these tokens instead of introducing new palette values.
+*/
+:root {
+  color-scheme: dark;
+  --ust-bg: #05070B;
+  --ust-panel: #080C14;
+  --ust-panel-secondary: #0A1222;
+  --ust-navy-reflection: #101C35;
+  --ust-steel-accent: #243A5B;
+  --ust-orange: #FF7A1A;
+  --ust-text: #F2F5FA;
+  --ust-text-muted: #9AA8BA;
+  --ust-text-secondary: #C5D0DF;
+  --ust-border: rgba(110, 145, 190, .20);
+  --ust-border-subtle: rgba(110, 145, 190, .12);
+  --ust-success: #8FC7A2;
+  --ust-focus: rgba(255, 122, 26, .48);
+  --ust-shadow-panel: 0 18px 52px rgba(0, 0, 0, .42);
+  --ust-radius-panel: 18px;
+  --ust-radius-control: 10px;
+  --ust-motion-fast: 160ms;
+  --ust-motion-standard: 220ms;
+}
