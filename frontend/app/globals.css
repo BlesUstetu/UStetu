@@ -2968,3 +2968,69 @@ html body .buy-modal-overlay > .buy-modal {
   box-shadow:none !important;
   color:#b7ff00 !important;
 }
+
+/* Seller Center readability pass: remove heavy embossed shadows that blur small text. */
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.seller-listing-top,.seller-panel-intro,
+  .inventory-card,.inventory-action-card,.orders-card,.orders-panel,
+  .settings-card,.earnings-card,.payout-card,.seller-summary-item,
+  .seller-stat,.seller-overview-item,.seller-locked-order,.seller-wallet-status,
+  .seller-earnings-meta,.seller-note,.seller-token,.seller-two,
+  .seller-form-grid,.seller-menu-item
+) :where(
+  h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,div,a,button,
+  th,td,dt,dd,li,legend,[role="tab"]
+) {
+  -webkit-font-smoothing:antialiased !important;
+  -moz-osx-font-smoothing:grayscale !important;
+  text-rendering:optimizeLegibility !important;
+  -webkit-text-stroke:0 !important;
+  text-shadow:none !important;
+  filter:none;
+}
+
+/* Strong readable hierarchy for Seller Center labels and values. */
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.inventory-action-card,
+  .orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card
+) :where(h1,h2,h3,h4,strong,b,th) {
+  color:#f2f7fc !important;
+  font-weight:750 !important;
+  opacity:1 !important;
+}
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.inventory-card,.inventory-action-card,
+  .orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card
+) :where(p,span,label,small,td,dt,dd,li) {
+  color:#c4d0dc;
+  font-weight:500;
+  opacity:1 !important;
+  line-height:1.45;
+}
+
+/* Keep semantic status colors and orange action accents crisp. */
+:is(.seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.orders-card,.orders-panel)
+  :where(.status,.status-badge,.verified-badge,[data-status="success"],.text-success) {
+  color:#54f0ae !important;
+}
+:is(.seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content)
+  :where(.eyebrow,.seller-menu-label,.seller-panel-intro strong) {
+  color:#ffad70 !important;
+  font-weight:800 !important;
+}
+
+/* Inputs remain clean and legible, without inherited emboss effects. */
+:is(.seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card)
+  :where(input,textarea,select,option) {
+  color:#f4f8fc !important;
+  -webkit-text-fill-color:#f4f8fc !important;
+  text-shadow:none !important;
+  -webkit-text-stroke:0 !important;
+  filter:none !important;
+}
