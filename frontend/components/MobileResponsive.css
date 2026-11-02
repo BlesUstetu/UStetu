@@ -656,19 +656,32 @@ body {
 
 
 /* ==========================================================
-   USTETU — Compact mobile token drawer
-   Reduce vertical spacing without changing the desktop layout.
+   USTETU — Consolidated mobile token drawer
+   One breakpoint block per supported viewport width.
    ========================================================== */
 @media (max-width: 600px) {
   .token-drawer {
+    top: 68px !important;
+    right: 6px !important;
+    bottom: 6px !important;
+    width: calc(100vw - 12px) !important;
     padding: 12px !important;
     border-radius: 17px !important;
+    z-index: 90 !important;
   }
 
   .drawer-topline {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    bottom: auto !important;
+    left: 12px !important;
+    z-index: 3 !important;
     min-height: 28px !important;
+    pointer-events: none;
   }
 
+  .drawer-topline .drawer-close { pointer-events: auto; }
   .drawer-close {
     width: 30px !important;
     height: 30px !important;
@@ -677,9 +690,12 @@ body {
   }
 
   .drawer-token-head {
+    position: relative !important;
     gap: 10px !important;
     margin: 10px 0 12px !important;
-    padding-bottom: 0 !important;
+    margin-top: 10px !important;
+    margin-bottom: 12px !important;
+    padding: 0 40px 0 0 !important;
   }
 
   .token-mark-large {
@@ -688,36 +704,13 @@ body {
     font-size: 18px !important;
   }
 
-  .drawer-token-head h2 {
-    font-size: 21px !important;
-  }
-
-  .drawer-token-head span {
-    margin-top: 2px !important;
-    font-size: 9px !important;
-  }
-
-  .detail-grid {
-    border-radius: 14px !important;
-  }
-
-  .detail-grid > div {
-    padding: 10px 12px !important;
-  }
-
-  .detail-grid span {
-    margin-bottom: 4px !important;
-    font-size: 8px !important;
-  }
-
-  .detail-grid strong {
-    font-size: 10px !important;
-  }
-
-  .address-value {
-    font-size: 8px !important;
-  }
-
+  .drawer-token-head h2 { font-size: 21px !important; }
+  .drawer-token-head span { margin-top: 2px !important; font-size: 9px !important; }
+  .detail-grid { grid-template-columns: 1fr !important; border-radius: 14px !important; }
+  .detail-grid > div { padding: 10px 12px !important; }
+  .detail-grid span { margin-bottom: 4px !important; font-size: 8px !important; }
+  .detail-grid strong { font-size: 10px !important; }
+  .address-value { font-size: 8px !important; }
   .address-icon-button {
     width: 27px !important;
     height: 27px !important;
@@ -730,31 +723,13 @@ body {
     border-radius: 14px !important;
   }
 
-  .drawer-listing-title {
-    font-size: 9px !important;
-  }
-
-  .drawer-price {
-    margin-top: 5px !important;
-  }
-
-  .drawer-price strong {
-    font-size: 22px !important;
-  }
-
+  .drawer-listing-title { font-size: 9px !important; }
+  .drawer-price { margin-top: 5px !important; }
+  .drawer-price strong { font-size: 22px !important; }
   .drawer-price span,
-  .drawer-available {
-    font-size: 9px !important;
-  }
-
-  .drawer-available {
-    margin-top: 5px !important;
-  }
-
-  .drawer-actions {
-    margin-top: 12px !important;
-  }
-
+  .drawer-available { font-size: 9px !important; }
+  .drawer-available { margin-top: 5px !important; }
+  .drawer-actions { margin-top: 12px !important; }
   .token-drawer .primary-glass {
     min-height: 38px !important;
     padding: 8px 10px !important;
@@ -765,52 +740,13 @@ body {
 
 @media (max-width: 430px) {
   .token-drawer {
+    top: 64px !important;
+    right: 5px !important;
+    bottom: 5px !important;
+    width: calc(100vw - 10px) !important;
     padding: 10px !important;
   }
 
-  .drawer-token-head {
-    margin-top: 8px !important;
-    margin-bottom: 10px !important;
-  }
-
-  .detail-grid > div {
-    padding: 9px 11px !important;
-  }
-
-  .drawer-listing-card {
-    margin-top: 10px !important;
-    padding: 11px !important;
-  }
-
-  .drawer-actions {
-    margin-top: 10px !important;
-  }
-}
-
-
-/* Align mobile drawer close control with the token logo row. */
-@media (max-width: 600px) {
-  .drawer-topline {
-    position: absolute !important;
-    top: 12px !important;
-    right: 12px !important;
-    left: 12px !important;
-    z-index: 3 !important;
-    pointer-events: none;
-  }
-
-  .drawer-topline .drawer-close {
-    pointer-events: auto;
-  }
-
-  .drawer-token-head {
-    position: relative !important;
-    margin-top: 10px !important;
-    padding-right: 40px !important;
-  }
-}
-
-@media (max-width: 430px) {
   .drawer-topline {
     top: 10px !important;
     right: 10px !important;
@@ -818,28 +754,19 @@ body {
   }
 
   .drawer-token-head {
+    gap: 8px !important;
     margin-top: 8px !important;
+    margin-bottom: 10px !important;
     padding-right: 38px !important;
   }
-}
 
-
-/* Keep the token drawer below the sticky header so its controls are never covered. */
-@media (max-width: 600px) {
-  .token-drawer {
-    top: 68px !important;
-    bottom: 6px !important;
-    z-index: 90 !important;
+  .detail-grid > div { padding: 9px 11px !important; }
+  .drawer-listing-card {
+    margin-top: 10px !important;
+    padding: 11px !important;
   }
+  .drawer-actions { margin-top: 10px !important; }
 }
-
-@media (max-width: 430px) {
-  .token-drawer {
-    top: 64px !important;
-    bottom: 5px !important;
-  }
-}
-
 
 @media (max-width: 600px) {
   .wallet-token-action {
