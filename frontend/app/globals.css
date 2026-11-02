@@ -2338,3 +2338,130 @@ body,.app-shell {
   .listing-glass .mobile-listing-card,
   .listing-glass .mobile-listing-card .row-action { transition:none !important; }
 }
+
+/* USTETU global panel depth system — apply the mobile Marketplace concave language
+   consistently to Seller Center, Buyer Center, drawers, detail panels and forms. */
+:is(
+  .seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+  .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.seller-listing-top,.seller-panel-intro,
+  .buyer-card,.buyer-panel,.buyer-section,.buyer-content,.buyer-overview,
+  .inventory-card,.inventory-action-card,.orders-card,.orders-panel,
+  .orders-summary,.settings-card,.earnings-card,.payout-card,
+  .registry-panel,.registry-detail,.modal-panel,.dialog-panel,.token-drawer,
+  .drawer-listing-card,.detail-grid,.escrow-progress,.seller-summary-item,
+  .seller-stat,.seller-overview-item,.seller-locked-order,.seller-wallet-status,
+  .seller-earnings-meta,.seller-note,.seller-token,.seller-two,
+  .seller-form-grid,.buyer-form-grid,.create-listing-panel
+) {
+  position:relative;
+  background:
+    linear-gradient(180deg,rgba(135,210,238,.105) 0%,rgba(15,45,64,.025) 15%,rgba(0,0,0,.24) 58%,rgba(0,0,0,.48) 100%),
+    linear-gradient(155deg,#0a2030 0%,#04101a 48%,#010509 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(190,235,250,.19),
+    inset 0 5px 10px rgba(0,0,0,.42),
+    inset 0 14px 20px rgba(0,0,0,.56),
+    inset 0 -3px 0 rgba(0,0,0,.92),
+    0 3px 0 rgba(0,25,40,.90),
+    0 9px 16px rgba(0,0,0,.76) !important;
+}
+
+/* Nested metrics, order tiles and information cells are recessed into their parent. */
+:is(
+  .seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.buyer-card,.buyer-panel,.buyer-section,
+  .buyer-content,.inventory-card,.orders-card,.orders-panel,.settings-card,
+  .earnings-card,.payout-card,.registry-panel,.token-drawer,.detail-grid
+) :is(
+  .seller-summary-item,.seller-stat,.seller-overview-item,.seller-locked-order,
+  .seller-wallet-status,.seller-earnings-meta,.orders-summary>div,
+  .detail-grid>div,.detail-wide,.drawer-listing-card,.seller-note,
+  .inventory-action-card
+) {
+  background:
+    linear-gradient(180deg,rgba(125,200,228,.075),rgba(0,0,0,.24) 32%,rgba(0,0,0,.48)),
+    linear-gradient(160deg,#071522,#02080e) !important;
+  border-color:rgba(0,174,255,.20) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(172,224,244,.13),
+    inset 0 4px 9px rgba(0,0,0,.62),
+    inset 0 -2px 0 rgba(0,0,0,.88) !important;
+}
+
+/* Shared raised action controls across Seller and Buyer panels. */
+:is(
+  .seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.buyer-card,.buyer-panel,.buyer-section,
+  .buyer-content,.inventory-card,.orders-card,.orders-panel,.settings-card,
+  .earnings-card,.payout-card,.registry-panel,.token-drawer
+) :is(button,.row-action,.primary-glass,[role="tab"],.seller-menu-item,.buyer-menu-item) {
+  box-shadow:
+    0 1px 0 rgba(190,238,255,.32),
+    0 3px 0 rgba(0,59,91,.90),
+    0 6px 10px rgba(0,0,0,.70),
+    inset 0 1px 0 rgba(215,245,255,.14),
+    inset 0 -2px 0 rgba(0,0,0,.82) !important;
+  transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease;
+}
+:is(
+  .seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.buyer-card,.buyer-panel,.buyer-section,
+  .buyer-content,.inventory-card,.orders-card,.orders-panel,.settings-card,
+  .earnings-card,.payout-card,.registry-panel,.token-drawer
+) :is(button:not(:disabled):active,.row-action:active,.primary-glass:active,[role="tab"]:active) {
+  transform:translateY(2px);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.72),0 1px 0 rgba(0,35,55,.88) !important;
+}
+:is(
+  .seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,
+  .seller-section,.seller-content,.buyer-card,.buyer-panel,.buyer-section,
+  .buyer-content,.inventory-card,.orders-card,.orders-panel,.settings-card,
+  .earnings-card,.payout-card,.registry-panel,.token-drawer
+) :is(input,textarea,select) {
+  background:linear-gradient(180deg,#01050a 0%,#061522 100%) !important;
+  box-shadow:inset 0 4px 9px rgba(0,0,0,.86),inset 0 1px 0 rgba(0,0,0,.82) !important;
+}
+
+/* Preserve the same tactile hierarchy on narrow screens without crowding content. */
+@media (max-width:600px) {
+  :is(
+    .seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,
+    .seller-section,.seller-content,.buyer-card,.buyer-panel,.buyer-section,
+    .buyer-content,.inventory-card,.orders-card,.orders-panel,.settings-card,
+    .earnings-card,.payout-card,.registry-panel,.modal-panel,.dialog-panel,
+    .token-drawer,.drawer-listing-card,.detail-grid,.escrow-progress
+  ) {
+    box-shadow:
+      inset 0 1px 0 rgba(190,235,250,.18),
+      inset 0 6px 12px rgba(0,0,0,.50),
+      inset 0 15px 20px rgba(0,0,0,.60),
+      inset 0 -3px 0 rgba(0,0,0,.92),
+      0 3px 0 rgba(0,25,40,.92),
+      0 8px 14px rgba(0,0,0,.78) !important;
+  }
+  :is(
+    .seller-summary-item,.seller-stat,.seller-overview-item,.seller-locked-order,
+    .seller-wallet-status,.seller-earnings-meta,.orders-summary>div,
+    .detail-grid>div,.detail-wide,.drawer-listing-card,.seller-note,
+    .inventory-action-card
+  ) {
+    box-shadow:inset 0 1px 0 rgba(172,224,244,.12),inset 0 5px 10px rgba(0,0,0,.62),inset 0 -2px 0 rgba(0,0,0,.88) !important;
+  }
+  :is(
+    .seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,
+    .seller-section,.seller-content,.buyer-card,.buyer-panel,.buyer-section,
+    .buyer-content,.inventory-card,.orders-card,.orders-panel,.settings-card,
+    .earnings-card,.payout-card,.registry-panel,.token-drawer
+  ) :is(button,.row-action,.primary-glass,[role="tab"]) {
+    min-height:38px;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  :is(
+    .seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,
+    .seller-section,.seller-content,.buyer-card,.buyer-panel,.buyer-section,
+    .buyer-content,.inventory-card,.orders-card,.orders-panel,.settings-card,
+    .earnings-card,.payout-card,.registry-panel,.token-drawer
+  ) :is(button,.row-action,.primary-glass,[role="tab"]) { transition:none !important; }
+}
