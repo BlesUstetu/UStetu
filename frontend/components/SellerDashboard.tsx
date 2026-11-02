@@ -328,7 +328,7 @@ export default function SellerDashboard() {
   const loadLockedOrders = async () => {
     try {
       await ensureSeller();
-      if (!publicClient || activeListingId === null || !listing || !isListingOwner) {
+      if (!basePublicClient || activeListingId === null || !listing || !isListingOwner) {
         throw new Error("No USTETU listing is available for this wallet.");
       }
 
@@ -347,7 +347,7 @@ export default function SellerDashboard() {
 
       for (let offset = 0; offset < ids.length; offset += BATCH_SIZE) {
         const batch = ids.slice(offset, offset + BATCH_SIZE);
-        const results = await publicClient.multicall({
+        const results = await basePublicClient.multicall({
           contracts: batch.map((orderId) => ({
             address: USTETU_ESCROW_ADDRESS,
             abi: orderLookupAbi,
@@ -369,8 +369,8 @@ export default function SellerDashboard() {
           if (!tokenMeta) {
             try {
               const [symbol, decimals] = await Promise.all([
-                publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "symbol" }),
-                publicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "decimals" })
+                basePublicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "symbol" }),
+                basePublicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "decimals" })
               ]);
               tokenMeta = { symbol: symbol || "TOKEN", decimals: Number(decimals) };
             } catch {
