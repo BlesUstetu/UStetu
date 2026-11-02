@@ -15,6 +15,9 @@ export type DiscoveredListing = {
 type ListingIndexResponse = {
   ok: boolean;
   ready: boolean;
+  displayReady?: boolean;
+  indexStatus?: "current" | "syncing";
+  freshnessError?: string | null;
   error?: string;
   indexedThrough?: number | string | null;
   lastUpdatedAt?: string | null;
@@ -44,7 +47,10 @@ function normalizeListing(row: Record<string, unknown>): DiscoveredListing {
   };
 }
 
-async function readIndex(params: Record<string, string> = {}): Promise<ListingIndexResponse> {
+async function readIndex(
+  params: Record<string, string> = {},
+  requireFresh = false
+): Promise<ListingIndexResponse> {
   const url = new URL(INDEX_URL, window.location.origin);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   const response = await fetch(url.toString(), { method: "GET", cache: "no-store" });
@@ -52,16 +58,16 @@ async function readIndex(params: Record<string, string> = {}): Promise<ListingIn
   if (!response.ok || !result?.ok) {
     throw new Error(result?.error || "Could not read the Supabase listing index.");
   }
-  if (!result.ready) {
-    throw new Error(result.error || "Listing index is not current; duplicate check is blocked.");
+  if (requireFresh && !result.ready) {
+    throw new Error(result.freshnessError || result.error || "Listing index is not current; duplicate check is blocked.");
   }
   return result;
 }
 
 /**
- * Listing discovery reads the server-side Supabase projection instead of
- * scanning the entire Base event history in every browser session.
- * The endpoint fails closed whenever the indexer cursor is missing or stale.
+ * Listing discovery reads finalized rows from the server-side Supabase projection.
+ * Display can use that projection while it catches up; duplicate checks remain
+ * fail-closed until the endpoint confirms the index is current.
  */
 export async function discoverListingsOnChain(
   onProgress?: (listings: DiscoveredListing[]) => void
@@ -78,7 +84,7 @@ export async function discoverListingsOnChain(
   }
 
   inFlight = (async () => {
-    const result = await readIndex();
+    const result = await readIndex({}, false);
     const listings = (result.listings ?? []).map(normalizeListing);
     cached = { at: Date.now(), listings };
     return listings;
@@ -102,7 +108,7 @@ export async function discoverSellerTokenListingIds(
   seller: `0x${string}`,
   token: `0x${string}`
 ): Promise<string[]> {
-  const result = await readIndex({ seller: seller.toLowerCase(), token: token.toLowerCase() });
+  const result = await readIndex({ seller: seller.toLowerCase(), token: token.toLowerCase() }, true);
   return (result.listings ?? [])
     .map((row) => String(row.listing_id ?? ""))
     .filter((id) => /^\d+$/.test(id));
