@@ -9,6 +9,7 @@ import "../components/HideBuyTxList.css";
 import "../components/SystemInfoStyles.css";
 import "../components/LivingMinimalStyles.css";
 import "../components/MobileResponsive.css";
+import "../components/MobileHeaderResponsive.css";
 
 export const metadata: Metadata = {
   title: "USTETU — Own What’s Next.",
