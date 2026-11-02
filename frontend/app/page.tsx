@@ -96,7 +96,6 @@ export default function HomePage() {
   const [lastKnownLiveListings, setLastKnownLiveListings] = useState<LiveListing[]>([]);
 
   const paymentTokenQuery = useReadContract({
-    chainId: base.id,
     address: USTETU_ESCROW_ADDRESS,
     abi: escrowAbi,
     functionName: "paymentToken",
@@ -115,7 +114,6 @@ export default function HomePage() {
   );
 
   const listingQueries = useReadContracts({
-    chainId: base.id,
     contracts: listingConfigs as never[],
     query: { enabled: listingConfigs.length > 0, refetchInterval: 10000 }
   });
@@ -139,7 +137,6 @@ export default function HomePage() {
   );
 
   const tokenQueries = useReadContracts({
-    chainId: base.id,
     contracts: tokenConfigs as never[],
     query: { enabled: tokenConfigs.length > 0 }
   });
@@ -160,20 +157,17 @@ export default function HomePage() {
     [listings]
   );
   const expectedTokenIdQueries = useReadContracts({
-    chainId: base.id,
     contracts: expectedTokenIdConfigs as never[],
     query: { enabled: expectedTokenIdConfigs.length > 0, refetchInterval: 30000 }
   });
 
   const paymentSymbolQuery = useReadContract({
-    chainId: base.id,
     address: paymentTokenAddress,
     abi: erc20MetadataAbi,
     functionName: "symbol",
     query: { enabled: Boolean(paymentTokenAddress) }
   });
   const paymentDecimalsQuery = useReadContract({
-    chainId: base.id,
     address: paymentTokenAddress,
     abi: erc20MetadataAbi,
     functionName: "decimals",
@@ -334,7 +328,6 @@ export default function HomePage() {
     { address: item.address, abi: erc20MetadataAbi, functionName: "symbol" as const }
   ])).flat(), [stableLiveListings]);
   const metadataQueries = useReadContracts({
-    chainId: base.id,
     contracts: metadataConfigs as never[],
     query: { enabled: metadataConfigs.length > 0 }
   });
