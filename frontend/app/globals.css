@@ -1418,3 +1418,74 @@ body,.app-shell {
     text-shadow:0 1px 0 rgba(220,235,255,.45),0 2px 2px rgba(0,0,0,.9) !important;
   }
 }
+
+/* USTETU — unified high-contrast embossed typography across all panels
+   Static depth is independent of prefers-reduced-motion. */
+:is(
+  .listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+  .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,
+  .detail-grid,.escrow-progress,.orders-panel,.seller-summary-item,
+  .seller-stat,.seller-overview-item,.registry-detail,.seller-locked-order,
+  .inventory-action-card
+) :where(*:not(input):not(textarea):not(select):not(svg):not(path)) {
+  text-shadow:
+    0 1px 0 rgba(226,238,255,.72),
+    0 2px 0 rgba(2,6,14,.98),
+    0 3px 0 rgba(0,0,0,.94),
+    0 5px 7px rgba(0,0,0,.96) !important;
+}
+
+/* Stronger bevel for headings and key values. */
+:is(
+  .listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+  .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,
+  .detail-grid,.escrow-progress,.orders-panel
+) :is(h1,h2,h3,h4,h5,h6,strong,b,th,.seller-value,.seller-stat-value) {
+  -webkit-text-stroke:.16px rgba(225,238,255,.46);
+  text-shadow:
+    0 1px 0 rgba(244,248,255,.88),
+    0 2px 0 rgba(0,0,0,.99),
+    0 4px 0 rgba(0,0,0,.96),
+    0 6px 9px rgba(0,0,0,.98) !important;
+}
+
+/* Preserve the marketplace's orange hierarchy while giving it a bevel. */
+:is(
+  .listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+  .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,
+  .detail-grid,.escrow-progress,.orders-panel
+) :is(.eyebrow,.seller-menu-label,.listing-table thead th) {
+  color:#ffb36f !important;
+  -webkit-text-stroke:.12px rgba(255,224,194,.48);
+  text-shadow:
+    0 1px 0 rgba(255,225,194,.76),
+    0 2px 0 rgba(104,43,8,.98),
+    0 4px 0 rgba(40,15,3,.96),
+    0 6px 8px rgba(0,0,0,.98) !important;
+}
+
+/* Form controls remain crisp and readable, not embossed. */
+:is(
+  .listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+  .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,
+  .detail-grid,.escrow-progress,.orders-panel
+) :is(input,textarea,select,[contenteditable="true"]) {
+  -webkit-text-stroke:0 !important;
+  text-shadow:none !important;
+}
