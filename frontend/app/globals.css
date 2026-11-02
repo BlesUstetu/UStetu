@@ -1244,3 +1244,48 @@ body,.app-shell {
     text-shadow:0 1px 2px rgba(0,0,0,.7) !important;
   }
 }
+
+
+/* USTETU — consistent embossed text across every dashboard and Seller Center panel */
+:is(
+  .listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+  .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+  .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+  .buyer-card,.buyer-panel,.buyer-section,.registry-panel,
+  .modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,
+  .detail-grid,.escrow-progress,.orders-panel
+) :is(
+  h1,h2,h3,h4,h5,h6,p,label,span,strong,b,small,dt,dd,th,td,
+  li,a,button,legend
+):not(input):not(textarea):not(select) {
+  text-shadow:
+    0 1px 0 rgba(58,91,145,.22),
+    0 2px 3px rgba(0,0,0,.78) !important;
+}
+:is(.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+    .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+    .seller-section,.seller-content) :is(h1,h2,h3,h4) {
+  color:#edf3fc !important;
+  font-weight:750;
+  text-shadow:
+    0 1px 0 rgba(73,105,151,.30),
+    0 2px 0 rgba(0,0,0,.78),
+    0 4px 7px rgba(0,0,0,.82) !important;
+}
+:is(.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,
+    .seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,
+    .seller-section,.seller-content) :is(.seller-menu-label,.eyebrow) {
+  color:#ffad67 !important;
+  text-shadow:0 1px 0 rgba(111,45,8,.72),0 2px 4px rgba(0,0,0,.8) !important;
+}
+@media (prefers-reduced-motion:reduce) {
+  :is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+      .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
+      .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+      .seller-panel,.seller-panel-content,.seller-section,.seller-content,
+      .buyer-card,.buyer-panel,.buyer-section,.registry-panel)
+  :is(h1,h2,h3,h4,h5,h6,p,label,span,strong,b,small,dt,dd,th,td,li,a,button) {
+    text-shadow:0 1px 2px rgba(0,0,0,.65) !important;
+  }
+}
