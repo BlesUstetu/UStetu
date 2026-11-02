@@ -2941,3 +2941,30 @@ html body .buy-modal-overlay > .buy-modal {
   filter:none !important;
   opacity:1 !important;
 }
+
+
+/* Footer email icon: remove the cyan square frame and retain the icon only. */
+.site-footer-email {
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  min-width:0 !important;
+  min-height:0 !important;
+}
+.site-footer-email:hover,
+.site-footer-email:focus,
+.site-footer-email:focus-visible {
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+}
+.site-footer-email-icon {
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#b7ff00 !important;
+}
