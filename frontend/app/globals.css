@@ -3197,3 +3197,146 @@ html body .buy-modal-overlay > .buy-modal {
     font-weight:750 !important;
   }
 }
+
+/* Token information + Buy panels: dedicated mobile layout and safe-area sizing. */
+@media (max-width: 600px) {
+  html body .token-drawer {
+    position:fixed !important;
+    top:50% !important;
+    left:50% !important;
+    right:auto !important;
+    bottom:auto !important;
+    transform:translate(-50%,-50%) !important;
+    width:calc(100vw - 24px) !important;
+    max-width:460px !important;
+    height:auto !important;
+    max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    padding:16px 13px calc(16px + env(safe-area-inset-bottom)) !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    overscroll-behavior:contain;
+    border-radius:18px !important;
+    box-sizing:border-box !important;
+  }
+  .token-drawer .drawer-token-head {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+    margin-bottom:14px;
+  }
+  .token-drawer .drawer-token-head h2 {
+    font-size:clamp(17px,5vw,21px) !important;
+    line-height:1.25 !important;
+    overflow-wrap:anywhere;
+  }
+  .token-drawer .detail-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+  .token-drawer .detail-grid > div {
+    min-width:0 !important;
+    padding:9px !important;
+    border-radius:10px !important;
+  }
+  .token-drawer .detail-grid .detail-wide {
+    grid-column:1 / -1 !important;
+  }
+  .token-drawer .detail-grid span {
+    font-size:10px !important;
+    line-height:1.35 !important;
+  }
+  .token-drawer .detail-grid strong {
+    font-size:12px !important;
+    line-height:1.4 !important;
+    overflow-wrap:anywhere;
+  }
+  .token-drawer .address-line {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-width:0;
+  }
+  .token-drawer .address-value {
+    min-width:0;
+    flex:1;
+    font-size:10px !important;
+    overflow-wrap:anywhere;
+    word-break:break-all;
+  }
+  .token-drawer .address-tools { flex:0 0 auto; }
+  .token-drawer .drawer-listing-card {
+    margin-top:10px !important;
+    padding:12px !important;
+  }
+  .token-drawer .drawer-price strong { font-size:18px !important; }
+  .token-drawer .drawer-actions {
+    position:sticky;
+    bottom:calc(-16px - env(safe-area-inset-bottom));
+    margin:12px -13px calc(-16px - env(safe-area-inset-bottom)) !important;
+    padding:10px 13px calc(12px + env(safe-area-inset-bottom)) !important;
+    background:linear-gradient(180deg,rgba(3,9,15,.88),#03090f 35%) !important;
+    z-index:2;
+  }
+  .token-drawer .drawer-actions button {
+    width:100%;
+    min-height:46px !important;
+    font-size:14px !important;
+  }
+
+  html body .buy-modal-overlay {
+    position:fixed !important;
+    inset:0 !important;
+    width:100vw !important;
+    height:100dvh !important;
+    min-height:100dvh !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding: max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom)) !important;
+    overflow-y:auto !important;
+    box-sizing:border-box !important;
+  }
+  html body .buy-modal-overlay > .buy-modal {
+    width:100% !important;
+    max-width:520px !important;
+    max-height:calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    margin:auto !important;
+    padding:15px 13px !important;
+    border-radius:16px !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    box-sizing:border-box !important;
+  }
+  .buy-modal-header { gap:9px !important; margin-bottom:13px !important; }
+  .buy-modal-header h2 { font-size:clamp(18px,5vw,22px) !important; line-height:1.25 !important; }
+  .buy-modal-header p { font-size:12px !important; line-height:1.4 !important; }
+  .buy-order-summary,.buy-balance-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:7px !important;
+    margin:10px 0 !important;
+  }
+  .buy-order-summary > div,.buy-balance-grid > div {
+    min-width:0 !important;
+    padding:9px !important;
+  }
+  .buy-order-summary > div:last-child { grid-column:1 / -1; }
+  .buy-order-summary span,.buy-balance-grid span { font-size:10px !important; }
+  .buy-order-summary strong,.buy-balance-grid strong { font-size:12px !important; overflow-wrap:anywhere; }
+  .buy-input-wrap { min-height:46px; gap:7px !important; padding:7px !important; }
+  .buy-input-wrap input { min-width:0; font-size:16px !important; }
+  .buy-max-button { min-height:34px; padding:7px 9px !important; }
+  .escrow-flow { margin-top:12px !important; padding:10px !important; }
+  .escrow-flow-head { align-items:flex-start !important; flex-wrap:wrap; }
+  .escrow-step { grid-template-columns:24px minmax(0,1fr) !important; gap:8px !important; padding:9px !important; }
+  .escrow-step > b { grid-column:2; max-width:none !important; text-align:left !important; overflow-wrap:anywhere; }
+  .escrow-timing { grid-template-columns:minmax(0,1fr) auto !important; gap:6px 8px !important; }
+  .escrow-tx-summary > a { min-width:0; overflow-wrap:anywhere; }
+  .buy-modal .buy-submit { min-height:48px !important; font-size:14px !important; }
+}
+@media (max-width: 360px) {
+  html body .token-drawer { width:calc(100vw - 16px) !important; padding-left:10px !important; padding-right:10px !important; }
+  .token-drawer .detail-grid { gap:6px !important; }
+  .token-drawer .detail-grid > div { padding:7px !important; }
+  html body .buy-modal-overlay > .buy-modal { padding:12px 10px !important; }
+}
