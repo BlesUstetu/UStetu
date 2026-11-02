@@ -120,6 +120,7 @@ export default function SellerDashboard() {
   }, []);
 
   const registeredQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_SELLER_REGISTRY_ADDRESS,
     abi: sellerRegistryAbi,
     functionName: "isRegisteredSeller",
@@ -127,6 +128,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address }
   });
   const sellerQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_SELLER_REGISTRY_ADDRESS,
     abi: sellerRegistryAbi,
     functionName: "getSeller",
@@ -134,6 +136,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!registeredQuery.data, retry: false }
   });
   const listingQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_ESCROW_ADDRESS,
     abi: escrowAbi,
     functionName: "getListing",
@@ -141,17 +144,20 @@ export default function SellerDashboard() {
     query: { enabled: activeListingId !== null }
   });
   const paymentTokenQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_ESCROW_ADDRESS,
     abi: escrowAbi,
     functionName: "paymentToken"
   });
   const paymentDecimalsQuery = useReadContract({
+    chainId: base.id,
     address: paymentTokenQuery.data,
     abi: erc20MetadataAbi,
     functionName: "decimals",
     query: { enabled: !!paymentTokenQuery.data }
   });
   const claimableQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_ESCROW_ADDRESS,
     abi: escrowAbi,
     functionName: "claimable",
@@ -159,6 +165,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!paymentTokenQuery.data }
   });
   const tokenInfoQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_REGISTRY_ADDRESS,
     abi: registryAbi,
     functionName: "getToken",
@@ -166,12 +173,14 @@ export default function SellerDashboard() {
     query: { enabled: !!listingQuery.data }
   });
   const tokenMetadataQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: erc20MetadataAbi,
     functionName: "symbol",
     query: { enabled: !!tokenInfoQuery.data?.contractAddress }
   });
   const tokenDecimalsQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: erc20MetadataAbi,
     functionName: "decimals",
@@ -184,6 +193,7 @@ export default function SellerDashboard() {
   const createTokenAddress = isAddress(listingTokenAddress) ? listingTokenAddress as `0x${string}` : undefined;
   const createTokenId = createTokenAddress ? tokenIdFor(createTokenAddress) : undefined;
   const createTokenInfoQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_REGISTRY_ADDRESS,
     abi: registryAbi,
     functionName: "getToken",
@@ -191,18 +201,21 @@ export default function SellerDashboard() {
     query: { enabled: !!createTokenId }
   });
   const createTokenSymbolQuery = useReadContract({
+    chainId: base.id,
     address: createTokenAddress,
     abi: erc20MetadataAbi,
     functionName: "symbol",
     query: { enabled: !!createTokenAddress }
   });
   const createTokenDecimalsQuery = useReadContract({
+    chainId: base.id,
     address: createTokenAddress,
     abi: erc20MetadataAbi,
     functionName: "decimals",
     query: { enabled: !!createTokenAddress }
   });
   const tokenBalanceQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: tokenApprovalAbi,
     functionName: "balanceOf",
@@ -210,6 +223,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!tokenInfoQuery.data?.contractAddress }
   });
   const tokenAllowanceQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: tokenApprovalAbi,
     functionName: "allowance",
@@ -217,6 +231,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!tokenInfoQuery.data?.contractAddress }
   });
   const pendingWalletQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_SELLER_REGISTRY_ADDRESS,
     abi: sellerRegistryAbi,
     functionName: "getPendingWithdrawalWallet",
