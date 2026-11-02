@@ -1085,3 +1085,96 @@ button:disabled {
   background:linear-gradient(180deg,rgba(38,61,96,.24),rgba(4,10,20,.12)) !important;
   border-bottom-color:rgba(65,101,153,.32) !important;
 }
+
+
+/* USTETU — Deep Black surfaces with restrained Deep Navy reflections */
+:root {
+  --ust-black-0:#05070B;
+  --ust-black-1:#080C14;
+  --ust-black-2:#0A1222;
+  --ust-navy-0:#101C35;
+  --ust-navy-1:#243A5B;
+  --ust-black-edge:rgba(65,101,153,.35);
+}
+body,.app-shell {
+  background:#05070B !important;
+}
+.app-shell::before {
+  background:
+    radial-gradient(ellipse at 12% 8%,rgba(36,58,91,.13),transparent 32%),
+    radial-gradient(ellipse at 88% 82%,rgba(16,28,53,.16),transparent 36%),
+    linear-gradient(135deg,rgba(36,58,91,.025) 1px,transparent 1px),
+    linear-gradient(45deg,rgba(16,28,53,.02) 1px,transparent 1px) !important;
+  background-size:auto,auto,34px 34px,34px 34px !important;
+}
+.topbar {
+  border-bottom:0 !important;
+  background:#05070B !important;
+  box-shadow:none !important;
+}
+.listing-glass,.seller-card,.buyer-card,.buyer-panel,.buyer-section,
+.inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+.seller-overview-shell,.seller-overview,.seller-menu,.registry-panel,
+.search-glass,.token-drawer,.detail-grid,.drawer-listing-card,
+.escrow-progress,.seller-nav,.seller-tabs,.modal-panel,.dialog-panel,
+.orders-panel {
+  border-color:var(--ust-black-edge) !important;
+  background-image:
+    radial-gradient(ellipse at 9% 0%,rgba(36,58,91,.18),transparent 32%),
+    linear-gradient(145deg,#111a2a 0%,#0b1220 24%,#080d17 62%,#05080e 100%) !important;
+  box-shadow:
+    0 16px 32px rgba(0,0,0,.58),
+    0 3px 8px rgba(0,0,0,.56),
+    inset 0 1px 0 rgba(48,76,119,.24),
+    inset 0 -2px 0 rgba(0,0,0,.82),
+    inset 1px 0 0 rgba(36,58,91,.10) !important;
+}
+.listing-glass::after,.seller-card::after,.buyer-card::after,
+.buyer-panel::after,.buyer-section::after,.inventory-card::after,
+.orders-card::after,.settings-card::after,.earnings-card::after,
+.payout-card::after,.seller-overview-shell::after,.seller-overview::after {
+  border-color:rgba(36,58,91,.10) !important;
+  box-shadow:inset 0 1px 0 rgba(36,58,91,.08) !important;
+}
+.listing-toolbar {
+  background:linear-gradient(180deg,rgba(36,58,91,.18),rgba(5,7,11,.24)) !important;
+  border-bottom-color:rgba(65,101,153,.25) !important;
+}
+.search-glass,.seller-form input,.seller-form select,.seller-form textarea,
+.seller-dashboard input,.seller-dashboard select,.seller-dashboard textarea {
+  background:linear-gradient(180deg,#05080e,#0b1220) !important;
+}
+.row-action,.secondary-glass,.icon-button,
+.seller-dashboard button,.seller-orders button,.orders-refresh,
+.orders-download,.orders-filter,.seller-view-orders,
+.seller-locked-order-action button,.seller-expire-button {
+  background:
+    linear-gradient(180deg,rgba(36,58,91,.24),rgba(5,8,14,0) 28%),
+    linear-gradient(145deg,#17243a 0%,#101b2d 28%,#0a1220 68%,#060a12 100%) !important;
+  border-color:rgba(65,101,153,.42) !important;
+  box-shadow:
+    0 5px 0 #03060b,
+    0 8px 15px rgba(0,0,0,.54),
+    inset 0 1px 0 rgba(55,86,134,.28),
+    inset 0 -2px 0 rgba(0,0,0,.78) !important;
+}
+.row-action:hover,.secondary-glass:hover,.icon-button:hover,
+.seller-dashboard button:hover:not(:disabled),
+.seller-orders button:hover:not(:disabled),.orders-refresh:hover,
+.orders-download:hover,.orders-filter:hover {
+  border-color:rgba(91,133,193,.58) !important;
+  filter:brightness(1.08) !important;
+}
+.seller-summary-item,.seller-stat,.seller-overview-item,
+.orders-summary>div,.seller-earnings-meta,.seller-wallet-status,
+.registry-detail,.seller-locked-order,.inventory-action-card {
+  border-color:rgba(65,101,153,.30) !important;
+  background:
+    linear-gradient(145deg,rgba(36,58,91,.16),rgba(5,8,14,.42) 60%),
+    linear-gradient(145deg,#0e1726,#070c14) !important;
+  box-shadow:inset 0 1px rgba(55,86,134,.20),0 7px 15px rgba(0,0,0,.36) !important;
+}
+.token-mark,.token-mark-large {
+  background:linear-gradient(145deg,#17243a,#080d16) !important;
+  border-color:rgba(65,101,153,.40) !important;
+}
