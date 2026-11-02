@@ -2043,3 +2043,31 @@ body,.app-shell {
     inset 0 2px 0 rgba(255,224,190,.18),
     inset 0 -4px 8px rgba(0,0,0,.84) !important;
 }
+
+/* Remove the inner blue frame around the listing table area.
+   Keep the outer listing-glass cyan frame and row depth. */
+.listing-table-wrap,
+.listing-table,
+.listing-table thead,
+.listing-table tbody {
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+}
+.listing-table {
+  background:transparent !important;
+}
+.listing-table tbody tr.listing-row,
+.listing-table tbody tr.listing-row > td,
+.listing-table tbody tr.listing-row > td:first-child,
+.listing-table tbody tr.listing-row > td:last-child {
+  border:0 !important;
+  outline:0 !important;
+}
+.listing-table tbody tr.listing-row {
+  box-shadow:
+    0 3px 0 rgba(0,20,34,.98),
+    0 8px 13px rgba(0,0,0,.9),
+    inset 0 2px 0 rgba(170,225,246,.10),
+    inset 0 -4px 8px rgba(0,0,0,.82) !important;
+}
