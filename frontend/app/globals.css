@@ -1355,3 +1355,66 @@ body,.app-shell {
     text-shadow:0 1px 0 rgba(180,205,242,.32),0 2px 3px rgba(0,0,0,.88) !important;
   }
 }
+
+
+/* USTETU — high-contrast embossed finish for the desktop marketplace listing table */
+.listing-glass .listing-table thead th {
+  color:#ffb36f !important;
+  -webkit-text-stroke:.18px rgba(255,220,184,.72);
+  text-shadow:
+    0 1px 0 rgba(255,224,194,.88),
+    0 2px 0 rgba(111,49,13,.98),
+    0 3px 0 rgba(36,15,5,.96),
+    0 5px 7px rgba(0,0,0,.96) !important;
+}
+.listing-glass .listing-table tbody td {
+  color:#dce7f7 !important;
+  -webkit-text-stroke:.12px rgba(218,232,251,.55);
+  text-shadow:
+    0 1px 0 rgba(222,235,255,.62),
+    0 2px 0 rgba(3,8,17,.98),
+    0 3px 5px rgba(0,0,0,.96) !important;
+}
+.listing-glass .listing-table tbody td .token-cell strong,
+.listing-glass .listing-table tbody td strong {
+  color:#f5f8ff !important;
+  -webkit-text-stroke:.16px rgba(230,240,255,.72);
+  text-shadow:
+    0 1px 0 rgba(236,245,255,.86),
+    0 2px 0 rgba(5,10,20,.98),
+    0 4px 6px rgba(0,0,0,.98) !important;
+}
+.listing-glass .listing-table tbody td .token-cell > div > span,
+.listing-glass .listing-table tbody td.mono,
+.listing-glass .listing-table tbody td .network-text {
+  color:#b8c9df !important;
+  -webkit-text-stroke:.08px rgba(204,222,246,.42);
+  text-shadow:
+    0 1px 0 rgba(220,234,255,.48),
+    0 2px 0 rgba(2,7,15,.98),
+    0 3px 4px rgba(0,0,0,.96) !important;
+}
+.listing-glass .listing-table tbody td .registered-badge {
+  text-shadow:0 1px 0 rgba(215,255,231,.48),0 2px 2px rgba(0,0,0,.92) !important;
+}
+.listing-glass .listing-table tbody td .row-action {
+  color:#f0f5ff !important;
+  -webkit-text-stroke:.12px rgba(220,235,255,.6);
+  text-shadow:
+    0 1px 0 rgba(232,242,255,.76),
+    0 2px 0 rgba(2,7,15,.98),
+    0 3px 5px rgba(0,0,0,.96) !important;
+}
+@media (max-width:600px) {
+  .listing-glass .listing-mobile-cards :is(.token-cell strong,.mobile-listing-meta strong,.mobile-listing-stats strong,.row-action) {
+    text-shadow:
+      0 1px 0 rgba(220,235,255,.58),
+      0 2px 0 rgba(2,7,15,.98),
+      0 3px 4px rgba(0,0,0,.94) !important;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .listing-glass .listing-table :is(th,td,td *) {
+    text-shadow:0 1px 0 rgba(220,235,255,.45),0 2px 2px rgba(0,0,0,.9) !important;
+  }
+}
