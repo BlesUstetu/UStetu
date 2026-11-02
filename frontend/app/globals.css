@@ -3133,3 +3133,67 @@ html body .buy-modal-overlay > .buy-modal {
     font-size:11px !important;
   }
 }
+
+/* Marketplace listing content: crisp typography across desktop and mobile cards. */
+.listing-glass .listing-table tbody tr.listing-row :is(td,td *),
+.listing-glass .listing-mobile-card :is(*),
+.listing-glass .mobile-listing-card :is(*) {
+  -webkit-font-smoothing:antialiased !important;
+  -moz-osx-font-smoothing:grayscale !important;
+  text-rendering:geometricPrecision !important;
+  -webkit-text-stroke:0 !important;
+  text-shadow:none !important;
+  filter:none !important;
+  opacity:1 !important;
+}
+.listing-glass .listing-table tbody tr.listing-row :is(td,td *) {
+  color:#e6eef7;
+}
+.listing-glass .listing-table tbody tr.listing-row :is(strong,b,.token-name,.token-symbol) {
+  color:#f5f8fc !important;
+  font-weight:750 !important;
+  letter-spacing:0 !important;
+}
+.listing-glass .listing-table tbody tr.listing-row :is(small,.muted,.token-symbol) {
+  color:#b9c9d9 !important;
+  font-weight:500 !important;
+}
+.listing-glass .listing-table tbody tr.listing-row :is(.registered-badge,.status-badge,[data-status="success"]) {
+  color:#5af0ad !important;
+  font-weight:700 !important;
+}
+.listing-glass .listing-table tbody tr.listing-row :is(.network-badge,.network-pill) {
+  color:#dceaf6 !important;
+  font-weight:600 !important;
+}
+.listing-glass .listing-mobile-card,
+.listing-glass .mobile-listing-card {
+  color:#eaf2fa !important;
+}
+.listing-glass .listing-mobile-card :is(h1,h2,h3,strong,b),
+.listing-glass .mobile-listing-card :is(h1,h2,h3,strong,b) {
+  color:#f5f8fc !important;
+  font-weight:750 !important;
+}
+.listing-glass .listing-mobile-card :is(p,span,label,small,dt,dd),
+.listing-glass .mobile-listing-card :is(p,span,label,small,dt,dd) {
+  color:#c3d0dd !important;
+  font-weight:500 !important;
+}
+@media (max-width: 768px) {
+  .listing-glass .listing-mobile-card :is(*),
+  .listing-glass .mobile-listing-card :is(*) {
+    font-size:clamp(12px,3.25vw,14px);
+    line-height:1.45 !important;
+    letter-spacing:0 !important;
+  }
+  .listing-glass .listing-mobile-card :is(h1,h2,h3,strong,b),
+  .listing-glass .mobile-listing-card :is(h1,h2,h3,strong,b) {
+    font-size:clamp(13px,3.6vw,15px) !important;
+  }
+  .listing-glass .listing-mobile-card :is(button,.row-action),
+  .listing-glass .mobile-listing-card :is(button,.row-action) {
+    font-size:12px !important;
+    font-weight:750 !important;
+  }
+}
