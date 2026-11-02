@@ -75,7 +75,6 @@ export default function SellerOrders() {
   const [error, setError] = useState("");
   const [lastScan, setLastScan] = useState("");
   const [filter, setFilter] = useState<OrderFilter>("ALL");
-  const [indexReady, setIndexReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,7 +150,6 @@ export default function SellerOrders() {
         sellerOrders.sort((a, b) => (a.id > b.id ? -1 : a.id < b.id ? 1 : 0));
         if (!cancelled) {
           setOrders(sellerOrders);
-          setIndexReady(Boolean(index.ready));
           setLastScan(`Indexed through Base block ${index.indexedThrough ?? "—"} · ${ids.length} indexed orders`);
           if (!index.ready) setError("Order index is catching up. Some of the newest orders may not appear yet.");
         }
