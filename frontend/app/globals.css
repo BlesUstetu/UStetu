@@ -1856,3 +1856,33 @@ body,.app-shell {
   background:radial-gradient(ellipse at 10% 0%,rgba(0,174,255,.16),transparent 36%),linear-gradient(180deg,#0b1d2c,#030a12 62%,#02060b) !important;
   box-shadow:0 0 22px rgba(0,174,255,.18),0 24px 70px rgba(0,0,0,.82),inset 0 1px 0 rgba(128,220,255,.2) !important;
 }
+
+/* Listing rows use cyan by default; orange is an interaction highlight only. */
+.listing-table tbody tr.listing-row:first-child {
+  background:linear-gradient(180deg,#101d2b 0%,#06111c 48%,#02080e 100%) !important;
+  box-shadow:0 0 0 1px rgba(0,157,222,.56),0 5px 12px rgba(0,0,0,.72),inset 0 1px 0 rgba(132,218,255,.12) !important;
+}
+.listing-table tbody tr.listing-row:first-child td {
+  border-color:rgba(0,174,255,.16) !important;
+}
+.listing-table tbody tr.listing-row:hover,
+.listing-table tbody tr.listing-row:focus-within {
+  background:linear-gradient(180deg,#332319 0%,#17110e 48%,#08090c 100%) !important;
+  box-shadow:0 0 0 1px #ff8a18,0 0 12px rgba(255,128,22,.22),0 6px 14px rgba(0,0,0,.76),inset 0 1px 0 rgba(255,198,127,.25) !important;
+}
+.listing-table tbody tr.listing-row:hover td,
+.listing-table tbody tr.listing-row:focus-within td {
+  border-color:rgba(255,138,24,.62) !important;
+}
+@media (max-width:600px) {
+  .listing-mobile-card:first-child {
+    border-color:rgba(0,174,255,.72) !important;
+    background:linear-gradient(180deg,#101d2b,#030910) !important;
+  }
+  .listing-mobile-card:hover,
+  .listing-mobile-card:focus-within {
+    border-color:#ff8a18 !important;
+    background:linear-gradient(180deg,#302116,#08090c) !important;
+    box-shadow:0 0 12px rgba(255,128,22,.22),inset 0 1px 0 rgba(255,198,127,.2) !important;
+  }
+}
