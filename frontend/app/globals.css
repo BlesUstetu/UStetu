@@ -682,3 +682,238 @@ html[data-theme="light"] .escrow-progress-bar {
   .mobile-listing-stats { gap: 6px; }
   .mobile-listing-stats > div > strong { font-size: 11px; }
 }
+
+
+/* USTETU — Dark Industrial Web3 surface system */
+:root {
+  --ust-metal-0:#080a0d;
+  --ust-metal-1:#11151a;
+  --ust-metal-2:#1b2026;
+  --ust-metal-3:#303740;
+  --ust-metal-edge:rgba(190,202,215,.34);
+  --ust-orange:#ff7a1a;
+  --ust-orange-bright:#ff9a38;
+  --ust-orange-soft:rgba(255,122,26,.16);
+  --ust-orange-edge:rgba(255,145,55,.62);
+  --ust-steel-text:#e8edf2;
+  --ust-steel-muted:#9ba6b2;
+  --accent:#ff8a28;
+  --accent-strong:#e76612;
+  --line:rgba(190,202,215,.18);
+  --glass:rgba(20,25,31,.88);
+  --glass-strong:rgba(15,19,24,.96);
+  --glass-hover:rgba(43,49,57,.96);
+  --shadow:0 24px 58px rgba(0,0,0,.48);
+}
+body,.app-shell {
+  background:#080a0d !important;
+  color:#edf1f5;
+}
+.app-shell::before {
+  background:
+    radial-gradient(ellipse at 12% 8%,rgba(255,122,26,.075),transparent 30%),
+    radial-gradient(ellipse at 88% 82%,rgba(110,125,140,.08),transparent 34%),
+    linear-gradient(135deg,rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(45deg,rgba(255,255,255,.012) 1px,transparent 1px) !important;
+  background-size:auto,auto,34px 34px,34px 34px !important;
+  animation:none !important;
+}
+.topbar {
+  border-bottom:1px solid rgba(255,255,255,.09) !important;
+  background:linear-gradient(180deg,rgba(20,24,29,.94),rgba(7,9,12,.96)) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.09) !important;
+}
+.icon-button,.language-control,.network-pill,.search-glass,
+.listing-glass,.token-drawer,.detail-grid,.drawer-listing-card,
+.escrow-progress,.seller-card,.seller-nav,.seller-tabs,.buyer-card,
+.buyer-panel,.buyer-section,.inventory-card,.orders-card,.settings-card,
+.earnings-card,.payout-card,.modal-panel,.dialog-panel,.orders-panel,
+.seller-overview-shell,.seller-overview,.seller-menu,.registry-panel {
+  border:1px solid var(--ust-metal-edge) !important;
+  background:
+    radial-gradient(circle at 8% 0%,rgba(255,255,255,.075),transparent 24%),
+    linear-gradient(145deg,#30363d 0%,#1b2026 18%,#101419 58%,#080b0f 100%) padding-box !important;
+  box-shadow:
+    0 16px 30px rgba(0,0,0,.48),
+    0 4px 9px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -2px 0 rgba(0,0,0,.72),
+    inset 1px 0 0 rgba(255,255,255,.07) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.listing-glass,.seller-card,.buyer-card,.buyer-panel,.buyer-section,
+.inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+.seller-overview-shell,.seller-overview,.seller-menu,.registry-panel {
+  position:relative;
+  border-radius:17px !important;
+}
+.listing-glass::after,.seller-card::after,.buyer-card::after,
+.buyer-panel::after,.buyer-section::after,.inventory-card::after,
+.orders-card::after,.settings-card::after,.earnings-card::after,
+.payout-card::after,.seller-overview-shell::after,.seller-overview::after {
+  content:"";
+  position:absolute;
+  inset:4px;
+  border:1px solid rgba(255,255,255,.045);
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.listing-toolbar {
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.08)) !important;
+  border-bottom:1px solid rgba(190,202,215,.18) !important;
+}
+.listing-table th,.orders-table th {
+  color:#ffb06c !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(0,0,0,.16));
+}
+.listing-table td,.orders-table td {
+  border-color:rgba(190,202,215,.13) !important;
+}
+.listing-row:hover {
+  background:linear-gradient(90deg,rgba(255,122,26,.11),rgba(255,122,26,.025)) !important;
+  box-shadow:inset 3px 0 0 var(--ust-orange) !important;
+}
+.search-glass {
+  border-radius:12px !important;
+  background:linear-gradient(145deg,#343b43,#14191f 52%,#0b0e12) !important;
+}
+.search-glass input,.seller-form input,.seller-form select,
+.seller-form textarea,.seller-dashboard input,.seller-dashboard select,
+.seller-dashboard textarea {
+  border:1px solid rgba(194,205,216,.32) !important;
+  border-radius:9px !important;
+  background:linear-gradient(180deg,#080b0f,#1a2027) !important;
+  color:#f1f4f7 !important;
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.72),inset 0 1px rgba(255,255,255,.09),0 1px 0 rgba(255,255,255,.05) !important;
+}
+.search-glass input:focus,.seller-dashboard input:focus,
+.seller-dashboard select:focus,.seller-dashboard textarea:focus {
+  outline:1px solid rgba(255,145,55,.72) !important;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.72),0 0 0 3px rgba(255,122,26,.12) !important;
+}
+.row-action,.secondary-glass,.primary-glass,.icon-button,
+.seller-dashboard button,.seller-orders button,.orders-refresh,
+.orders-download,.orders-filter,.seller-view-orders,
+.seller-locked-order-action button,.seller-expire-button {
+  border:1px solid rgba(210,220,230,.48) !important;
+  border-radius:10px !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 28%),
+    linear-gradient(145deg,#59616a 0%,#343b43 24%,#1b2128 62%,#0c1015 100%) !important;
+  color:#edf1f5 !important;
+  text-shadow:0 1px 1px rgba(0,0,0,.8);
+  box-shadow:
+    0 5px 0 #07090c,
+    0 8px 15px rgba(0,0,0,.48),
+    inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 -2px 0 rgba(0,0,0,.7) !important;
+  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease !important;
+}
+.row-action:hover,.secondary-glass:hover,.icon-button:hover,
+.seller-dashboard button:hover:not(:disabled),
+.seller-orders button:hover:not(:disabled),.orders-refresh:hover,
+.orders-download:hover,.orders-filter:hover {
+  filter:brightness(1.18);
+  transform:translateY(-1px);
+  box-shadow:0 6px 0 #07090c,0 11px 19px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.4) !important;
+}
+.row-action:active,.secondary-glass:active,
+.seller-dashboard button:active:not(:disabled),
+.seller-orders button:active:not(:disabled) {
+  transform:translateY(2px);
+  box-shadow:0 2px 0 #07090c,0 4px 8px rgba(0,0,0,.45),inset 0 2px 5px rgba(0,0,0,.4) !important;
+}
+.primary-glass,.seller-dashboard button.primary,
+.seller-dashboard button.registry-button,.seller-dashboard .primary {
+  border-color:rgba(255,184,121,.82) !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0) 26%),
+    linear-gradient(145deg,#ffb05e 0%,#ff8428 32%,#e75a0c 72%,#9d3507 100%) !important;
+  color:#fff !important;
+  box-shadow:
+    0 5px 0 #702707,
+    0 9px 18px rgba(255,105,18,.23),
+    inset 0 1px 0 rgba(255,255,255,.52),
+    inset 0 -2px 0 rgba(90,25,0,.55) !important;
+}
+.primary-glass:hover:not(:disabled),.seller-dashboard button.primary:hover:not(:disabled),
+.seller-dashboard button.registry-button:hover:not(:disabled),
+.seller-dashboard .primary:hover:not(:disabled) {
+  filter:brightness(1.12) saturate(1.08);
+  box-shadow:0 6px 0 #702707,0 12px 24px rgba(255,105,18,.3),inset 0 1px rgba(255,255,255,.6) !important;
+}
+button:disabled {
+  filter:grayscale(.55) brightness(.72);
+  cursor:not-allowed !important;
+}
+.danger,.seller-dashboard button.danger {
+  border-color:rgba(255,119,119,.6) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),transparent 26%),linear-gradient(145deg,#773c3c,#3a171a 70%,#180b0d) !important;
+}
+.eyebrow,.language-globe,.language-option.is-active span,
+.seller-menu-label,.seller-panel-intro strong {
+  color:#ff9b4b !important;
+}
+.seller-menu {
+  padding:12px !important;
+}
+.seller-menu-items button,.seller-menu button {
+  border-radius:9px !important;
+}
+.seller-menu button[aria-current="page"],
+.seller-menu button.active,.orders-filter.active {
+  border-color:var(--ust-orange-edge) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.24),transparent 25%),linear-gradient(145deg,#ff9a40,#d9570c 72%,#782a08) !important;
+  color:#fff !important;
+  box-shadow:0 4px 0 #6f2908,0 7px 14px rgba(255,112,25,.22),inset 0 1px rgba(255,255,255,.5) !important;
+}
+.seller-summary-item,.seller-stat,.seller-overview-item,
+.orders-summary>div,.seller-earnings-meta,.seller-wallet-status,
+.registry-detail,.seller-locked-order,.inventory-action-card {
+  border:1px solid rgba(190,202,215,.22) !important;
+  border-radius:11px !important;
+  background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(0,0,0,.2) 58%),linear-gradient(145deg,#222930,#11161c) !important;
+  box-shadow:inset 0 1px rgba(255,255,255,.11),0 7px 15px rgba(0,0,0,.25) !important;
+}
+.seller-value,.seller-summary-item strong,.orders-summary strong {
+  color:#f4f6f8 !important;
+}
+.seller-note,.seller-sub,.seller-panel-intro,
+.orders-page-intro,.orders-toolbar-info {
+  color:#aab4bf !important;
+}
+.seller-wallet-status.ready,.approved {
+  border-color:rgba(109,206,135,.42) !important;
+}
+.language-options {
+  border:1px solid rgba(255,153,76,.48) !important;
+  background:linear-gradient(145deg,#282e35,#0b0e12) !important;
+}
+.language-option:hover,.language-option.is-active {
+  background:linear-gradient(90deg,rgba(255,122,26,.2),rgba(255,122,26,.06)) !important;
+}
+.network-pill {
+  color:#dce3e9 !important;
+}
+.token-mark,.token-mark-large {
+  border:1px solid rgba(255,167,94,.48) !important;
+  background:linear-gradient(145deg,#4c555e,#171c22) !important;
+  box-shadow:inset 0 1px rgba(255,255,255,.24),0 5px 12px rgba(0,0,0,.42) !important;
+}
+.verified-badge {
+  border-color:rgba(255,158,83,.55) !important;
+  color:#ffad69 !important;
+}
+.listing-discovery-warning {
+  background:rgba(255,122,26,.08) !important;
+  border-color:rgba(255,145,55,.24) !important;
+}
+.site-footer-email-icon { color:#ff922f !important; }
+@media (max-width:820px) {
+  .seller-card,.listing-glass,.orders-card,.buyer-card,.buyer-panel { box-shadow:0 10px 24px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.17),inset 0 -2px rgba(0,0,0,.55) !important; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; }
+}
