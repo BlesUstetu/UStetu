@@ -3401,3 +3401,12 @@ html body .buy-modal-overlay > .buy-modal {
   .system-contract-address { grid-template-columns:minmax(0,1fr); }
   .system-contract-address button { width:100%; min-height:40px; }
 }
+
+
+/* Preserve semantic status and orange table-header colors after the readability pass. */
+:is(.seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.orders-card,.orders-panel) :where(table thead th,table th) {
+  color:#ffad70 !important;
+}
+:is(.seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.orders-card,.orders-panel) .seller-wallet-status.ready :where(strong,b,span) {
+  color:#54f0ae !important;
+}
