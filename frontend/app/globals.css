@@ -2922,3 +2922,22 @@ html body .buy-modal-overlay > .buy-modal {
 @media (prefers-reduced-motion:reduce) {
   .buy-modal .buy-submit { transition:none !important; }
 }
+
+/* Marketplace table headings: crisp orange text, no blurred emboss effect. */
+.listing-glass .listing-table thead th,
+.listing-glass .listing-table thead th:first-child,
+.listing-glass .listing-table thead th * {
+  color:#ffad59 !important;
+  font-family:inherit !important;
+  font-size:13px !important;
+  font-weight:850 !important;
+  letter-spacing:.015em !important;
+  line-height:1.25 !important;
+  -webkit-font-smoothing:antialiased !important;
+  -moz-osx-font-smoothing:grayscale !important;
+  text-rendering:geometricPrecision !important;
+  -webkit-text-stroke:0 !important;
+  text-shadow:none !important;
+  filter:none !important;
+  opacity:1 !important;
+}
