@@ -69,7 +69,7 @@ export async function GET(request: Request) {
         .eq("event_name", "OrderCreated")
         .eq("removed", false)
         .not("finalized_at", "is", null)
-        .filter("payload->>seller", "eq", seller)
+        .filter("payload->>seller", "ilike", seller)
         .order("block_number", { ascending: false })
         .range(offset, offset + pageSize - 1);
       if (listingId !== null) query = query.filter("payload->>listingId", "eq", listingId);
