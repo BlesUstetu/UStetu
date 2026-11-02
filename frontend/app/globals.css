@@ -2152,3 +2152,108 @@ body,.app-shell {
     0 7px 9px rgba(0,0,0,.94) !important;
   filter:drop-shadow(0 1px 1px rgba(0,0,0,.72));
 }
+
+/* Final Marketplace polish: coherent recessed search, restrained live pulse,
+   tactile View action, and consistent listing rhythm on desktop/mobile. */
+
+/* Search field: visibly recessed into the black surface. */
+.search-glass {
+  background:linear-gradient(180deg,#06111a 0%,#02070c 100%) !important;
+  box-shadow:
+    inset 0 4px 10px rgba(0,0,0,.88),
+    inset 0 1px 0 rgba(0,0,0,.92),
+    0 1px 0 rgba(104,211,245,.16),
+    0 0 12px rgba(0,174,255,.10) !important;
+}
+.search-glass input {
+  background:linear-gradient(180deg,#01050a 0%,#071522 100%) !important;
+  box-shadow:
+    inset 0 4px 8px rgba(0,0,0,.94),
+    inset 0 1px 0 rgba(0,0,0,.86),
+    0 1px 0 rgba(116,212,242,.14) !important;
+}
+.search-glass:focus-within {
+  border-color:rgba(68,211,255,.78) !important;
+  box-shadow:inset 0 4px 10px rgba(0,0,0,.88),0 0 0 1px rgba(0,174,255,.12),0 0 16px rgba(0,174,255,.16) !important;
+}
+
+/* Live dot: slow, subtle pulse without making the UI distracting. */
+@keyframes ustetu-live-pulse {
+  0%,100% { opacity:1; box-shadow:0 0 7px #25f59a,0 0 13px rgba(37,245,154,.46); }
+  50% { opacity:.72; box-shadow:0 0 3px #25f59a,0 0 7px rgba(37,245,154,.24); }
+}
+.status-dot i {
+  animation:ustetu-live-pulse 2.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce) {
+  .status-dot i { animation:none !important; }
+}
+
+/* Listing rows: subtle top bevel, stronger recessed center and soft lower depth. */
+.listing-glass .listing-table tbody tr.listing-row {
+  border-radius:16px;
+  background:
+    linear-gradient(180deg,rgba(142,218,245,.10) 0%,rgba(20,55,75,.025) 14%,rgba(0,0,0,.24) 58%,rgba(0,0,0,.52) 100%),
+    linear-gradient(180deg,#081a28 0%,#020a12 52%,#010407 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(177,229,247,.18),
+    inset 0 5px 9px rgba(0,0,0,.52),
+    inset 0 13px 18px rgba(0,0,0,.58),
+    inset 0 -3px 0 rgba(0,0,0,.92),
+    0 7px 12px rgba(0,0,0,.76) !important;
+}
+.listing-glass .listing-table tbody tr.listing-row > td {
+  padding-top:16px !important;
+  padding-bottom:16px !important;
+}
+
+/* View: raised cyan button, with a clear press-in response and orange hover cue. */
+.listing-glass .listing-table .row-action,
+.listing-glass .listing-table button.row-action {
+  border:1px solid rgba(0,190,255,.82) !important;
+  background:linear-gradient(180deg,#12405b 0%,#08263a 44%,#020b14 100%) !important;
+  box-shadow:
+    0 1px 0 rgba(190,238,255,.38),
+    0 3px 0 rgba(0,59,91,.96),
+    0 6px 10px rgba(0,0,0,.76),
+    inset 0 1px 0 rgba(215,245,255,.18),
+    inset 0 -2px 0 rgba(0,0,0,.84) !important;
+  transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease,filter .14s ease;
+}
+.listing-glass .listing-table .row-action:hover,
+.listing-glass .listing-table button.row-action:hover {
+  border-color:#ff9a35 !important;
+  box-shadow:
+    0 1px 0 rgba(255,218,180,.48),
+    0 3px 0 rgba(117,48,8,.94),
+    0 0 12px rgba(255,138,24,.18),
+    0 6px 10px rgba(0,0,0,.76),
+    inset 0 1px 0 rgba(255,230,204,.18) !important;
+}
+.listing-glass .listing-table .row-action:active,
+.listing-glass .listing-table button.row-action:active {
+  transform:translateY(3px);
+  box-shadow:0 1px 0 rgba(0,45,70,.9),inset 0 3px 6px rgba(0,0,0,.76) !important;
+}
+@media (prefers-reduced-motion:reduce) {
+  .listing-glass .listing-table .row-action,
+  .listing-glass .listing-table button.row-action { transition:none !important; }
+}
+
+/* Stable row rhythm; compact without crowding on smaller screens. */
+.listing-glass .listing-table { border-spacing:0 10px !important; }
+@media (max-width:820px) {
+  .listing-glass .listing-table { border-spacing:0 8px !important; }
+}
+@media (max-width:600px) {
+  .listing-glass .listing-mobile-card {
+    box-shadow:
+      inset 0 1px 0 rgba(177,229,247,.16),
+      inset 0 6px 10px rgba(0,0,0,.48),
+      inset 0 -3px 0 rgba(0,0,0,.84),
+      0 6px 12px rgba(0,0,0,.72) !important;
+  }
+  .listing-glass .listing-mobile-card .row-action {
+    min-height:38px;
+  }
+}
