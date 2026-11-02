@@ -981,3 +981,107 @@ button:disabled {
   filter:brightness(1.06) saturate(1.04) !important;
   box-shadow:0 6px 0 #702707,0 10px 19px rgba(255,105,18,.22),inset 0 1px rgba(255,255,255,.32) !important;
 }
+
+
+/* USTETU — Deep Navy industrial reflections (replace white sheen) */
+:root {
+  --ust-navy-0:#0A1222;
+  --ust-navy-1:#101C35;
+  --ust-navy-2:#243A5B;
+  --ust-navy-edge:rgba(65,101,153,.52);
+  --ust-navy-soft:rgba(36,58,91,.18);
+}
+
+/* Navy-blue reflections on graphite panels; no bright white gloss. */
+.listing-glass,.seller-card,.buyer-card,.buyer-panel,.buyer-section,
+.inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
+.seller-overview-shell,.seller-overview,.seller-menu,.registry-panel,
+.search-glass,.token-drawer,.detail-grid,.drawer-listing-card,
+.escrow-progress,.seller-nav,.seller-tabs,.modal-panel,.dialog-panel,
+.orders-panel {
+  border-color:var(--ust-navy-edge) !important;
+  background-image:
+    radial-gradient(ellipse at 9% 0%,rgba(55,91,145,.16),transparent 31%),
+    linear-gradient(145deg,#273345 0%,#1a2433 19%,#101722 58%,#080d16 100%) !important;
+  box-shadow:
+    0 14px 28px rgba(0,0,0,.50),
+    0 3px 7px rgba(0,0,0,.52),
+    inset 0 1px 0 rgba(73,105,151,.30),
+    inset 0 -2px 0 rgba(0,0,0,.74),
+    inset 1px 0 0 rgba(55,84,128,.14) !important;
+}
+.listing-glass::after,.seller-card::after,.buyer-card::after,
+.buyer-panel::after,.buyer-section::after,.inventory-card::after,
+.orders-card::after,.settings-card::after,.earnings-card::after,
+.payout-card::after,.seller-overview-shell::after,.seller-overview::after {
+  border-color:rgba(57,91,143,.12) !important;
+  box-shadow:inset 0 1px 0 rgba(58,91,145,.10) !important;
+}
+
+/* Secondary metal controls use navy bevels instead of white reflections. */
+.row-action,.secondary-glass,.icon-button,
+.seller-dashboard button,.seller-orders button,.orders-refresh,
+.orders-download,.orders-filter,.seller-view-orders,
+.seller-locked-order-action button,.seller-expire-button {
+  border-color:rgba(74,105,151,.58) !important;
+  background:
+    linear-gradient(180deg,rgba(50,78,119,.34),rgba(10,18,34,0) 28%),
+    linear-gradient(145deg,#34445b 0%,#26364e 25%,#172438 64%,#0b1423 100%) !important;
+  box-shadow:
+    0 5px 0 #060b14,
+    0 7px 13px rgba(0,0,0,.48),
+    inset 0 1px 0 rgba(79,111,159,.36),
+    inset 0 -2px 0 rgba(0,0,0,.72) !important;
+}
+.row-action:hover,.secondary-glass:hover,.icon-button:hover,
+.seller-dashboard button:hover:not(:disabled),
+.seller-orders button:hover:not(:disabled),.orders-refresh:hover,
+.orders-download:hover,.orders-filter:hover {
+  filter:brightness(1.09) !important;
+  border-color:rgba(91,133,193,.72) !important;
+  box-shadow:
+    0 6px 0 #060b14,
+    0 9px 16px rgba(0,0,0,.52),
+    inset 0 1px 0 rgba(92,132,187,.42) !important;
+}
+
+/* Preserve industrial orange primary actions, with a restrained navy upper bevel. */
+.primary-glass,.seller-dashboard button.primary,
+.seller-dashboard button.registry-button,.seller-dashboard .primary {
+  background:
+    linear-gradient(180deg,rgba(43,66,101,.42),rgba(10,18,34,0) 25%),
+    linear-gradient(145deg,#f59b4c 0%,#f07820 32%,#d9510b 72%,#913006 100%) !important;
+  box-shadow:
+    0 5px 0 #702707,
+    0 8px 15px rgba(255,105,18,.17),
+    inset 0 1px 0 rgba(69,99,145,.40),
+    inset 0 -2px 0 rgba(90,25,0,.55) !important;
+}
+.primary-glass:hover:not(:disabled),.seller-dashboard button.primary:hover:not(:disabled),
+.seller-dashboard button.registry-button:hover:not(:disabled),
+.seller-dashboard .primary:hover:not(:disabled) {
+  filter:brightness(1.06) saturate(1.04) !important;
+  box-shadow:0 6px 0 #702707,0 10px 19px rgba(255,105,18,.21),inset 0 1px rgba(78,111,161,.44) !important;
+}
+
+/* Navy accents for active navigation and compact information tiles. */
+.seller-menu button[aria-current="page"],
+.seller-menu button.active,.orders-filter.active {
+  box-shadow:
+    0 4px 0 #6f2908,
+    0 7px 14px rgba(255,112,25,.18),
+    inset 0 1px rgba(67,99,146,.42) !important;
+}
+.seller-summary-item,.seller-stat,.seller-overview-item,
+.orders-summary>div,.seller-earnings-meta,.seller-wallet-status,
+.registry-detail,.seller-locked-order,.inventory-action-card {
+  border-color:rgba(65,101,153,.42) !important;
+  background:
+    linear-gradient(145deg,rgba(44,70,108,.24),rgba(5,12,24,.28) 58%),
+    linear-gradient(145deg,#202d40,#101a2a) !important;
+  box-shadow:inset 0 1px rgba(68,102,153,.28),0 7px 15px rgba(0,0,0,.28) !important;
+}
+.listing-toolbar {
+  background:linear-gradient(180deg,rgba(38,61,96,.24),rgba(4,10,20,.12)) !important;
+  border-bottom-color:rgba(65,101,153,.32) !important;
+}
