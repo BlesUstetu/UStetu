@@ -59,9 +59,12 @@ export default function BuyModalFlow(props: Props) {
   const client = usePublicClient();
   const { address } = useAccount();
   const [recoveryKey, setRecoveryKey] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const [completed, setCompleted] = useState<Completed | null>(null);
   const baselineBlockRef = useRef<bigint | null>(null);
   const seenOrderRef = useRef<bigint | null>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,7 +117,9 @@ export default function BuyModalFlow(props: Props) {
     };
   }, [props.open, props.listingId, client, address]);
 
-  if (completed && typeof document !== "undefined") {
+  if (!mounted || typeof document === "undefined") return null;
+
+  if (completed) {
     return createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4">
         <div className="w-full max-w-md rounded-2xl border border-emerald-400/40 bg-[#0b1424] p-6 text-white shadow-2xl">
@@ -135,12 +140,12 @@ export default function BuyModalFlow(props: Props) {
             </div>
             {completed.txHash ? <a className="mt-2 block break-all text-cyan-300 underline" href={`${BASESCAN_TX}${completed.txHash}`} target="_blank" rel="noreferrer">{completed.txHash.slice(0, 10)}…{completed.txHash.slice(-8)} ↗</a> : <div className="mt-2 text-slate-400">Confirmed. Searching for transaction hash…</div>}
           </div>
-          <button type="button" className="mt-4 w-full rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-200" onClick={props.onCompleted}>Done</button>
+          <button type="button" className="mt-4 w-full rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-200" onClick={() => { props.onCompleted(); props.onClose(); }}>Done</button>
         </div>
       </div>,
       document.body
     );
   }
 
-  return <BuyModal key={recoveryKey} {...props} />;
+  return createPortal(<BuyModal key={recoveryKey} {...props} />, document.body);
 }
