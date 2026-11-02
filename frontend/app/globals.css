@@ -1178,3 +1178,69 @@ body,.app-shell {
   background:linear-gradient(145deg,#17243a,#080d16) !important;
   border-color:rgba(65,101,153,.40) !important;
 }
+
+
+/* USTETU — embossed typography for panel depth */
+.listing-toolbar .listing-count,
+.listing-toolbar .status-dot,
+.listing-table th,
+.listing-table td,
+.listing-table td *,
+.seller-card h1,.seller-card h2,.seller-card h3,
+.buyer-card h1,.buyer-card h2,.buyer-card h3,
+.buyer-panel h1,.buyer-panel h2,.buyer-panel h3,
+.seller-overview strong,.seller-summary-item strong,
+.seller-stat strong,.seller-value,.orders-summary strong {
+  text-shadow:
+    0 1px 0 rgba(65,101,153,.30),
+    0 2px 3px rgba(0,0,0,.82),
+    0 -1px 0 rgba(0,0,0,.45);
+}
+.listing-table th {
+  color:#ffad67 !important;
+  font-weight:800 !important;
+  letter-spacing:.10em !important;
+  text-shadow:
+    0 1px 0 rgba(255,194,139,.20),
+    0 2px 0 rgba(93,39,8,.82),
+    0 4px 7px rgba(0,0,0,.85) !important;
+}
+.listing-table td {
+  color:#c4d0e0 !important;
+  text-shadow:
+    0 1px 0 rgba(57,86,129,.24),
+    0 2px 3px rgba(0,0,0,.9) !important;
+}
+.token-cell strong,
+.listing-table td strong,
+.seller-card strong,.buyer-card strong,.buyer-panel strong,
+.seller-overview strong,.seller-summary-item strong,
+.seller-stat strong,.seller-value,.orders-summary strong {
+  color:#f0f4fb !important;
+  font-weight:750 !important;
+  text-shadow:
+    0 1px 0 rgba(88,119,164,.30),
+    0 2px 0 rgba(0,0,0,.72),
+    0 4px 6px rgba(0,0,0,.88) !important;
+}
+.token-cell span,.mono,.address-value,.network-text,
+.listing-toolbar .listing-count,.listing-toolbar .status-dot {
+  text-shadow:0 1px 0 rgba(0,0,0,.88),0 0 7px rgba(36,58,91,.16) !important;
+}
+.verified-badge,.seller-wallet-status,.approved {
+  text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 5px rgba(75,190,125,.12) !important;
+}
+.row-action,.secondary-glass,.primary-glass,
+.seller-dashboard button,.seller-orders button {
+  text-shadow:0 1px 0 rgba(90,120,164,.22),0 2px 3px rgba(0,0,0,.9) !important;
+}
+.drawer-token-head h2,.drawer-listing-title,.drawer-price strong,
+.drawer-available strong,.detail-grid strong,.detail-grid span {
+  text-shadow:0 1px 0 rgba(65,101,153,.22),0 2px 4px rgba(0,0,0,.86) !important;
+}
+@media (prefers-reduced-motion:reduce) {
+  .listing-table th,.listing-table td,.listing-table td *,
+  .token-cell strong,.row-action,.secondary-glass,.primary-glass {
+    text-shadow:0 1px 2px rgba(0,0,0,.7) !important;
+  }
+}
