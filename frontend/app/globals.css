@@ -3810,3 +3810,119 @@ html body .topbar {
   .search-glass input,
   .search-glass input:focus { min-height: 40px !important; }
 }
+
+/* SELLER CENTER — typography clarity pass across every Seller tab. */
+.seller-dashboard,
+.seller-dashboard *,
+.seller-orders,
+.seller-orders * {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  text-rendering: optimizeLegibility;
+}
+
+.seller-dashboard,
+.seller-orders {
+  color: #f4f7fc !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.seller-dashboard :is(h1,h2,h3,h4),
+.seller-orders :is(h1,h2,h3,h4) {
+  color: #f8fbff !important;
+  font-weight: 750 !important;
+  line-height: 1.3 !important;
+}
+
+.seller-dashboard :is(p,label,small,li),
+.seller-orders :is(p,label,small,li) {
+  color: #d0dbea !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.55 !important;
+}
+
+.seller-dashboard :is(.seller-note,.seller-sub,.seller-panel-intro,.seller-menu-label),
+.seller-orders :is(.seller-note,.seller-sub,.seller-panel-intro,.orders-page-intro,.orders-toolbar-info) {
+  color: #c1cede !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.55 !important;
+}
+
+.seller-dashboard :is(.eyebrow,.seller-menu-label,.seller-panel-intro strong),
+.seller-orders :is(.eyebrow,.seller-menu-label) {
+  color: #ffad70 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .075em !important;
+}
+
+.seller-dashboard :is(.seller-value,.seller-summary-item strong,.seller-stat strong,.seller-overview-item strong,.seller-summary-item b),
+.seller-orders :is(.seller-value,.orders-summary strong) {
+  color: #f7faff !important;
+  font-size: 16px !important;
+  font-weight: 750 !important;
+  line-height: 1.35 !important;
+}
+
+.seller-dashboard button,
+.seller-orders button,
+.seller-dashboard :is(input,select,textarea),
+.seller-orders :is(input,select,textarea) {
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1.4 !important;
+}
+
+.seller-dashboard :is(input,select,textarea),
+.seller-orders :is(input,select,textarea) {
+  color: #f5f8fc !important;
+  font-weight: 500 !important;
+}
+
+.seller-dashboard :is(input,select,textarea)::placeholder,
+.seller-orders :is(input,select,textarea)::placeholder {
+  color: #aebed0 !important;
+  opacity: 1 !important;
+}
+
+.seller-dashboard :is(table th, .table-label),
+.seller-orders :is(table th, .table-label) {
+  color: #ffb77f !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .045em !important;
+}
+
+.seller-dashboard :is(table td, .seller-wallet-status, .seller-locked-order),
+.seller-orders :is(table td, .seller-wallet-status, .seller-locked-order) {
+  color: #e3ebf5 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.seller-dashboard button:disabled,
+.seller-orders button:disabled {
+  color: #c0cad7 !important;
+  -webkit-text-fill-color: #c0cad7 !important;
+}
+
+@media (max-width: 600px) {
+  .seller-dashboard,
+  .seller-orders {
+    font-size: 14px !important;
+  }
+  .seller-dashboard :is(p,label,small,li),
+  .seller-orders :is(p,label,small,li),
+  .seller-dashboard :is(.seller-note,.seller-sub,.seller-panel-intro),
+  .seller-orders :is(.seller-note,.seller-sub,.seller-panel-intro,.orders-page-intro,.orders-toolbar-info) {
+    font-size: 12px !important;
+  }
+  .seller-dashboard button,
+  .seller-orders button {
+    font-size: 12px !important;
+  }
+}

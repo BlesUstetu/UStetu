@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
+import { base } from "wagmi/chains";
 import Header from "@/components/Header";
 import BuyModalFlow from "@/components/BuyModalFlow";
 import TokenLogo from "@/components/TokenLogo";

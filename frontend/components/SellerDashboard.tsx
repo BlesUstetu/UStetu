@@ -76,7 +76,6 @@ function generateListingId(): bigint {
 export default function SellerDashboard() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const publicClient = usePublicClient();
   const basePublicClient = usePublicClient({ chainId: base.id });
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
@@ -112,8 +111,15 @@ export default function SellerDashboard() {
   }>>([]);
   const [lockedOrdersLoading, setLockedOrdersLoading] = useState(false);
   const [activeMenu, setActiveMenu] = useState<"create" | "inventory" | "settings" | "orders" | "earnings" | "wallet">("create");
+  const [clockNow, setClockNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const registeredQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_SELLER_REGISTRY_ADDRESS,
     abi: sellerRegistryAbi,
     functionName: "isRegisteredSeller",
@@ -121,6 +127,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address }
   });
   const sellerQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_SELLER_REGISTRY_ADDRESS,
     abi: sellerRegistryAbi,
     functionName: "getSeller",
@@ -128,6 +135,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!registeredQuery.data, retry: false }
   });
   const listingQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_ESCROW_ADDRESS,
     abi: escrowAbi,
     functionName: "getListing",
@@ -135,17 +143,20 @@ export default function SellerDashboard() {
     query: { enabled: activeListingId !== null }
   });
   const paymentTokenQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_ESCROW_ADDRESS,
     abi: escrowAbi,
     functionName: "paymentToken"
   });
   const paymentDecimalsQuery = useReadContract({
+    chainId: base.id,
     address: paymentTokenQuery.data,
     abi: erc20MetadataAbi,
     functionName: "decimals",
     query: { enabled: !!paymentTokenQuery.data }
   });
   const claimableQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_ESCROW_ADDRESS,
     abi: escrowAbi,
     functionName: "claimable",
@@ -153,6 +164,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!paymentTokenQuery.data }
   });
   const tokenInfoQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_REGISTRY_ADDRESS,
     abi: registryAbi,
     functionName: "getToken",
@@ -160,12 +172,14 @@ export default function SellerDashboard() {
     query: { enabled: !!listingQuery.data }
   });
   const tokenMetadataQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: erc20MetadataAbi,
     functionName: "symbol",
     query: { enabled: !!tokenInfoQuery.data?.contractAddress }
   });
   const tokenDecimalsQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: erc20MetadataAbi,
     functionName: "decimals",
@@ -178,6 +192,7 @@ export default function SellerDashboard() {
   const createTokenAddress = isAddress(listingTokenAddress) ? listingTokenAddress as `0x${string}` : undefined;
   const createTokenId = createTokenAddress ? tokenIdFor(createTokenAddress) : undefined;
   const createTokenInfoQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_REGISTRY_ADDRESS,
     abi: registryAbi,
     functionName: "getToken",
@@ -185,18 +200,21 @@ export default function SellerDashboard() {
     query: { enabled: !!createTokenId }
   });
   const createTokenSymbolQuery = useReadContract({
+    chainId: base.id,
     address: createTokenAddress,
     abi: erc20MetadataAbi,
     functionName: "symbol",
     query: { enabled: !!createTokenAddress }
   });
   const createTokenDecimalsQuery = useReadContract({
+    chainId: base.id,
     address: createTokenAddress,
     abi: erc20MetadataAbi,
     functionName: "decimals",
     query: { enabled: !!createTokenAddress }
   });
   const tokenBalanceQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: tokenApprovalAbi,
     functionName: "balanceOf",
@@ -204,6 +222,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!tokenInfoQuery.data?.contractAddress }
   });
   const tokenAllowanceQuery = useReadContract({
+    chainId: base.id,
     address: tokenInfoQuery.data?.contractAddress,
     abi: tokenApprovalAbi,
     functionName: "allowance",
@@ -211,6 +230,7 @@ export default function SellerDashboard() {
     query: { enabled: !!address && !!tokenInfoQuery.data?.contractAddress }
   });
   const pendingWalletQuery = useReadContract({
+    chainId: base.id,
     address: USTETU_SELLER_REGISTRY_ADDRESS,
     abi: sellerRegistryAbi,
     functionName: "getPendingWithdrawalWallet",
@@ -242,7 +262,7 @@ export default function SellerDashboard() {
   const pendingWallet = pendingWalletQuery.data as `0x${string}` | undefined;
   const effectiveAt = seller?.withdrawalWalletChangeEffectiveAt ? Number(seller.withdrawalWalletChangeEffectiveAt) : 0;
   const pendingActive = !!pendingWallet && pendingWallet !== ZERO;
-  const canActivate = pendingActive && effectiveAt > 0 && Date.now() >= effectiveAt * 1000;
+  const canActivate = pendingActive && effectiveAt > 0 && clockNow >= effectiveAt * 1000;
   const isListingOwner = !!address && !!listing?.seller && listing.seller.toLowerCase() === address.toLowerCase();
 
   useEffect(() => {
@@ -322,27 +342,27 @@ export default function SellerDashboard() {
   const loadLockedOrders = async () => {
     try {
       await ensureSeller();
-      if (!publicClient || activeListingId === null || !listing || !isListingOwner) {
+      if (!basePublicClient || activeListingId === null || !listing || !isListingOwner) {
         throw new Error("No USTETU listing is available for this wallet.");
       }
 
       setLockedOrdersLoading(true);
       setError("");
       const matches: typeof lockedOrders = [];
-
-      // PublicNode/Base RPC dapat menolak eth_getLogs untuk event filters.
-      // Untuk lookup ini kita baca order state langsung agar tidak bergantung pada archive/log indexing.
-      const MAX_ORDER_ID_SCAN = 200;
+      const response = await fetch(
+        `/api/orders/seller?seller=${address!.toLowerCase()}&listingId=${activeListingId.toString()}`,
+        { cache: "no-store" }
+      );
+      const index = await response.json() as { ok?: boolean; orderIds?: string[]; error?: string };
+      if (!response.ok || !index.ok) throw new Error(index.error || "Could not load indexed orders for this listing.");
+      const ids = (index.orderIds ?? []).filter((id) => /^\d+$/.test(id)).map(BigInt);
       const BATCH_SIZE = 50;
+      const metadata = new Map<string, { symbol: string; decimals: number }>();
 
-      for (let startId = 1; startId <= MAX_ORDER_ID_SCAN; startId += BATCH_SIZE) {
-        const ids = Array.from(
-          { length: Math.min(BATCH_SIZE, MAX_ORDER_ID_SCAN - startId + 1) },
-          (_, i) => BigInt(startId + i)
-        );
-
-        const results = await publicClient.multicall({
-          contracts: ids.map((orderId) => ({
+      for (let offset = 0; offset < ids.length; offset += BATCH_SIZE) {
+        const batch = ids.slice(offset, offset + BATCH_SIZE);
+        const results = await basePublicClient.multicall({
+          contracts: batch.map((orderId) => ({
             address: USTETU_ESCROW_ADDRESS,
             abi: orderLookupAbi,
             functionName: "getOrder" as const,
@@ -354,43 +374,32 @@ export default function SellerDashboard() {
         for (let i = 0; i < results.length; i += 1) {
           const result = results[i];
           if (result.status !== "success" || !result.result) continue;
-
           const order = result.result;
-          if (
-            order.listingId !== activeListingId ||
-            order.seller.toLowerCase() !== address!.toLowerCase() ||
-            order.tokenAmount === 0n ||
-            order.state === 2 ||
-            order.state === 3
-          ) continue;
+          if (order.listingId !== activeListingId || order.seller.toLowerCase() !== address!.toLowerCase()
+            || order.tokenAmount === 0n || order.state === 2 || order.state === 3) continue;
 
-          let tokenSymbol = "UST";
-          let tokenDecimals = 18;
-          try {
-            const [symbol, decimals] = await Promise.all([
-              publicClient.readContract({
-                address: order.token,
-                abi: tokenMetadataLookupAbi,
-                functionName: "symbol"
-              }),
-              publicClient.readContract({
-                address: order.token,
-                abi: tokenMetadataLookupAbi,
-                functionName: "decimals"
-              })
-            ]);
-            tokenSymbol = symbol || tokenSymbol;
-            tokenDecimals = Number(decimals);
-          } catch {}
-
+          const tokenKey = order.token.toLowerCase();
+          let tokenMeta = metadata.get(tokenKey);
+          if (!tokenMeta) {
+            try {
+              const [symbol, decimals] = await Promise.all([
+                basePublicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "symbol" }),
+                basePublicClient.readContract({ address: order.token, abi: tokenMetadataLookupAbi, functionName: "decimals" })
+              ]);
+              tokenMeta = { symbol: symbol || "TOKEN", decimals: Number(decimals) };
+            } catch {
+              tokenMeta = { symbol: "TOKEN", decimals: 18 };
+            }
+            metadata.set(tokenKey, tokenMeta);
+          }
           matches.push({
-            id: ids[i],
+            id: batch[i],
             buyer: order.buyer,
             tokenAmount: order.tokenAmount,
             state: Number(order.state),
             expiresAt: order.expiresAt,
-            tokenSymbol,
-            tokenDecimals
+            tokenSymbol: tokenMeta.symbol,
+            tokenDecimals: tokenMeta.decimals
           });
         }
       }
@@ -399,7 +408,7 @@ export default function SellerDashboard() {
       setLockedOrders(matches);
 
       if (!matches.length) {
-        setMessage("No active orders were found for this USTETU listing in the first 200 Order IDs.");
+        setMessage("No active orders were found for this listing in the indexed order history.");
       }
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
@@ -417,8 +426,8 @@ export default function SellerDashboard() {
       const hash = await fn();
       setBusy(`Waiting ${label}`);
       setMessage(`${label} submitted. Waiting for Base confirmation…`);
-      if (publicClient) {
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (basePublicClient) {
+        const receipt = await basePublicClient.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") throw new Error(`${label} failed or was reverted.`);
         setMessage(`${label} confirmed: ${short(hash)}`);
       }
@@ -456,11 +465,11 @@ export default function SellerDashboard() {
   const registerListingToken = async () => {
     try {
       await ensureSeller();
-      if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
+      if (!basePublicClient || !address) throw new Error("RPC client or wallet is not available.");
       if (!createTokenAddress) throw new Error("Token contract address is invalid.");
 
       const tokenId = tokenIdFor(createTokenAddress);
-      const alreadyRegistered = await publicClient.readContract({
+      const alreadyRegistered = await basePublicClient.readContract({
         address: USTETU_REGISTRY_ADDRESS,
         abi: registryAbi,
         functionName: "isRegisteredToken",
@@ -494,13 +503,13 @@ export default function SellerDashboard() {
       setMessage("Preparing listing — checking wallet and Base network…");
       await ensureSeller();
       if (!isAddress(listingTokenAddress)) throw new Error("Token contract address is invalid.");
-      if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
+      if (!basePublicClient || !address) throw new Error("RPC client or wallet is not available.");
 
       const token = listingTokenAddress as `0x${string}`;
       setMessage("Checking token registration…");
       const tokenId = tokenIdFor(token);
 
-      const registeredToken = await publicClient.readContract({
+      const registeredToken = await basePublicClient.readContract({
         address: USTETU_REGISTRY_ADDRESS, abi: registryAbi, functionName: "getToken", args: [tokenId]
       });
       if (!registeredToken.contractAddress || registeredToken.contractAddress.toLowerCase() !== token.toLowerCase()) {
@@ -522,7 +531,7 @@ export default function SellerDashboard() {
       for (const listingId of existingListingIds) {
         let existing;
         try {
-          existing = await publicClient.readContract({
+          existing = await basePublicClient.readContract({
             address: USTETU_ESCROW_ADDRESS,
             abi: escrowAbi,
             functionName: "getListing",
@@ -546,8 +555,8 @@ export default function SellerDashboard() {
       const decimals = Number(registeredToken.decimalsSnapshot);
       if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) throw new Error("Token decimals from the Registry are invalid.");
 
-      const symbol = await publicClient.readContract({ address: token, abi: erc20MetadataAbi, functionName: "symbol" });
-      const balance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "balanceOf", args: [address] });
+      const symbol = await basePublicClient.readContract({ address: token, abi: erc20MetadataAbi, functionName: "symbol" });
+      const balance = await basePublicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "balanceOf", args: [address] });
       const price = parseUnits(normalizeListingAmount(listingPrice || "0"), paymentDecimals);
       const inventory = parseUnits(normalizeListingAmount(listingInventory || "0"), decimals);
       const min = parseUnits(normalizeListingAmount(listingMin || "0"), decimals);
@@ -563,14 +572,14 @@ export default function SellerDashboard() {
       let id: bigint | null = null;
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const candidate = generateListingId();
-        const existing = await publicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [candidate] });
+        const existing = await basePublicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [candidate] });
         if (!existing.seller || existing.seller.toLowerCase() === ZERO.toLowerCase()) { id = candidate; break; }
       }
       if (id === null) throw new Error("Failed to generate a unique Listing ID. Please try again.");
       setGeneratedListingId(id);
 
       setMessage("Preparing token approval and wallet confirmation…");
-      const allowance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
+      const allowance = await basePublicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
       if (allowance < inventory) {
         await transact("Approve listing inventory", () => writeContractAsync({ address: token, abi: tokenApprovalAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, inventory] }));
       }
@@ -683,7 +692,7 @@ export default function SellerDashboard() {
   const expireLockedOrder = async (orderId: bigint) => {
     try {
       await ensureSeller();
-      if (!publicClient || !listing || activeListingId === null || !isListingOwner) {
+      if (!basePublicClient || !listing || activeListingId === null || !isListingOwner) {
         throw new Error("Listing not found or not owned by this wallet.");
       }
 
@@ -889,6 +898,10 @@ export default function SellerDashboard() {
 
       {!isConnected ? (
         <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect your wallet to open Seller Center.</p></div>
+      ) : registeredQuery.isLoading ? (
+        <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Checking seller registration on Base…</p></div>
+      ) : registeredQuery.isError ? (
+        <div className="seller-card"><h2>Seller status unavailable</h2><p className="seller-note">The Seller Registry could not be read. Your wallet registration has not been changed.</p><button onClick={() => void registeredQuery.refetch()}>Retry status check</button></div>
       ) : !registeredQuery.data ? (
         <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">This wallet is not registered. Seller registration is permissionless and requires a small amount of ETH on Base for gas.</p>
           <div className="seller-gas-status">
@@ -901,7 +914,7 @@ export default function SellerDashboard() {
           </div>
           <button
             onClick={() => void register()}
-            disabled={disabled || chainId !== base.id || baseBalanceQuery.isLoading || (baseBalanceQuery.data?.value ?? 0n) <= 0n}
+            disabled={disabled || baseBalanceQuery.isLoading || (baseBalanceQuery.data?.value ?? 0n) <= 0n}
           >
             {busy || "Register Seller"}
           </button>
