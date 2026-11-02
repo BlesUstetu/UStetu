@@ -2071,3 +2071,25 @@ body,.app-shell {
     inset 0 2px 0 rgba(170,225,246,.10),
     inset 0 -4px 8px rgba(0,0,0,.82) !important;
 }
+
+/* Remove the thin cyan rectangle around the individual listing row.
+   Higher-specificity override for the PR #36 table treatment. */
+.listing-glass .listing-table tbody tr.listing-row,
+.listing-glass .listing-table tbody tr.listing-row:first-child,
+.listing-glass .listing-table tbody tr.listing-row:hover,
+.listing-glass .listing-table tbody tr.listing-row:focus-within {
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:0 7px 13px rgba(0,0,0,.78),inset 0 2px 0 rgba(170,225,246,.08),inset 0 -4px 8px rgba(0,0,0,.82) !important;
+}
+.listing-glass .listing-table tbody tr.listing-row > td,
+.listing-glass .listing-table tbody tr.listing-row > td:first-child,
+.listing-glass .listing-table tbody tr.listing-row > td:last-child {
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+}
+.listing-glass .listing-table tbody tr.listing-row:hover,
+.listing-glass .listing-table tbody tr.listing-row:focus-within {
+  box-shadow:0 8px 15px rgba(0,0,0,.84),0 0 11px rgba(255,138,24,.14),inset 0 2px 0 rgba(255,224,190,.12),inset 0 -4px 8px rgba(0,0,0,.84) !important;
+}
