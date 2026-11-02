@@ -50,12 +50,14 @@ type ListingRow = {
 
 export async function GET(request: Request) {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) {
-    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." }, { status: 503 });
+  // Production uses the service-role key. Preview/development may use only
+  // the publishable (anon) key; RLS limits it to read-only discovery data.
+  const dbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !dbKey) {
+    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured. Check SUPABASE_URL and a Supabase server key." }, { status: 503 });
   }
 
-  const db = createClient(supabaseUrl, serviceKey, {
+  const db = createClient(supabaseUrl, dbKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
   try {
