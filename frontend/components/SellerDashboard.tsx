@@ -76,7 +76,6 @@ function generateListingId(): bigint {
 export default function SellerDashboard() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const publicClient = usePublicClient();
   const basePublicClient = usePublicClient({ chainId: base.id });
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
@@ -427,8 +426,8 @@ export default function SellerDashboard() {
       const hash = await fn();
       setBusy(`Waiting ${label}`);
       setMessage(`${label} submitted. Waiting for Base confirmation…`);
-      if (publicClient) {
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (basePublicClient) {
+        const receipt = await basePublicClient.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") throw new Error(`${label} failed or was reverted.`);
         setMessage(`${label} confirmed: ${short(hash)}`);
       }
@@ -466,11 +465,11 @@ export default function SellerDashboard() {
   const registerListingToken = async () => {
     try {
       await ensureSeller();
-      if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
+      if (!basePublicClient || !address) throw new Error("RPC client or wallet is not available.");
       if (!createTokenAddress) throw new Error("Token contract address is invalid.");
 
       const tokenId = tokenIdFor(createTokenAddress);
-      const alreadyRegistered = await publicClient.readContract({
+      const alreadyRegistered = await basePublicClient.readContract({
         address: USTETU_REGISTRY_ADDRESS,
         abi: registryAbi,
         functionName: "isRegisteredToken",
@@ -504,13 +503,13 @@ export default function SellerDashboard() {
       setMessage("Preparing listing — checking wallet and Base network…");
       await ensureSeller();
       if (!isAddress(listingTokenAddress)) throw new Error("Token contract address is invalid.");
-      if (!publicClient || !address) throw new Error("RPC client or wallet is not available.");
+      if (!basePublicClient || !address) throw new Error("RPC client or wallet is not available.");
 
       const token = listingTokenAddress as `0x${string}`;
       setMessage("Checking token registration…");
       const tokenId = tokenIdFor(token);
 
-      const registeredToken = await publicClient.readContract({
+      const registeredToken = await basePublicClient.readContract({
         address: USTETU_REGISTRY_ADDRESS, abi: registryAbi, functionName: "getToken", args: [tokenId]
       });
       if (!registeredToken.contractAddress || registeredToken.contractAddress.toLowerCase() !== token.toLowerCase()) {
@@ -532,7 +531,7 @@ export default function SellerDashboard() {
       for (const listingId of existingListingIds) {
         let existing;
         try {
-          existing = await publicClient.readContract({
+          existing = await basePublicClient.readContract({
             address: USTETU_ESCROW_ADDRESS,
             abi: escrowAbi,
             functionName: "getListing",
@@ -556,8 +555,8 @@ export default function SellerDashboard() {
       const decimals = Number(registeredToken.decimalsSnapshot);
       if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) throw new Error("Token decimals from the Registry are invalid.");
 
-      const symbol = await publicClient.readContract({ address: token, abi: erc20MetadataAbi, functionName: "symbol" });
-      const balance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "balanceOf", args: [address] });
+      const symbol = await basePublicClient.readContract({ address: token, abi: erc20MetadataAbi, functionName: "symbol" });
+      const balance = await basePublicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "balanceOf", args: [address] });
       const price = parseUnits(normalizeListingAmount(listingPrice || "0"), paymentDecimals);
       const inventory = parseUnits(normalizeListingAmount(listingInventory || "0"), decimals);
       const min = parseUnits(normalizeListingAmount(listingMin || "0"), decimals);
@@ -573,14 +572,14 @@ export default function SellerDashboard() {
       let id: bigint | null = null;
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const candidate = generateListingId();
-        const existing = await publicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [candidate] });
+        const existing = await basePublicClient.readContract({ address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "getListing", args: [candidate] });
         if (!existing.seller || existing.seller.toLowerCase() === ZERO.toLowerCase()) { id = candidate; break; }
       }
       if (id === null) throw new Error("Failed to generate a unique Listing ID. Please try again.");
       setGeneratedListingId(id);
 
       setMessage("Preparing token approval and wallet confirmation…");
-      const allowance = await publicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
+      const allowance = await basePublicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
       if (allowance < inventory) {
         await transact("Approve listing inventory", () => writeContractAsync({ address: token, abi: tokenApprovalAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, inventory] }));
       }
@@ -693,7 +692,7 @@ export default function SellerDashboard() {
   const expireLockedOrder = async (orderId: bigint) => {
     try {
       await ensureSeller();
-      if (!publicClient || !listing || activeListingId === null || !isListingOwner) {
+      if (!basePublicClient || !listing || activeListingId === null || !isListingOwner) {
         throw new Error("Listing not found or not owned by this wallet.");
       }
 
