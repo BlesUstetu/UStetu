@@ -3340,3 +3340,64 @@ html body .buy-modal-overlay > .buy-modal {
   .token-drawer .detail-grid > div { padding:7px !important; }
   html body .buy-modal-overlay > .buy-modal { padding:12px 10px !important; }
 }
+
+
+/* System Information: deployed contract address cards. */
+.system-contract-addresses {
+  display:grid;
+  gap:10px;
+  margin-top:14px;
+  padding:14px;
+  border:1px solid rgba(63,174,210,.22);
+  border-radius:14px;
+  background:linear-gradient(145deg,rgba(10,20,34,.96),rgba(5,9,16,.98));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 8px 22px rgba(0,0,0,.22);
+}
+.system-contract-heading,.system-contract-meta {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.system-contract-heading strong { color:#ffad70; font-size:12px; letter-spacing:.07em; }
+.system-contract-heading span { color:#9fb1c3; font-size:11px; }
+.system-contract-address {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px 12px;
+  align-items:center;
+  min-width:0;
+  padding:11px;
+  border:1px solid rgba(111,151,185,.16);
+  border-radius:10px;
+  background:rgba(3,8,15,.72);
+}
+.system-contract-meta { grid-column:1 / -1; }
+.system-contract-meta strong { color:#edf5fc; font-size:13px; }
+.system-contract-meta a { color:#70cce8; font-size:11px; text-decoration:none; white-space:nowrap; }
+.system-contract-address code {
+  min-width:0;
+  color:#c9d8e7;
+  font-size:11px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+  word-break:break-all;
+}
+.system-contract-address button {
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid rgba(255,122,26,.42);
+  border-radius:8px;
+  color:#ffad70;
+  background:rgba(255,122,26,.09);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+.system-contract-address button:hover { color:#fff; background:rgba(255,122,26,.2); border-color:#ff7a1a; }
+@media (max-width:480px) {
+  .system-contract-addresses { padding:10px; }
+  .system-contract-heading { align-items:flex-start; flex-direction:column; gap:4px; }
+  .system-contract-address { grid-template-columns:minmax(0,1fr); }
+  .system-contract-address button { width:100%; min-height:40px; }
+}
