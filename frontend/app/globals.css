@@ -1,7 +1,20 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
-:root { --bg:#000000; --bg-soft:#020305; --text:#f7f7ff; --muted:#9a9aaa; --muted-strong:#c5c5d4; --line:rgba(255,255,255,.105); --glass:rgba(24,24,24,.58); --glass-strong:rgba(24,24,24,.72); --glass-hover:rgba(36,36,36,.72); --accent:#a18cff; --accent-strong:#6f4cff; --purple:#1A04AE; --shadow:0 28px 90px rgba(0,0,0,.42); }
-html[data-theme="light"] { --bg:#edf2f7; --bg-soft:#e7edf4; --text:#152033; --muted:#69778b; --muted-strong:#4e5c70; --line:rgba(20,35,55,.11); --glass:rgba(255,255,255,.52); --glass-strong:rgba(255,255,255,.7); --glass-hover:rgba(255,255,255,.8); --accent:#356ea9; --accent-strong:#2563a4; --shadow:0 28px 90px rgba(57,73,94,.13); }
+:root {
+  --bg: var(--ust-bg); --bg-soft: var(--ust-panel); --text: var(--ust-text);
+  --muted: var(--ust-text-muted); --muted-strong: var(--ust-text-secondary);
+  --line: var(--ust-border); --glass: var(--ust-panel);
+  --glass-strong: var(--ust-panel-secondary); --glass-hover: var(--ust-navy-reflection);
+  --accent: var(--ust-orange); --accent-strong: var(--ust-orange);
+  --purple: var(--ust-navy-reflection); --shadow: var(--ust-shadow-panel);
+}
+:root[data-theme="light"], html[data-theme="light"] {
+  --bg:#edf2f7; --bg-soft:#e7edf4; --text:#152033; --muted:#69778b;
+  --muted-strong:#4e5c70; --line:rgba(20,35,55,.11);
+  --glass:rgba(255,255,255,.52); --glass-strong:rgba(255,255,255,.7);
+  --glass-hover:rgba(255,255,255,.8); --accent:#356ea9;
+  --accent-strong:#2563a4; --shadow:0 28px 90px rgba(57,73,94,.13);
+}
 body { font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#000000; color:var(--text); transition:background 220ms ease,color 220ms ease; }
 button,input { font:inherit; }
 button,a { -webkit-tap-highlight-color:transparent; }

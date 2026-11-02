@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import Providers from "./providers";
+import "./design-tokens.css";
 import "./globals.css";
 import "./buy-modal.css";
 import "../components/BuyModalStyles.css";
@@ -8,6 +9,7 @@ import "../components/HideBuyTxList.css";
 import "../components/SystemInfoStyles.css";
 import "../components/LivingMinimalStyles.css";
 import "../components/MobileResponsive.css";
+import "../components/MobileHeaderResponsive.css";
 
 export const metadata: Metadata = {
   title: "USTETU — Own What’s Next.",

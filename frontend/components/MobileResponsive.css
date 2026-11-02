@@ -656,538 +656,32 @@ body {
 
 
 /* ==========================================================
-   USTETU — Mobile / Tablet Header Re-layout
-   Two clear rows: utility controls above, navigation below.
-   This prevents Home / Orders / Seller / Wallet from colliding.
-   ========================================================== */
-@media (max-width: 760px) {
-  .topbar {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto auto !important;
-    gap: 7px !important;
-    align-items: center !important;
-    padding: 8px !important;
-  }
-
-  .topbar-left {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    justify-content: flex-start !important;
-    gap: 4px !important;
-  }
-
-  .topbar-right {
-    grid-column: 1 !important;
-    grid-row: 2 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: 7px !important;
-    overflow: visible !important;
-    flex-wrap: nowrap !important;
-    padding: 2px 0 !important;
-  }
-
-  .brand-center {
-    display: none !important;
-  }
-
-  .topbar-right > * {
-    flex: 0 0 auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    align-self: center !important;
-  }
-
-  .home-nav-link,
-  .seller-orders-link {
-    width: 32px !important;
-    min-width: 32px !important;
-    height: 32px !important;
-    margin: 0 !important;
-  }
-
-  .home-nav-link svg,
-  .seller-orders-link svg {
-    width: 15px !important;
-    height: 15px !important;
-  }
-
-  .seller-nav-control,
-  .wallet-connect-control {
-    flex: 0 0 auto !important;
-    min-width: 0 !important;
-    align-self: center !important;
-  }
-
-  .seller-nav-link {
-    min-height: 32px !important;
-    padding: 0 9px !important;
-    font-size: 10px !important;
-    gap: 5px !important;
-    white-space: nowrap !important;
-  }
-
-  .seller-nav-icon {
-    width: 13px !important;
-    height: 13px !important;
-    font-size: 8px !important;
-  }
-
-  .ustetu-wallet-button {
-    min-height: 32px !important;
-    padding: 0 9px !important;
-    gap: 5px !important;
-    font-size: 10px !important;
-    letter-spacing: .035em !important;
-    white-space: nowrap !important;
-  }
-
-  .ustetu-wallet-icon {
-    width: 14px !important;
-    height: 14px !important;
-    font-size: 8px !important;
-  }
-}
-
-@media (max-width: 430px) {
-  .topbar {
-    gap: 6px !important;
-    padding: 7px !important;
-  }
-
-  .topbar-left {
-    justify-content: flex-start !important;
-  }
-
-  .topbar-right {
-    gap: 6px !important;
-    justify-content: center !important;
-  }
-
-  .home-nav-link,
-  .seller-orders-link {
-    width: 30px !important;
-    min-width: 30px !important;
-    height: 30px !important;
-  }
-
-  .seller-nav-link {
-    min-height: 30px !important;
-    padding: 0 8px !important;
-    font-size: 9px !important;
-  }
-
-  .ustetu-wallet-button {
-    min-height: 30px !important;
-    padding: 0 8px !important;
-    font-size: 9px !important;
-  }
-
-  .ustetu-wallet-icon {
-    width: 13px !important;
-    height: 13px !important;
-  }
-}
-
-@media (max-width: 360px) {
-  .topbar-right {
-    gap: 5px !important;
-  }
-
-  .seller-nav-link {
-    padding: 0 7px !important;
-    font-size: 8px !important;
-  }
-
-  .ustetu-wallet-button {
-    padding: 0 7px !important;
-    font-size: 8px !important;
-  }
-}
-
-
-/* ==========================================================
-   USTETU — Final Mobile / Tablet Header Composition
-   Row 1: brand + utility controls
-   Row 2: navigation controls
-   ========================================================== */
-@media (max-width: 760px) {
-  .topbar {
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    grid-template-rows: auto auto !important;
-    gap: 7px !important;
-    padding: 8px 9px !important;
-  }
-
-  .brand-center {
-    position: static !important;
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    transform: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 7px !important;
-    margin: 0 !important;
-    min-width: 0 !important;
-    width: auto !important;
-    max-width: 100% !important;
-    pointer-events: none !important;
-    white-space: nowrap !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 2 !important;
-  }
-
-  .brand-center .brand-copy,
-  .brand-center .brand {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  .ustetu-logo {
-    width: 20px !important;
-    height: 32px !important;
-    flex: 0 0 20px !important;
-  }
-
-  .brand-copy {
-    text-align: left !important;
-    min-width: 0 !important;
-  }
-
-  .brand {
-    font-size: 15px !important;
-    letter-spacing: .12em !important;
-    line-height: 1 !important;
-  }
-
-  .tagline {
-    display: block !important;
-    margin-top: 3px !important;
-    font-size: 7px !important;
-    letter-spacing: .025em !important;
-  }
-
-  .topbar-left {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    width: auto !important;
-    justify-content: flex-end !important;
-    gap: 4px !important;
-    min-width: 0 !important;
-  }
-
-  .header-controls {
-    gap: 4px !important;
-  }
-
-  .header-controls .icon-button,
-  .header-controls .language-wrap .icon-button {
-    width: 32px !important;
-    min-width: 32px !important;
-    height: 32px !important;
-    padding: 0 !important;
-    border: 1px solid rgba(255,255,255,.13) !important;
-    border-radius: 10px !important;
-    background: rgba(255,255,255,.035) !important;
-    box-shadow: none !important;
-    font-size: 10px !important;
-  }
-
-  .header-controls .language-wrap .icon-button {
-    width: 42px !important;
-    min-width: 42px !important;
-    padding: 0 5px !important;
-    font-size: 9px !important;
-  }
-
-  .header-controls .icon-button:hover {
-    border-color: rgba(120,175,235,.38) !important;
-    background: rgba(255,255,255,.08) !important;
-  }
-
-  .topbar-left .system-info-trigger {
-    order: 0 !important;
-    width: 32px !important;
-    min-width: 32px !important;
-    height: 32px !important;
-    padding: 0 !important;
-    border-radius: 10px !important;
-    justify-content: center !important;
-    gap: 0 !important;
-    font-size: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .system-info-trigger .system-info-icon {
-    font-size: 14px !important;
-  }
-
-  .system-info-trigger > span:last-child {
-    display: none !important;
-  }
-
-  .topbar-right {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    width: 100% !important;
-    max-width: none !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    padding: 1px 0 !important;
-  }
-
-  .home-nav-link,
-  .seller-orders-link {
-    width: 34px !important;
-    min-width: 34px !important;
-    height: 34px !important;
-    border: 1px solid rgba(255,255,255,.12) !important;
-    border-radius: 10px !important;
-    background: rgba(255,255,255,.035) !important;
-  }
-
-  .home-nav-link svg,
-  .seller-orders-link svg {
-    width: 16px !important;
-    height: 16px !important;
-  }
-
-  .seller-nav-control,
-  .wallet-connect-control {
-    min-width: 0 !important;
-    flex: 0 0 auto !important;
-  }
-
-  .seller-nav-link,
-  .ustetu-wallet-button {
-    min-height: 34px !important;
-    border: 1px solid rgba(255,255,255,.1) !important;
-    border-radius: 10px !important;
-  }
-
-  .seller-nav-link {
-    padding: 0 10px !important;
-    font-size: 10px !important;
-  }
-
-  .ustetu-wallet-button {
-    padding: 0 10px !important;
-    font-size: 10px !important;
-  }
-}
-
-@media (max-width: 430px) {
-  .topbar {
-    gap: 6px !important;
-    padding: 7px 8px !important;
-  }
-
-  .brand-center {
-    gap: 5px !important;
-  }
-
-  .ustetu-logo {
-    width: 18px !important;
-    height: 29px !important;
-    flex-basis: 18px !important;
-  }
-
-  .brand {
-    font-size: 14px !important;
-  }
-
-  .tagline {
-    font-size: 6px !important;
-  }
-
-  .topbar-right {
-    gap: 6px !important;
-  }
-
-  .home-nav-link,
-  .seller-orders-link,
-  .seller-nav-link,
-  .ustetu-wallet-button {
-    min-height: 32px !important;
-    height: 32px !important;
-  }
-
-  .home-nav-link,
-  .seller-orders-link {
-    width: 32px !important;
-    min-width: 32px !important;
-  }
-
-  .seller-nav-link,
-  .ustetu-wallet-button {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    font-size: 9px !important;
-  }
-
-  .header-controls .icon-button {
-    width: 30px !important;
-    min-width: 30px !important;
-    height: 30px !important;
-  }
-
-  .header-controls .language-wrap .icon-button {
-    width: 40px !important;
-    min-width: 40px !important;
-  }
-
-  .topbar-left .system-info-trigger {
-    width: 30px !important;
-    min-width: 30px !important;
-    height: 30px !important;
-  }
-}
-
-
-/* Mobile/tablet: keep Home beside the USTETU brand */
-@media (max-width: 760px) {
-  .brand-center .mobile-brand-home {
-    display: inline-flex !important;
-    flex: 0 0 32px !important;
-    width: 32px !important;
-    min-width: 32px !important;
-    height: 32px !important;
-    margin-left: 5px !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .brand-center .mobile-brand-home svg {
-    width: 15px !important;
-    height: 15px !important;
-    fill: none !important;
-    stroke: currentColor !important;
-    stroke-width: 1.8 !important;
-    stroke-linecap: round !important;
-    stroke-linejoin: round !important;
-  }
-
-  .topbar-right .home-nav-link {
-    display: none !important;
-  }
-}
-
-@media (max-width: 430px) {
-  .brand-center .mobile-brand-home {
-    flex-basis: 30px !important;
-    width: 30px !important;
-    min-width: 30px !important;
-    height: 30px !important;
-    margin-left: 4px !important;
-  }
-}
-
-
-/* ==========================================================
-   Header edge alignment — mobile/tablet
-   Brand + utility use the full header width.
-   Navigation row distributes controls edge-to-edge.
-   ========================================================== */
-@media (max-width: 760px) {
-  .topbar {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    grid-template-rows: auto auto !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    padding: 8px 8px !important;
-    gap: 7px !important;
-    justify-items: stretch !important;
-  }
-
-  .brand-center {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    justify-self: start !important;
-    align-self: center !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-  }
-
-  .topbar-left {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    justify-self: end !important;
-    align-self: center !important;
-    width: auto !important;
-    margin: 0 !important;
-  }
-
-  .topbar-right {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    gap: 6px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .topbar-right .seller-nav-control,
-  .topbar-right .wallet-connect-control,
-  .topbar-right .seller-orders-link {
-    flex: 0 0 auto !important;
-  }
-
-  .topbar-right .seller-nav-control {
-    margin-left: 0 !important;
-  }
-
-  .topbar-right .wallet-connect-control {
-    margin-right: 0 !important;
-  }
-
-  .topbar-right .seller-orders-link {
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-}
-
-@media (max-width: 430px) {
-  .topbar {
-    padding: 7px 7px !important;
-  }
-
-  .brand-center {
-    gap: 5px !important;
-  }
-
-  .topbar-right {
-    gap: 5px !important;
-  }
-}
-
-
-/* ==========================================================
-   USTETU — Compact mobile token drawer
-   Reduce vertical spacing without changing the desktop layout.
+   USTETU — Consolidated mobile token drawer
+   One breakpoint block per supported viewport width.
    ========================================================== */
 @media (max-width: 600px) {
   .token-drawer {
+    top: 68px !important;
+    right: 6px !important;
+    bottom: 6px !important;
+    width: calc(100vw - 12px) !important;
     padding: 12px !important;
     border-radius: 17px !important;
+    z-index: 90 !important;
   }
 
   .drawer-topline {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    bottom: auto !important;
+    left: 12px !important;
+    z-index: 3 !important;
     min-height: 28px !important;
+    pointer-events: none;
   }
 
+  .drawer-topline .drawer-close { pointer-events: auto; }
   .drawer-close {
     width: 30px !important;
     height: 30px !important;
@@ -1196,9 +690,12 @@ body {
   }
 
   .drawer-token-head {
+    position: relative !important;
     gap: 10px !important;
     margin: 10px 0 12px !important;
-    padding-bottom: 0 !important;
+    margin-top: 10px !important;
+    margin-bottom: 12px !important;
+    padding: 0 40px 0 0 !important;
   }
 
   .token-mark-large {
@@ -1207,36 +704,13 @@ body {
     font-size: 18px !important;
   }
 
-  .drawer-token-head h2 {
-    font-size: 21px !important;
-  }
-
-  .drawer-token-head span {
-    margin-top: 2px !important;
-    font-size: 9px !important;
-  }
-
-  .detail-grid {
-    border-radius: 14px !important;
-  }
-
-  .detail-grid > div {
-    padding: 10px 12px !important;
-  }
-
-  .detail-grid span {
-    margin-bottom: 4px !important;
-    font-size: 8px !important;
-  }
-
-  .detail-grid strong {
-    font-size: 10px !important;
-  }
-
-  .address-value {
-    font-size: 8px !important;
-  }
-
+  .drawer-token-head h2 { font-size: 21px !important; }
+  .drawer-token-head span { margin-top: 2px !important; font-size: 9px !important; }
+  .detail-grid { grid-template-columns: 1fr !important; border-radius: 14px !important; }
+  .detail-grid > div { padding: 10px 12px !important; }
+  .detail-grid span { margin-bottom: 4px !important; font-size: 8px !important; }
+  .detail-grid strong { font-size: 10px !important; }
+  .address-value { font-size: 8px !important; }
   .address-icon-button {
     width: 27px !important;
     height: 27px !important;
@@ -1249,31 +723,13 @@ body {
     border-radius: 14px !important;
   }
 
-  .drawer-listing-title {
-    font-size: 9px !important;
-  }
-
-  .drawer-price {
-    margin-top: 5px !important;
-  }
-
-  .drawer-price strong {
-    font-size: 22px !important;
-  }
-
+  .drawer-listing-title { font-size: 9px !important; }
+  .drawer-price { margin-top: 5px !important; }
+  .drawer-price strong { font-size: 22px !important; }
   .drawer-price span,
-  .drawer-available {
-    font-size: 9px !important;
-  }
-
-  .drawer-available {
-    margin-top: 5px !important;
-  }
-
-  .drawer-actions {
-    margin-top: 12px !important;
-  }
-
+  .drawer-available { font-size: 9px !important; }
+  .drawer-available { margin-top: 5px !important; }
+  .drawer-actions { margin-top: 12px !important; }
   .token-drawer .primary-glass {
     min-height: 38px !important;
     padding: 8px 10px !important;
@@ -1284,52 +740,13 @@ body {
 
 @media (max-width: 430px) {
   .token-drawer {
+    top: 64px !important;
+    right: 5px !important;
+    bottom: 5px !important;
+    width: calc(100vw - 10px) !important;
     padding: 10px !important;
   }
 
-  .drawer-token-head {
-    margin-top: 8px !important;
-    margin-bottom: 10px !important;
-  }
-
-  .detail-grid > div {
-    padding: 9px 11px !important;
-  }
-
-  .drawer-listing-card {
-    margin-top: 10px !important;
-    padding: 11px !important;
-  }
-
-  .drawer-actions {
-    margin-top: 10px !important;
-  }
-}
-
-
-/* Align mobile drawer close control with the token logo row. */
-@media (max-width: 600px) {
-  .drawer-topline {
-    position: absolute !important;
-    top: 12px !important;
-    right: 12px !important;
-    left: 12px !important;
-    z-index: 3 !important;
-    pointer-events: none;
-  }
-
-  .drawer-topline .drawer-close {
-    pointer-events: auto;
-  }
-
-  .drawer-token-head {
-    position: relative !important;
-    margin-top: 10px !important;
-    padding-right: 40px !important;
-  }
-}
-
-@media (max-width: 430px) {
   .drawer-topline {
     top: 10px !important;
     right: 10px !important;
@@ -1337,28 +754,19 @@ body {
   }
 
   .drawer-token-head {
+    gap: 8px !important;
     margin-top: 8px !important;
+    margin-bottom: 10px !important;
     padding-right: 38px !important;
   }
-}
 
-
-/* Keep the token drawer below the sticky header so its controls are never covered. */
-@media (max-width: 600px) {
-  .token-drawer {
-    top: 68px !important;
-    bottom: 6px !important;
-    z-index: 90 !important;
+  .detail-grid > div { padding: 9px 11px !important; }
+  .drawer-listing-card {
+    margin-top: 10px !important;
+    padding: 11px !important;
   }
+  .drawer-actions { margin-top: 10px !important; }
 }
-
-@media (max-width: 430px) {
-  .token-drawer {
-    top: 64px !important;
-    bottom: 5px !important;
-  }
-}
-
 
 @media (max-width: 600px) {
   .wallet-token-action {
