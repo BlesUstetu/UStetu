@@ -2128,3 +2128,12 @@ body,.app-shell {
     0 8px 14px rgba(0,0,0,.86),
     0 0 10px rgba(255,138,24,.12) !important;
 }
+
+/* Refine the outer Marketplace frame: thinner, quieter cyan edge. */
+.listing-glass {
+  border:1px solid rgba(0,191,255,.48) !important;
+  box-shadow:
+    0 0 10px rgba(0,174,255,.12),
+    inset 0 1px 0 rgba(126,225,255,.16),
+    inset 0 -12px 24px rgba(0,0,0,.9) !important;
+}
