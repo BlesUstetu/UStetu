@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
+import { base } from "wagmi/chains";
 import { USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 
 const USDC_DECIMALS = 6;
@@ -69,7 +70,7 @@ const orderAbi = [{
 
 export default function SellerOrders() {
   const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: base.id });
   const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
