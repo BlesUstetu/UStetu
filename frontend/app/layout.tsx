@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import Providers from "./providers";
+import "./design-tokens.css";
 import "./globals.css";
 import "./buy-modal.css";
 import "../components/BuyModalStyles.css";
