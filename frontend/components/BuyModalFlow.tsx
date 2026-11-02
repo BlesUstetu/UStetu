@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { decodeEventLog, encodeFunctionData, type PublicClient } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
+import { base } from "wagmi/chains";
 import BuyModal from "@/components/BuyModal";
 import { escrowAbi, USTETU_ESCROW_ADDRESS } from "@/lib/contracts";
 
@@ -56,7 +57,7 @@ async function findCompleteTx(client: PublicClient, orderId: bigint, buyer: `0x$
 }
 
 export default function BuyModalFlow(props: Props) {
-  const client = usePublicClient();
+  const client = usePublicClient({ chainId: base.id });
   const { address } = useAccount();
   const [recoveryKey, setRecoveryKey] = useState(0);
   const [mounted, setMounted] = useState(false);
