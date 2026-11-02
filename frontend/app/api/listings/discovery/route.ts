@@ -33,7 +33,7 @@ async function getLatestBaseBlock(): Promise<number> {
 }
 
 type ListingRow = {
-  listing_id: string;
+  listing_id_text: string;
   seller: string;
   token_id: string;
   token_contract: string;
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
     const token = url.searchParams.get("token")?.toLowerCase();
     let query = db
       .from("listings")
-      .select("listing_id,seller,token_id,token_contract,payment_token,price,inventory_deposited,inventory_locked,min_order_amount,max_order_amount,status,finalized,available_inventory")
+      .select("listing_id_text:listing_id::text,seller,token_id,token_contract,payment_token,price,inventory_deposited,inventory_locked,min_order_amount,max_order_amount,status,finalized,available_inventory")
       .eq("chain_id", CHAIN_ID)
       .eq("contract_address", ESCROW_ADDRESS)
       .order("last_block_number", { ascending: false });
@@ -142,7 +142,7 @@ export async function GET(request: Request) {
       requiredThrough,
       latestBlock,
       lastUpdatedAt: state?.updated_at ?? null,
-      listings: rows
+      listings: rows.map(({ listing_id_text, ...row }) => ({ ...row, listing_id: listing_id_text }))
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not read listing index.";
