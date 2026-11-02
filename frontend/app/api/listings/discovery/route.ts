@@ -67,29 +67,34 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     if (stateError) throw stateError;
-    const latestBlock = await getLatestBaseBlock();
-    const requiredThrough = Math.max(0, latestBlock - CONFIRMATIONS);
+    // The indexer projection is useful for displaying already-finalized listings
+    // even while it is catching up. Freshness is enforced separately for writes
+    // (seller + token duplicate checks) by the client.
+    let latestBlock: number | null = null;
+    let latestBlockError: string | null = null;
+    try {
+      latestBlock = await getLatestBaseBlock();
+    } catch (error) {
+      latestBlockError = error instanceof Error ? error.message : "Base RPC is unavailable.";
+      console.warn("Listing discovery freshness check unavailable", latestBlockError);
+    }
+
+    const requiredThrough = latestBlock === null
+      ? null
+      : Math.max(0, latestBlock - CONFIRMATIONS);
     const indexedThrough = Number(state?.last_scanned_block ?? 0);
     const updatedAt = state?.updated_at ? Date.parse(state.updated_at) : 0;
-    const ready = Boolean(
+    const stateIsFresh = Boolean(
       state &&
-      indexedThrough >= requiredThrough &&
       Number.isFinite(updatedAt) &&
       Date.now() - updatedAt <= INDEXER_MAX_AGE_MS
     );
-
-    if (!ready) {
-      return NextResponse.json({
-        ok: true,
-        ready: false,
-        error: "Listing index is not current. Duplicate checks are temporarily unavailable.",
-        indexedThrough: state?.last_scanned_block ?? null,
-        requiredThrough,
-        latestBlock,
-        lastUpdatedAt: state?.updated_at ?? null,
-        listings: []
-      }, { headers: { "Cache-Control": "no-store" } });
-    }
+    const ready = Boolean(
+      state &&
+      requiredThrough !== null &&
+      indexedThrough >= requiredThrough &&
+      stateIsFresh
+    );
 
     const url = new URL(request.url);
     const seller = url.searchParams.get("seller")?.toLowerCase();
@@ -99,6 +104,7 @@ export async function GET(request: Request) {
       .select("listing_id,seller,token_id,token_contract,payment_token,price,inventory_deposited,inventory_locked,min_order_amount,max_order_amount,status,finalized,available_inventory")
       .eq("chain_id", CHAIN_ID)
       .eq("contract_address", ESCROW_ADDRESS)
+      .eq("finalized", true)
       .order("last_block_number", { ascending: false });
 
     if (seller) query = query.eq("seller", seller);
@@ -119,8 +125,18 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      ready: true,
+      // "ready" is deliberately strict: callers that create listings must
+      // require a fully current index before duplicate checks can pass.
+      ready,
+      // Finalized rows remain safe to display while the indexer catches up.
+      displayReady: true,
+      indexStatus: ready ? "current" : "syncing",
+      freshnessError: ready ? null : latestBlockError
+        ? "Base RPC freshness check is temporarily unavailable."
+        : "Indexer is behind the latest finalized Base blocks.",
       indexedThrough: state?.last_scanned_block ?? null,
+      requiredThrough,
+      latestBlock,
       lastUpdatedAt: state?.updated_at ?? null,
       listings: rows
     }, { headers: { "Cache-Control": "no-store" } });
