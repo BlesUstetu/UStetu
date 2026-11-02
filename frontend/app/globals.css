@@ -2465,3 +2465,40 @@ body,.app-shell {
     .earnings-card,.payout-card,.registry-panel,.token-drawer
   ) :is(button,.row-action,.primary-glass,[role="tab"]) { transition:none !important; }
 }
+
+/* Keep the token detail / Buy panel centered above the marketplace on every viewport.
+   The global 3D panel system must not turn this fixed overlay into a flow element. */
+.token-drawer {
+  position:fixed !important;
+  z-index:50 !important;
+  top:50% !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+  margin:0 !important;
+  width:min(500px,calc(100vw - 32px)) !important;
+  max-height:calc(100dvh - 32px) !important;
+  overflow-y:auto !important;
+  transform:translate(-50%,-50%) !important;
+  animation:token-drawer-center-in 220ms ease both !important;
+}
+@keyframes token-drawer-center-in {
+  from { opacity:0; transform:translate(-50%,-48%) scale(.985); }
+  to { opacity:1; transform:translate(-50%,-50%) scale(1); }
+}
+.drawer-backdrop {
+  position:fixed !important;
+  z-index:40 !important;
+  inset:0 !important;
+}
+@media (max-width:600px) {
+  .token-drawer {
+    width:min(500px,calc(100vw - 24px)) !important;
+    max-height:calc(100dvh - 24px) !important;
+    padding:18px !important;
+    border-radius:18px !important;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .token-drawer { animation:none !important; }
+}
