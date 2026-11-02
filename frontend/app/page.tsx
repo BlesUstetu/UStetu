@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 import Header from "@/components/Header";
@@ -457,7 +458,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {selected && (
+      {selected && typeof document !== "undefined" && createPortal(
         <>
           <button className="drawer-backdrop" aria-label={t("close")} onClick={() => { setSelectedId(null); setBuyOpen(false); }} />
           <aside className="token-drawer" aria-label="Registered token">
@@ -489,7 +490,8 @@ export default function HomePage() {
               paymentSymbol={selected.paymentSymbol}
             />
           )}
-        </>
+        </>,
+        document.body
       )}
       <footer className="site-footer" aria-label="Contact">
         <a className="site-footer-email" href="mailto:info@ustetu.dev" aria-label="Email USTETU" title="Email USTETU">
