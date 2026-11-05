@@ -1,5 +1,7 @@
 "use client";
 
+import { DATA_SUFFIX } from "@/lib/attribution";
+
 import { useEffect, useState } from "react";
 import SellerOrders from "@/components/SellerOrders";
 import { discoverListingsOnChain, discoverSellerTokenListingIds } from "@/lib/listingDiscovery";
@@ -485,6 +487,7 @@ export default function SellerDashboard() {
       }
 
       await transact("Register seller", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_SELLER_REGISTRY_ADDRESS,
         abi: sellerRegistryAbi,
         functionName: "registerSeller",
@@ -517,6 +520,7 @@ export default function SellerDashboard() {
       }
 
       await transact("Register token", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_REGISTRY_ADDRESS,
         abi: registryAbi,
         functionName: "registerToken",
@@ -615,10 +619,12 @@ export default function SellerDashboard() {
       setMessage("Preparing token approval and wallet confirmation…");
       const allowance = await basePublicClient.readContract({ address: token, abi: tokenApprovalAbi, functionName: "allowance", args: [address, USTETU_ESCROW_ADDRESS] });
       if (allowance < inventory) {
-        await transact("Approve listing inventory", () => writeContractAsync({ address: token, abi: tokenApprovalAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, inventory] }));
+        await transact("Approve listing inventory", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX, address: token, abi: tokenApprovalAbi, functionName: "approve", args: [USTETU_ESCROW_ADDRESS, inventory] }));
       }
 
       await transact("Create listing", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS, abi: escrowAbi, functionName: "createListingAndDeposit",
         args: [id, tokenId, address, price, inventory, min, max]
       }));
@@ -639,6 +645,7 @@ export default function SellerDashboard() {
       if (raw <= 0n) throw new Error("Inventory amount must be greater than 0.");
       if (tokenAllowance < raw) {
         await transact("Approve inventory", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
           address: tokenAddress,
           abi: tokenApprovalAbi,
           functionName: "approve",
@@ -646,6 +653,7 @@ export default function SellerDashboard() {
         }));
       }
       await transact("Add inventory", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
         functionName: "addListingInventory",
@@ -663,6 +671,7 @@ export default function SellerDashboard() {
       const raw = parseUnits(normalizeListingAmount(withdrawAmount || "0"), tokenDecimals);
       if (raw <= 0n || raw > available) throw new Error("Withdrawal amount exceeds available inventory.");
       await transact("Withdraw inventory", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
         functionName: "withdrawListingInventory",
@@ -680,6 +689,7 @@ export default function SellerDashboard() {
       const raw = parseUnits(normalizeListingAmount(newPrice || "0"), paymentDecimals);
       if (raw <= 0n) throw new Error("Price must be greater than 0.");
       await transact("Update price", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
         functionName: "updateListingPrice",
@@ -698,6 +708,7 @@ export default function SellerDashboard() {
       const max = parseUnits(normalizeListingAmount(maxOrder || "0"), tokenDecimals);
       if (min <= 0n || max < min) throw new Error("Order limits are invalid.");
       await transact("Update limits", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
         functionName: "updateListingOrderLimits",
@@ -713,6 +724,7 @@ export default function SellerDashboard() {
       await ensureSeller();
       if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
       await transact(functionName, () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
         functionName,
@@ -731,6 +743,7 @@ export default function SellerDashboard() {
       }
 
       await transact(`Expire order #${orderId.toString()}`, () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
         functionName: "expireOrder",
@@ -748,6 +761,7 @@ export default function SellerDashboard() {
       await ensureSeller();
       if (claimable === 0n) throw new Error("No claimable USDC is available.");
       await transact("Withdraw earnings", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_ESCROW_ADDRESS,
         abi: escrowAbi,
         functionName: "withdrawClaimable",
@@ -763,6 +777,7 @@ export default function SellerDashboard() {
       await ensureSeller();
       if (!isAddress(withdrawalWallet)) throw new Error("Payout wallet address is invalid.");
       await transact("Request wallet change", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_SELLER_REGISTRY_ADDRESS,
         abi: sellerRegistryAbi,
         functionName: "requestWithdrawalWalletChange",
@@ -777,6 +792,7 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       await transact("Activate withdrawal wallet", () => writeContractAsync({
+        dataSuffix: DATA_SUFFIX,
         address: USTETU_SELLER_REGISTRY_ADDRESS,
         abi: sellerRegistryAbi,
         functionName: "activateWithdrawalWalletChange"
