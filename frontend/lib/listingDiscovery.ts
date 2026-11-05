@@ -70,15 +70,26 @@ async function readIndex(
  * fail-closed until the endpoint confirms the index is current.
  */
 export async function discoverListingsOnChain(
-  onProgress?: (listings: DiscoveredListing[]) => void
+  onProgress?: (listings: DiscoveredListing[]) => void,
+  forceRefresh = false
 ): Promise<DiscoveredListing[]> {
   const now = Date.now();
-  if (cached && now - cached.at < CACHE_MS) {
+  if (!forceRefresh && cached && now - cached.at < CACHE_MS) {
     onProgress?.(cached.listings);
     return cached.listings;
   }
   if (inFlight) {
-    const listings = await inFlight;
+    await inFlight;
+    if (!forceRefresh && cached) {
+      onProgress?.(cached.listings);
+      return cached.listings;
+    }
+  }
+
+  if (forceRefresh) {
+    const result = await readIndex({}, false);
+    const listings = (result.listings ?? []).map(normalizeListing);
+    cached = { at: Date.now(), listings };
     onProgress?.(listings);
     return listings;
   }
