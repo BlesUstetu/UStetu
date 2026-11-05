@@ -967,6 +967,50 @@ export default function SellerDashboard() {
           .seller-dashboard .seller-summary-item .seller-sub{font-size:7px;line-height:1.35}
           .seller-dashboard .seller-note{font-size:11px}
         }
+
+        /* Minimum readable type sizes: avoid tiny, low-contrast helper copy. */
+        .seller-dashboard .seller-card p,
+        .seller-dashboard .seller-overview-head>div>span,
+        .seller-dashboard .seller-overview-item small,
+        .seller-dashboard .seller-my-listing small,
+        .seller-dashboard .seller-auto-id small,
+        .seller-dashboard .inventory-action-title span,
+        .seller-dashboard .seller-field-hint,
+        .seller-dashboard .registry-detail,
+        .seller-dashboard .seller-note,
+        .seller-dashboard .seller-panel-intro,
+        .seller-dashboard .seller-wallet-status,
+        .seller-dashboard .seller-gas-state {font-size:12px!important;line-height:1.65!important;color:#c3d1e4!important}
+        .seller-dashboard .seller-summary-item label,
+        .seller-dashboard .seller-overview-item span,
+        .seller-dashboard .seller-stat span,
+        .seller-dashboard .seller-form label,
+        .seller-dashboard .seller-card label,
+        .seller-dashboard .seller-earnings-meta span,
+        .seller-dashboard .seller-locked-orders-title {font-size:10px!important;line-height:1.45!important;color:#b8c9df!important}
+        .seller-dashboard .seller-duplicate-warning,
+        .seller-dashboard .seller-duplicate-warning span {font-size:12px!important;line-height:1.65!important;color:#f0d5a5!important}
+        .seller-dashboard .seller-menu-label {font-size:10px!important;color:#b8c9df!important}
+        @media(max-width:850px){
+          .seller-dashboard .seller-card p,
+          .seller-dashboard .seller-overview-head>div>span,
+          .seller-dashboard .seller-overview-item small,
+          .seller-dashboard .seller-my-listing small,
+          .seller-dashboard .seller-auto-id small,
+          .seller-dashboard .inventory-action-title span,
+          .seller-dashboard .seller-field-hint,
+          .seller-dashboard .registry-detail,
+          .seller-dashboard .seller-note,
+          .seller-dashboard .seller-panel-intro,
+          .seller-dashboard .seller-wallet-status,
+          .seller-dashboard .seller-gas-state {font-size:11px!important;line-height:1.65!important}
+          .seller-dashboard .seller-summary-item label,
+          .seller-dashboard .seller-overview-item span,
+          .seller-dashboard .seller-stat span,
+          .seller-dashboard .seller-form label,
+          .seller-dashboard .seller-card label {font-size:9px!important}
+        }
+
       `}</style>
 
       {!isConnected ? (
