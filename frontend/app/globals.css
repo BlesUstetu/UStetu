@@ -3926,3 +3926,13 @@ html body .topbar {
     font-size: 12px !important;
   }
 }
+
+/* Seller Center wrapper: remove only the outer frame; preserve all inner cards and menu borders. */
+html body .seller-dashboard {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
