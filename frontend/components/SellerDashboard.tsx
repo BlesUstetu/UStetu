@@ -49,6 +49,11 @@ function normalizeListingAmount(value: string): string {
   if (/^\\d{1,3}(?:,\\d{3})+$/.test(trimmed)) return trimmed.replace(/,/g, "");
   return trimmed;
 }
+function formatDisplayUnits(value: bigint, decimals: number): string {
+  const [integerPart, fractionPart] = formatUnits(value, decimals).split(".");
+  const groupedInteger = integerPart.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+  return fractionPart ? `${groupedInteger}.${fractionPart}` : groupedInteger;
+}
 function short(value?: string) { return value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "—"; }
 function tokenIdFor(address: `0x${string}`) {
   return keccak256(encodeAbiParameters(
@@ -303,7 +308,7 @@ export default function SellerDashboard() {
 
   useEffect(() => {
     if (listing) {
-      setNewPrice(formatUnits(listing.price, paymentDecimals));
+      setNewPrice(formatDisplayUnits(listing.price, paymentDecimals));
       setMinOrder(formatUnits(listing.minOrderAmount, tokenDecimals));
       setMaxOrder(formatUnits(listing.maxOrderAmount, tokenDecimals));
     }
@@ -567,7 +572,7 @@ export default function SellerDashboard() {
       if (min <= 0n) throw new Error(`Minimum order must be greater than 0 ${symbol}.`);
       if (max < min) throw new Error("Maximum order cannot be lower than the minimum order.");
       if (max > inventory) throw new Error(`Maximum order cannot exceed the ${symbol} inventory.`);
-      if (balance < inventory) throw new Error(`Insufficient ${symbol} balance. Required: ${formatUnits(inventory, decimals)} ${symbol}; available: ${formatUnits(balance, decimals)} ${symbol}.`);
+      if (balance < inventory) throw new Error(`Insufficient ${symbol} balance. Required: ${formatDisplayUnits(inventory, decimals)} ${symbol}; available: ${formatDisplayUnits(balance, decimals)} ${symbol}.`);
 
       let id: bigint | null = null;
       for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -905,7 +910,7 @@ export default function SellerDashboard() {
       ) : !registeredQuery.data ? (
         <div className="seller-card"><h2>Seller Registration</h2><p className="seller-note">This wallet is not registered. Seller registration is permissionless and requires a small amount of ETH on Base for gas.</p>
           <div className="seller-gas-status">
-            <div className="seller-gas-row"><span>Base ETH Balance</span><strong>{baseBalanceQuery.isLoading ? "Checking…" : formatEther(baseBalanceQuery.data?.value ?? 0n) + " ETH"}</strong></div>
+            <div className="seller-gas-row"><span>Base ETH Balance</span><strong>{baseBalanceQuery.isLoading ? "Checking…" : formatDisplayUnits(baseBalanceQuery.data?.value ?? 0n, 18) + " ETH"}</strong></div>
             <div className="seller-gas-state ready">
               {(baseBalanceQuery.data?.value ?? 0n) > 0n
                 ? "✓ Ready — Base ETH balance is available for gas."
@@ -928,7 +933,7 @@ export default function SellerDashboard() {
           <div className="seller-overview-shell">
             <div className="seller-grid">
               <div className="seller-summary-item"><label>Seller</label><div className="seller-value seller-ok">REGISTERED</div><div className="seller-sub">Permissionless Seller Registry</div></div>
-              <div className="seller-summary-item"><label>Claimable USDC</label><div className="seller-value">{formatUnits(claimable, paymentDecimals)} USDC</div><div className="seller-sub">Available proceeds after settlement</div></div>
+              <div className="seller-summary-item"><label>Claimable USDC</label><div className="seller-value">{formatDisplayUnits(claimable, paymentDecimals)} USDC</div><div className="seller-sub">Available proceeds after settlement</div></div>
               <div className="seller-summary-item"><label>Network</label><div className="seller-value">BASE</div><div className="seller-sub">Chain ID {BASE_MAINNET_CHAIN_ID}</div></div>
             </div>
             {activeListingId !== null && listing && (
@@ -938,10 +943,10 @@ export default function SellerDashboard() {
                   <span className={`seller-status ${status === LISTING_STATUS.PAUSED ? "paused" : status === LISTING_STATUS.CLOSED ? "closed" : ""}`}>● {statusLabel}</span>
                 </div>
                 <div className="seller-overview-listing">
-                  <div className="seller-overview-item"><span>Price</span><strong>{formatUnits(listing.price, paymentDecimals)}</strong><small>{paymentSymbol} / {tokenSymbol}</small></div>
-                  <div className="seller-overview-item"><span>Deposited</span><strong>{formatUnits(listing.inventoryDeposited, tokenDecimals)}</strong><small>{tokenSymbol}</small></div>
-                  <div className="seller-overview-item"><span>Available</span><strong>{formatUnits(available, tokenDecimals)}</strong><small>Can withdraw</small></div>
-                  <div className="seller-overview-item"><span>Locked</span><strong>{formatUnits(listing.inventoryLocked, tokenDecimals)}</strong><small>Active orders</small></div>
+                  <div className="seller-overview-item"><span>Price</span><strong>{formatDisplayUnits(listing.price, paymentDecimals)}</strong><small>{paymentSymbol} / {tokenSymbol}</small></div>
+                  <div className="seller-overview-item"><span>Deposited</span><strong>{formatDisplayUnits(listing.inventoryDeposited, tokenDecimals)}</strong><small>{tokenSymbol}</small></div>
+                  <div className="seller-overview-item"><span>Available</span><strong>{formatDisplayUnits(available, tokenDecimals)}</strong><small>Can withdraw</small></div>
+                  <div className="seller-overview-item"><span>Locked</span><strong>{formatDisplayUnits(listing.inventoryLocked, tokenDecimals)}</strong><small>Active orders</small></div>
                 </div>
               </div>
             )}
@@ -1111,10 +1116,10 @@ export default function SellerDashboard() {
                     <span className={`seller-status ${status === LISTING_STATUS.PAUSED ? "paused" : status === LISTING_STATUS.CLOSED ? "closed" : ""}`}>● {statusLabel}</span>
                   </div>
                   <div className="seller-stats">
-                    <div className="seller-stat"><span>Deposited</span><strong>{formatUnits(listing.inventoryDeposited, tokenDecimals)} {tokenSymbol}</strong></div>
-                    <div className="seller-stat"><span>Available</span><strong>{formatUnits(available, tokenDecimals)} {tokenSymbol}</strong></div>
-                    <div className="seller-stat"><span>Locked</span><strong>{formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</strong></div>
-                    <div className="seller-stat"><span>Wallet</span><strong>{formatUnits(tokenBalance, tokenDecimals)} {tokenSymbol}</strong></div>
+                    <div className="seller-stat"><span>Deposited</span><strong>{formatDisplayUnits(listing.inventoryDeposited, tokenDecimals)} {tokenSymbol}</strong></div>
+                    <div className="seller-stat"><span>Available</span><strong>{formatDisplayUnits(available, tokenDecimals)} {tokenSymbol}</strong></div>
+                    <div className="seller-stat"><span>Locked</span><strong>{formatDisplayUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</strong></div>
+                    <div className="seller-stat"><span>Wallet</span><strong>{formatDisplayUnits(tokenBalance, tokenDecimals)} {tokenSymbol}</strong></div>
                   </div>
                   {isListingOwner && <div className="seller-form" style={{marginTop:14}}>
                     <h2>{tokenSymbol} Inventory</h2>
@@ -1131,12 +1136,12 @@ export default function SellerDashboard() {
                         <label>Amount to withdraw ({tokenSymbol})</label>
                         <input value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} inputMode="decimal" placeholder="Enter withdrawal amount" />
                         <div className="inventory-action-buttons">
-                          <button disabled={disabled || available === 0n} onClick={() => setWithdrawAmount(formatUnits(available, tokenDecimals))}>Use Available</button>
+                          <button disabled={disabled || available === 0n} onClick={() => setWithdrawAmount(formatDisplayUnits(available, tokenDecimals))}>Use Available</button>
                           <button className="primary" disabled={disabled || available === 0n || !withdrawAmount.trim()} onClick={() => void withdrawInventory()}>Withdraw {tokenSymbol}</button>
                         </div>
                       </div>
                     </div>
-                    <div className="seller-note inventory-balance-note">Available: {formatUnits(available, tokenDecimals)} {tokenSymbol} · Locked: {formatUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</div>
+                    <div className="seller-note inventory-balance-note">Available: {formatDisplayUnits(available, tokenDecimals)} {tokenSymbol} · Locked: {formatDisplayUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</div>
                     <div className="seller-locked-orders">
                       <div className="seller-locked-orders-head"><span className="seller-locked-orders-title">Orders locking inventory</span><button className="seller-view-orders" disabled={disabled || lockedOrdersLoading} onClick={() => void loadLockedOrders()}>{lockedOrdersLoading ? "Checking…" : "View Locked Orders"}</button></div>
                       {lockedOrders.map((order) => {
@@ -1147,7 +1152,7 @@ export default function SellerDashboard() {
                             <small>Buyer {short(order.buyer)}</small>
                           </div>
                           <div>
-                            <strong>{formatUnits(order.tokenAmount, order.tokenDecimals)} {order.tokenSymbol}</strong>
+                            <strong>{formatDisplayUnits(order.tokenAmount, order.tokenDecimals)} {order.tokenSymbol}</strong>
                             <small>{order.expiresAt ? `Expires ${new Date(Number(order.expiresAt) * 1000).toLocaleString("en-US")}` : "No expiry shown"}</small>
                           </div>
                           <div className="seller-locked-order-action">
@@ -1206,7 +1211,7 @@ export default function SellerDashboard() {
 
           {activeMenu === "earnings" && (
                 <div className="seller-card seller-section seller-earnings">
-                  <h2>Seller Earnings</h2><p className="seller-panel-intro">USDC proceeds become available here after eligible orders are settled.</p><div className="seller-value">{claimableQuery.isLoading ? "Loading…" : `${formatUnits(claimable, paymentDecimals)} USDC`}</div><p className="seller-note">Claimable USDC from completed settlements, ready to withdraw.</p><div className="seller-earnings-meta"><span>Payout destination</span><strong>{short(seller?.withdrawalWallet)}</strong></div><button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC to Wallet"}</button>
+                  <h2>Seller Earnings</h2><p className="seller-panel-intro">USDC proceeds become available here after eligible orders are settled.</p><div className="seller-value">{claimableQuery.isLoading ? "Loading…" : `${formatDisplayUnits(claimable, paymentDecimals)} USDC`}</div><p className="seller-note">Claimable USDC from completed settlements, ready to withdraw.</p><div className="seller-earnings-meta"><span>Payout destination</span><strong>{short(seller?.withdrawalWallet)}</strong></div><button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC to Wallet"}</button>
                 </div>
           )}
 
