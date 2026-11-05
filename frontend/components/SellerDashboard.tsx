@@ -308,7 +308,7 @@ export default function SellerDashboard() {
 
   useEffect(() => {
     if (listing) {
-      setNewPrice(formatDisplayUnits(listing.price, paymentDecimals));
+      setNewPrice(formatUnits(listing.price, paymentDecimals));
       setMinOrder(formatUnits(listing.minOrderAmount, tokenDecimals));
       setMaxOrder(formatUnits(listing.maxOrderAmount, tokenDecimals));
     }
@@ -1136,7 +1136,7 @@ export default function SellerDashboard() {
                         <label>Amount to withdraw ({tokenSymbol})</label>
                         <input value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} inputMode="decimal" placeholder="Enter withdrawal amount" />
                         <div className="inventory-action-buttons">
-                          <button disabled={disabled || available === 0n} onClick={() => setWithdrawAmount(formatDisplayUnits(available, tokenDecimals))}>Use Available</button>
+                          <button disabled={disabled || available === 0n} onClick={() => setWithdrawAmount(formatUnits(available, tokenDecimals))}>Use Available</button>
                           <button className="primary" disabled={disabled || available === 0n || !withdrawAmount.trim()} onClick={() => void withdrawInventory()}>Withdraw {tokenSymbol}</button>
                         </div>
                       </div>
