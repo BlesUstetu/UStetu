@@ -29,7 +29,7 @@ type Props = {
 function normalizeBuyAmount(value: string): string {
   const input = value.trim().replace(/\s/g, "");
   if (!input) return "";
-  const internationalNumber = /^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?$/;
+  const internationalNumber = /^(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)(?:[.][0-9]*)?$/;
   if (!internationalNumber.test(input)) {
     throw new Error("Use international number format: comma for thousands and dot for decimals (e.g. 1,234.56).");
   }
@@ -39,7 +39,7 @@ function formatBuyAmountInput(value: string): string {
   const raw = value.trim().replace(/,/g, "");
   if (!raw || !/^\d*(?:\.\d*)?$/.test(raw)) return value;
   const [whole = "", fraction] = raw.split(".");
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const grouped = whole.replace(/([0-9])(?=([0-9]{3})+(?![0-9]))/g, "$1,");
   return fraction !== undefined ? grouped + "." + fraction : grouped;
 }
 
