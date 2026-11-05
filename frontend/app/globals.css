@@ -4060,3 +4060,24 @@ html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,dt,dd,li,th,td,a,but
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: optimizeLegibility !important;
 }
+
+
+/* Final cleanup: remove residual filters that can soften glyphs inside panels.
+   Keep panel-level box-shadows and backdrop surfaces unchanged. */
+html body :is(
+  h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,dt,dd,li,
+  th,td,a,button,legend,em,i,[role="tab"],[role="button"],
+  .listing-table tbody tr
+):not(svg):not(path):not([data-keep-text-effect]) {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+
+/* Pseudo-elements should not reintroduce embossed lettering. */
+html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,th,td,a,button,[role="tab"])::before,
+html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,th,td,a,button,[role="tab"])::after {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
