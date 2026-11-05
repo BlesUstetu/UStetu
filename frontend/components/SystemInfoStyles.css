@@ -32,3 +32,15 @@ html[data-theme="light"] .system-info-panel{background:linear-gradient(rgba(247,
  .system-trust-points span,.system-time-grid span{font-size:10px;line-height:1.65}
  .system-listing-id-warning span{font-size:11px}
 }
+
+
+/* Minimum readable type sizes for all USTETU Center explanatory copy. */
+.system-info-panel .system-section-title p,.system-info-panel .system-note,.system-info-panel .system-trust-points span,.system-info-panel .system-confirm-banner span,.system-info-panel .system-seller-note,.system-info-panel .system-guide-step p,.system-info-panel .system-time-grid span,.system-info-panel .system-info-warning p,.system-info-panel .system-trust-footer{font-size:12px!important;line-height:1.7!important;color:#c6d3e5!important}
+.system-info-panel .system-guide-step strong{font-size:12px!important;line-height:1.5!important;color:#f0f5ff!important}
+.system-info-panel .system-guide-step em{font-size:10px!important;line-height:1.5!important;color:#c5e7ff!important}
+.system-info-panel .system-tech-item span,.system-info-panel .system-contract-heading span,.system-info-panel .system-contract-meta a{font-size:10px!important;color:#bdcce0!important}
+.system-info-panel .system-trust-footer{text-transform:none;letter-spacing:0}
+@media(max-width:700px){
+ .system-info-panel .system-section-title p,.system-info-panel .system-note,.system-info-panel .system-trust-points span,.system-info-panel .system-confirm-banner span,.system-info-panel .system-seller-note,.system-info-panel .system-guide-step p,.system-info-panel .system-time-grid span,.system-info-panel .system-info-warning p,.system-info-panel .system-trust-footer{font-size:12px!important;line-height:1.7!important}
+ .system-info-panel .system-guide-step strong{font-size:12px!important}
+}
