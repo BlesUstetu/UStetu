@@ -84,6 +84,12 @@ function normalizeAddress(value: string | null): `0x${string}` | null {
   return value as `0x${string}`;
 }
 
+function formatDisplayNumber(value: string): string {
+  const [integerPart, fractionPart] = value.split(".");
+  const groupedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fractionPart ? `${groupedInteger}.${fractionPart}` : groupedInteger;
+}
+
 export default function HomePage() {
   const { t } = useLanguage();
   const [listings, setListings] = useState<ApiListing[]>([]);
@@ -292,9 +298,9 @@ export default function HomePage() {
         paymentSymbol,
         paymentDecimals,
         availableRaw,
-        available: formatUnits(availableRaw, tokenDecimals),
+        available: formatDisplayNumber(formatUnits(availableRaw, tokenDecimals)),
         priceRaw,
-        price: formatUnits(priceRaw, paymentDecimals),
+        price: formatDisplayNumber(formatUnits(priceRaw, paymentDecimals)),
         minOrderAmount,
         maxOrderAmount,
         chainId: 8453,
@@ -430,7 +436,7 @@ export default function HomePage() {
                   <tr key={item.listingId.toString()} className="listing-row" onClick={() => setSelectedId(item.listingId)}>
                     <td><div className="token-cell"><TokenLogo address={item.address} chainId={item.chainId} name={item.tokenName} symbol={item.symbol} size={38} /><div><strong>{item.tokenName}</strong><span>{item.symbol}</span></div><span className="registered-badge">Registered</span></div></td>
                     <td className="mono">{item.seller.slice(0, 6)}…{item.seller.slice(-4)}</td>
-                    <td>{item.available} {item.symbol}</td><td><strong>{item.price}</strong> {item.paymentSymbol}</td><td><span className="network-text">Base Mainnet</span></td>
+                    <td>{item.available} {item.symbol}</td><td><strong>{item.price}</strong> {item.paymentSymbol} / {item.symbol}</td><td><span className="network-text">Base Mainnet</span></td>
                     <td><button className="row-action" type="button" onClick={(event) => { event.stopPropagation(); setSelectedId(item.listingId); }}>{t("view")}</button></td>
                   </tr>
                  ))}
@@ -450,7 +456,7 @@ export default function HomePage() {
                 <div className="mobile-listing-meta"><span>{t("seller")}</span><strong className="mono">{item.seller.slice(0, 6)}…{item.seller.slice(-4)}</strong></div>
                 <div className="mobile-listing-stats">
                   <div><span>{t("available")}</span><strong>{item.available} {item.symbol}</strong></div>
-                  <div><span>{t("price")}</span><strong>{item.price} {item.paymentSymbol}</strong></div>
+                  <div><span>{t("price")}</span><strong>{item.price} {item.paymentSymbol} / {item.symbol}</strong></div>
                 </div>
                 <div className="mobile-listing-network"><span className="network-text">Base Mainnet</span><span className="registered-badge">Registered</span></div>
               </article>
