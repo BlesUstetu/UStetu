@@ -287,7 +287,9 @@ export default function SellerDashboard() {
       })));
       setActiveListingId((current) => {
         if (current !== null && mine.some((item) => item.listing_id === current.toString())) return current;
-        return mine.length ? BigInt(mine[mine.length - 1].listing_id) : null;
+        // The discovery API sorts by last_block_number descending,
+        // so the first seller-owned row is the newest listing.
+        return mine.length ? BigInt(mine[0].listing_id) : null;
       });
     };
 
@@ -327,6 +329,26 @@ export default function SellerDashboard() {
     void tokenBalanceQuery.refetch();
     void tokenAllowanceQuery.refetch();
     void pendingWalletQuery.refetch();
+
+    // Refresh the Supabase discovery projection as well as the on-chain reads.
+    // Keep an intentional manual selection when it is still owned by this wallet;
+    // otherwise fall back to the newest seller-owned listing (API order: newest first).
+    if (address) {
+      void discoverListingsOnChain((listings) => {
+        const mine = listings.filter((item) => item.seller.toLowerCase() === address.toLowerCase());
+        setSellerListings(mine.map((item) => ({
+          listing_id: item.listing_id,
+          seller: item.seller,
+          token_contract: item.token_contract
+        })));
+        setActiveListingId((current) => {
+          if (current !== null && mine.some((item) => item.listing_id === current.toString())) return current;
+          return mine.length ? BigInt(mine[0].listing_id) : null;
+        });
+      }, true).catch(() => {
+        // Preserve the current selection if the index is temporarily unavailable.
+      });
+    }
   };
 
   const ensureBase = async () => {
