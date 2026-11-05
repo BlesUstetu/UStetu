@@ -944,7 +944,32 @@ export default function SellerDashboard() {
           .seller-overview-item strong{font-size:9px}
           .seller-actions button,.seller-form button{font-size:9px}
         }
-      `}</style>
+      `}
+        /* Readability pass: consistent high-contrast helper text on desktop and mobile. */
+        .seller-dashboard .seller-head p,.seller-dashboard .seller-sub,.seller-dashboard .seller-note,.seller-dashboard .seller-panel-intro,.seller-dashboard .seller-field-hint,.seller-dashboard .seller-stat span,.seller-dashboard .seller-summary-item label,.seller-dashboard .seller-summary-item .seller-sub,.seller-dashboard .seller-overview-head>div>span,.seller-dashboard .seller-overview-item span,.seller-dashboard .seller-overview-item small,.seller-dashboard .seller-auto-id span,.seller-dashboard .seller-auto-id small,.seller-dashboard .seller-my-listing small,.seller-dashboard .inventory-action-title span,.seller-dashboard .seller-earnings-meta span,.seller-dashboard .seller-locked-orders-title,.seller-dashboard .seller-locked-order small,.seller-dashboard .seller-wallet-status,.seller-dashboard .registry-detail,.seller-dashboard .seller-form label,.seller-dashboard .seller-card label,.seller-dashboard .seller-gas-row span{color:#b7c7dc}
+        .seller-dashboard .seller-panel-intro{font-size:13px;line-height:1.7}
+        .seller-dashboard .seller-note{font-size:12px;line-height:1.7}
+        .seller-dashboard .seller-field-hint{font-size:11px;line-height:1.6}
+        .seller-dashboard .seller-stat span,.seller-dashboard .seller-summary-item label,.seller-dashboard .seller-overview-item span{color:#aebfd6}
+        .seller-dashboard .seller-form input::placeholder,.seller-dashboard .seller-inline>input::placeholder{color:#9aabc2}
+        .seller-dashboard .registry-detail{font-size:10px;line-height:1.65}
+        .seller-dashboard .seller-duplicate-warning span{color:#f0d5a5}
+        @media(max-width:850px){
+          .seller-dashboard .seller-panel-intro{font-size:12px;line-height:1.7}
+          .seller-dashboard .seller-note{font-size:11px;line-height:1.7}
+          .seller-dashboard .seller-field-hint{font-size:11px}
+          .seller-dashboard .seller-summary-item label{font-size:7px}
+          .seller-dashboard .seller-summary-item .seller-sub{font-size:8px;line-height:1.4}
+          .seller-dashboard .seller-overview-item span,.seller-dashboard .seller-overview-item small{font-size:8px}
+          .seller-dashboard .seller-stat span{font-size:9px}
+        }
+        @media(max-width:420px){
+          .seller-dashboard .seller-summary-item label{font-size:7px}
+          .seller-dashboard .seller-summary-item .seller-sub{font-size:7px;line-height:1.35}
+          .seller-dashboard .seller-note{font-size:11px}
+        }
+
+</style>
 
       {!isConnected ? (
         <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect your wallet to open Seller Center.</p></div>
