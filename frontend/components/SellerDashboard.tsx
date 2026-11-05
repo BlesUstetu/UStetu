@@ -52,15 +52,11 @@ function normalizeListingAmount(value: string): string {
   return input.replace(/,/g, "");
 }
 function formatNumericInput(value: string): string {
-  try {
-    const normalized = normalizeListingAmount(value);
-    if (!normalized || !/^\d*(?:\.\d*)?$/.test(normalized)) return value;
-    const [whole = "", fraction] = normalized.split(".");
-    const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return fraction !== undefined ? grouped + "." + fraction : grouped;
-  } catch {
-    return value;
-  }
+  const raw = value.trim().replace(/,/g, "");
+  if (!raw || !/^\d*(?:\.\d*)?$/.test(raw)) return value;
+  const [whole = "", fraction] = raw.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fraction !== undefined ? grouped + "." + fraction : grouped;
 }
 function formatDisplayUnits(value: bigint, decimals: number): string {
   const [integerPart, fractionPart] = formatUnits(value, decimals).split(".");
