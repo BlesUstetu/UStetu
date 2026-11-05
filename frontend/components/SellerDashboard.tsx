@@ -953,10 +953,10 @@ export default function SellerDashboard() {
                 id="seller-listing-select"
                 value={activeListingId?.toString() ?? ""}
                 onChange={(event) => setActiveListingId(BigInt(event.target.value))}
-                style={{width:"100%",minHeight:40,border:"1px solid rgba(112,151,226,.24)",borderRadius:10,background:"#080f1b",color:"#e8eef8",padding:"9px 12px"}}
+                style={{width:"100%",minHeight:40,border:"1px solid #385778",borderRadius:10,background:"#080f1b",color:"#f8fafc",padding:"9px 12px",colorScheme:"dark"}}
               >
                 {sellerListings.map((item) => (
-                  <option key={item.listing_id} value={item.listing_id}>
+                  <option key={item.listing_id} value={item.listing_id} style={{background:"#111c2d",color:"#f8fafc"}}>
                     Listing #{item.listing_id} · {short(item.token_contract)}
                   </option>
                 ))}
