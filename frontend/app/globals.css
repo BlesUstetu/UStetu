@@ -1280,7 +1280,7 @@ body,.app-shell {
   text-shadow:0 1px 0 rgba(111,45,8,.72),0 2px 4px rgba(0,0,0,.8) !important;
 }
 @media (prefers-reduced-motion:reduce) {
-  :is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  :is(.listing-glass,.seller-card,.seller-orders,.seller-menu,
       .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
       .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
       .seller-panel,.seller-panel-content,.seller-section,.seller-content,
@@ -1336,7 +1336,7 @@ body,.app-shell {
     0 2px 0 rgba(75,27,3,.95),
     0 4px 6px rgba(0,0,0,.92) !important;
 }
-:is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+:is(.listing-glass,.seller-card,.seller-orders,.seller-menu,
     .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
     .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
     .seller-panel,.seller-panel-content,.seller-section,.seller-content,
@@ -1888,7 +1888,7 @@ body,.app-shell {
 }
 
 /* USTETU — pronounced 3D depth: raised panels, beveled edges and recessed content */
-:is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.inventory-card,.inventory-action-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,.registry-detail,.modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,.detail-grid,.escrow-progress) {
+:is(.listing-glass,.seller-card,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.inventory-card,.inventory-action-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,.registry-detail,.modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,.detail-grid,.escrow-progress) {
   position:relative;
   border:1px solid rgba(0,190,255,.78) !important;
   background:linear-gradient(155deg,rgba(20,55,78,.92) 0%,rgba(7,22,35,.98) 34%,rgba(2,7,13,1) 100%) !important;
@@ -1975,7 +1975,7 @@ body,.app-shell {
 .listing-table tbody tr.listing-row:focus-within > td:last-child { border-right-color:rgba(255,138,24,.82) !important; }
 
 /* Seller and Buyer surfaces use the same physical bevel language. */
-:is(.seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.seller-overview-shell,.seller-overview,.buyer-card,.buyer-panel,.buyer-section,.inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.registry-panel,.modal-panel,.dialog-panel,.token-drawer) {
+:is(.seller-card,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.seller-overview-shell,.seller-overview,.buyer-card,.buyer-panel,.buyer-section,.inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.registry-panel,.modal-panel,.dialog-panel,.token-drawer) {
   border-top-color:rgba(142,218,245,.62) !important;
   border-left-color:rgba(0,174,255,.52) !important;
   border-right-color:rgba(0,174,255,.38) !important;
@@ -3925,4 +3925,14 @@ html body .topbar {
   .seller-orders button {
     font-size: 12px !important;
   }
+}
+
+/* Seller Center wrapper: remove only the outer frame; preserve all inner cards and menu borders. */
+html body .seller-dashboard {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
 }
