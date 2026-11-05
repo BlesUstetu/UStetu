@@ -41,34 +41,26 @@ const tokenApprovalAbi = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] }
 ] as const;
 
+// International numeric format: comma for thousands, dot for decimals.
 function normalizeListingAmount(value: string): string {
-  const input = value.trim().replace(/\s/g, "");
+  const input = value.trim().replace(/\\s/g, "");
   if (!input) return "";
-  const lastDot = input.lastIndexOf(".");
-  const lastComma = input.lastIndexOf(",");
-  if (lastDot >= 0 && lastComma >= 0) {
-    const decimalSeparator = lastDot > lastComma ? "." : ",";
-    const groupingSeparator = decimalSeparator === "." ? "," : ".";
-    return input.split(groupingSeparator).join("").replace(decimalSeparator, ".");
+  const internationalNumber = /^(?:\\d+|\\d{1,3}(?:,\\d{3})+)(?:\\.\\d*)?$/;
+  if (!internationalNumber.test(input)) {
+    throw new Error("Use international number format: comma for thousands and dot for decimals (e.g. 1,234.56).");
   }
-  const separator = lastDot >= 0 ? "." : lastComma >= 0 ? "," : "";
-  if (!separator) return input;
-  const parts = input.split(separator);
-  if (parts.length > 2) {
-    if (parts.slice(1).every((part) => part.length === 3)) return parts.join("");
-    const fraction = parts.pop() ?? "";
-    return parts.join("") + "." + fraction;
-  }
-  const [whole, fraction = ""] = parts;
-  if (fraction.length === 3 && whole.length <= 3) return whole + fraction;
-  return whole + "." + fraction;
+  return input.replace(/,/g, "");
 }
 function formatNumericInput(value: string): string {
-  const normalized = normalizeListingAmount(value);
-  if (!normalized || !/^\d*(?:\.\d*)?$/.test(normalized)) return value;
-  const [whole = "", fraction] = normalized.split(".");
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return fraction !== undefined ? `${grouped}.${fraction}` : grouped;
+  try {
+    const normalized = normalizeListingAmount(value);
+    if (!normalized || !/^\\d*(?:\\.\\d*)?$/.test(normalized)) return value;
+    const [whole = "", fraction] = normalized.split(".");
+    const grouped = whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+    return fraction !== undefined ? `${grouped}.${fraction}` : grouped;
+  } catch {
+    return value;
+  }
 }
 function formatDisplayUnits(value: bigint, decimals: number): string {
   const [integerPart, fractionPart] = formatUnits(value, decimals).split(".");
