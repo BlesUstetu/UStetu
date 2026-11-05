@@ -4081,3 +4081,37 @@ html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,th,td,a,button,[role
   -webkit-text-stroke: 0 !important;
   filter: none !important;
 }
+
+
+/* Mobile Buy modal typography calibration.
+   Keep the approved layout and colors; improve small-label legibility only. */
+@media (max-width: 600px) {
+  html body .buy-modal,
+  html body .buy-modal :is(h1,h2,h3,h4,p,span,strong,b,label,small,button,a) {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: geometricPrecision !important;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+    filter: none !important;
+  }
+
+  html body .buy-modal :is(.buy-order-summary span,.buy-balance-grid span,.buy-input-wrap > span,.escrow-progress-top span,.escrow-tx-summary > span) {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+  }
+
+  html body .buy-modal :is(.buy-order-summary strong,.buy-balance-grid strong,.escrow-step > div strong) {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    font-weight: 650 !important;
+  }
+
+  html body .buy-modal :is(.buy-modal-header p,.escrow-progress p,.escrow-network,.escrow-order-id) {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+}
