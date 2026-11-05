@@ -4048,3 +4048,15 @@ html body .seller-dashboard {
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: optimizeLegibility !important;
 }
+
+
+/* Final global typography override.
+   Higher selector specificity is intentional: older component rules used !important
+   text shadows and text strokes, which could override the earlier scoped reset. */
+html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,dt,dd,li,th,td,a,button,legend,div,em,i,[role="tab"],[role="button"]):not(svg):not(path):not([data-keep-text-effect]) {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
