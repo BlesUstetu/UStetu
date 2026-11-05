@@ -1280,7 +1280,7 @@ body,.app-shell {
   text-shadow:0 1px 0 rgba(111,45,8,.72),0 2px 4px rgba(0,0,0,.8) !important;
 }
 @media (prefers-reduced-motion:reduce) {
-  :is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+  :is(.listing-glass,.seller-card,.seller-orders,.seller-menu,
       .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
       .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
       .seller-panel,.seller-panel-content,.seller-section,.seller-content,
@@ -1975,7 +1975,7 @@ body,.app-shell {
 .listing-table tbody tr.listing-row:focus-within > td:last-child { border-right-color:rgba(255,138,24,.82) !important; }
 
 /* Seller and Buyer surfaces use the same physical bevel language. */
-:is(.seller-card,.seller-dashboard,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.seller-overview-shell,.seller-overview,.buyer-card,.buyer-panel,.buyer-section,.inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.registry-panel,.modal-panel,.dialog-panel,.token-drawer) {
+:is(.seller-card,.seller-orders,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.seller-overview-shell,.seller-overview,.buyer-card,.buyer-panel,.buyer-section,.inventory-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.registry-panel,.modal-panel,.dialog-panel,.token-drawer) {
   border-top-color:rgba(142,218,245,.62) !important;
   border-left-color:rgba(0,174,255,.52) !important;
   border-right-color:rgba(0,174,255,.38) !important;
