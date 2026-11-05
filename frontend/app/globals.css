@@ -1336,7 +1336,7 @@ body,.app-shell {
     0 2px 0 rgba(75,27,3,.95),
     0 4px 6px rgba(0,0,0,.92) !important;
 }
-:is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,
+:is(.listing-glass,.seller-card,.seller-orders,.seller-menu,
     .seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,
     .inventory-card,.orders-card,.settings-card,.earnings-card,.payout-card,
     .seller-panel,.seller-panel-content,.seller-section,.seller-content,
