@@ -15,6 +15,11 @@ const tokenMetadataAbi = [
   { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
 ] as const;
 
+function formatDisplayUnits(value: bigint, decimals: number): string {
+  const [integerPart, fractionPart] = formatUnits(value, decimals).split(".");
+  const groupedInteger = integerPart.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+  return fractionPart ? `${groupedInteger}.${fractionPart}` : groupedInteger;
+}
 const short = (v?: string) => (v ? `${v.slice(0, 6)}…${v.slice(-4)}` : "—");
 
 const stateLabel: Record<number, string> = { 0: "PAYMENT PENDING", 1: "PAID", 2: "COMPLETED", 3: "EXPIRED" };
@@ -204,10 +209,10 @@ export default function SellerOrders() {
       o.id.toString(),
       o.listingId.toString(),
       o.buyer,
-      `${formatUnits(o.tokenAmount, o.tokenDecimals)} ${o.tokenSymbol}`,
-      `${formatUnits(o.grossPayment, USDC_DECIMALS)} USDC`,
-      `${formatUnits(o.sellerProceeds, USDC_DECIMALS)} USDC`,
-      `${formatUnits(o.marketplaceFee, USDC_DECIMALS)} USDC`,
+      `${formatDisplayUnits(o.tokenAmount, o.tokenDecimals)} ${o.tokenSymbol}`,
+      `${formatDisplayUnits(o.grossPayment, USDC_DECIMALS)} USDC`,
+      `${formatDisplayUnits(o.sellerProceeds, USDC_DECIMALS)} USDC`,
+      `${formatDisplayUnits(o.marketplaceFee, USDC_DECIMALS)} USDC`,
       stateLabel[o.state] ?? `STATE ${o.state}`,
       o.createdAt.toString(),
       o.paidAt.toString(),
@@ -246,8 +251,8 @@ export default function SellerOrders() {
       <div className="orders-page-title">Orders</div><p className="orders-page-intro">Review buyer activity, track order settlement, and export your seller order history.</p>
       <div className="orders-summary">
         <div className="orders-card"><label>Completed Orders</label><strong>{completed.length}</strong><small>Completed orders</small></div>
-        <div className="orders-card"><label>Gross Sales</label><strong>{formatUnits(gross, USDC_DECIMALS)} USDC</strong><small>Total payment from completed orders</small></div>
-        <div className="orders-card"><label>Completed Proceeds</label><strong>{formatUnits(proceeds, USDC_DECIMALS)} USDC</strong><small>After marketplace fees</small></div>
+        <div className="orders-card"><label>Gross Sales</label><strong>{formatDisplayUnits(gross, USDC_DECIMALS)} USDC</strong><small>Total payment from completed orders</small></div>
+        <div className="orders-card"><label>Completed Proceeds</label><strong>{formatDisplayUnits(proceeds, USDC_DECIMALS)} USDC</strong><small>After marketplace fees</small></div>
       </div>
 
       {error && <div className="orders-error">{error}</div>}
@@ -302,10 +307,10 @@ export default function SellerOrders() {
                 <td className="mono">#{o.id.toString()}</td>
                 <td className="mono">#{o.listingId.toString()}</td>
                 <td className="mono">{short(o.buyer)}</td>
-                <td>{formatUnits(o.tokenAmount, o.tokenDecimals)} {o.tokenSymbol}</td>
-                <td>{formatUnits(o.grossPayment, USDC_DECIMALS)} USDC</td>
-                <td>{formatUnits(o.sellerProceeds, USDC_DECIMALS)} USDC</td>
-                <td>{formatUnits(o.marketplaceFee, USDC_DECIMALS)} USDC</td>
+                <td>{formatDisplayUnits(o.tokenAmount, o.tokenDecimals)} {o.tokenSymbol}</td>
+                <td>{formatDisplayUnits(o.grossPayment, USDC_DECIMALS)} USDC</td>
+                <td>{formatDisplayUnits(o.sellerProceeds, USDC_DECIMALS)} USDC</td>
+                <td>{formatDisplayUnits(o.marketplaceFee, USDC_DECIMALS)} USDC</td>
                 <td><span className={`state ${stateClass(o.state)}`}>{stateLabel[o.state] ?? `STATE ${o.state}`}</span></td>
               </tr>)}</tbody>
             </table>
