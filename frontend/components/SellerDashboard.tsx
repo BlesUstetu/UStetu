@@ -73,6 +73,25 @@ function generateListingId(): bigint {
   return id === 0n ? 1n : id;
 }
 
+function newestCreatedListingId(
+  listings: Awaited<ReturnType<typeof discoverListingsOnChain>>
+): bigint | null {
+  // created_at comes from the immutable on-chain Listing.createdAt field.
+  // Never use last_block_number here: it changes on later listing/order activity.
+  const dated = listings
+    .filter((item) => item.created_at && Number.isFinite(Date.parse(item.created_at)))
+    .sort((a, b) => {
+      const byCreationTime = Date.parse(b.created_at!) - Date.parse(a.created_at!);
+      if (byCreationTime !== 0) return byCreationTime;
+      // Listing.createdAt has second precision. Use the ID only as a stable
+      // deterministic tie-breaker when multiple listings share that second.
+      const aId = BigInt(a.listing_id);
+      const bId = BigInt(b.listing_id);
+      return aId === bId ? 0 : aId > bId ? -1 : 1;
+    });
+  return dated.length ? BigInt(dated[0].listing_id) : null;
+}
+
 export default function SellerDashboard() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -287,9 +306,8 @@ export default function SellerDashboard() {
       })));
       setActiveListingId((current) => {
         if (current !== null && mine.some((item) => item.listing_id === current.toString())) return current;
-        // The discovery API sorts by last_block_number descending,
-        // so the first seller-owned row is the newest listing.
-        return mine.length ? BigInt(mine[0].listing_id) : null;
+        // Select by immutable on-chain creation time, not latest activity.
+        return newestCreatedListingId(mine);
       });
     };
 
@@ -343,7 +361,7 @@ export default function SellerDashboard() {
         })));
         setActiveListingId((current) => {
           if (current !== null && mine.some((item) => item.listing_id === current.toString())) return current;
-          return mine.length ? BigInt(mine[0].listing_id) : null;
+          return newestCreatedListingId(mine);
         });
       }, true).catch(() => {
         // Preserve the current selection if the index is temporarily unavailable.
