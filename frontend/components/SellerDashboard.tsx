@@ -42,7 +42,7 @@ const tokenApprovalAbi = [
 ] as const;
 
 function normalizeListingAmount(value: string): string {
-  const input = value.trim().replace(/\\s/g, "");
+  const input = value.trim().replace(/\s/g, "");
   if (!input) return "";
   const lastDot = input.lastIndexOf(".");
   const lastComma = input.lastIndexOf(",");
@@ -65,14 +65,14 @@ function normalizeListingAmount(value: string): string {
 }
 function formatNumericInput(value: string): string {
   const normalized = normalizeListingAmount(value);
-  if (!normalized || !/^\\d*(?:\\.\\d*)?$/.test(normalized)) return value;
+  if (!normalized || !/^\d*(?:\.\d*)?$/.test(normalized)) return value;
   const [whole = "", fraction] = normalized.split(".");
-  const grouped = whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return fraction !== undefined ? `${grouped}.${fraction}` : grouped;
 }
 function formatDisplayUnits(value: bigint, decimals: number): string {
   const [integerPart, fractionPart] = formatUnits(value, decimals).split(".");
-  const groupedInteger = integerPart.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+  const groupedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return fractionPart ? `${groupedInteger}.${fractionPart}` : groupedInteger;
 }
 function short(value?: string) { return value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "—"; }
