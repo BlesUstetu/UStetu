@@ -944,7 +944,6 @@ export default function SellerDashboard() {
           .seller-overview-item strong{font-size:9px}
           .seller-actions button,.seller-form button{font-size:9px}
         }
-      `}
         /* Readability pass: consistent high-contrast helper text on desktop and mobile. */
         .seller-dashboard .seller-head p,.seller-dashboard .seller-sub,.seller-dashboard .seller-note,.seller-dashboard .seller-panel-intro,.seller-dashboard .seller-field-hint,.seller-dashboard .seller-stat span,.seller-dashboard .seller-summary-item label,.seller-dashboard .seller-summary-item .seller-sub,.seller-dashboard .seller-overview-head>div>span,.seller-dashboard .seller-overview-item span,.seller-dashboard .seller-overview-item small,.seller-dashboard .seller-auto-id span,.seller-dashboard .seller-auto-id small,.seller-dashboard .seller-my-listing small,.seller-dashboard .inventory-action-title span,.seller-dashboard .seller-earnings-meta span,.seller-dashboard .seller-locked-orders-title,.seller-dashboard .seller-locked-order small,.seller-dashboard .seller-wallet-status,.seller-dashboard .registry-detail,.seller-dashboard .seller-form label,.seller-dashboard .seller-card label,.seller-dashboard .seller-gas-row span{color:#b7c7dc}
         .seller-dashboard .seller-panel-intro{font-size:13px;line-height:1.7}
@@ -968,8 +967,7 @@ export default function SellerDashboard() {
           .seller-dashboard .seller-summary-item .seller-sub{font-size:7px;line-height:1.35}
           .seller-dashboard .seller-note{font-size:11px}
         }
-
-</style>
+      `}</style>
 
       {!isConnected ? (
         <div className="seller-card"><h2>Seller Center</h2><p className="seller-note">Connect your wallet to open Seller Center.</p></div>
