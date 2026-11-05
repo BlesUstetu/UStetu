@@ -4037,3 +4037,76 @@ html body .seller-dashboard {
     font-size: 11px !important;
   }
 }
+
+
+/* Create Listing — make important status and warning messages readable. */
+.seller-dashboard .seller-duplicate-warning {
+  display:flex !important;
+  flex-direction:column !important;
+  gap:7px !important;
+  padding:14px 16px !important;
+  margin:14px 0 !important;
+  border-radius:13px !important;
+}
+.seller-dashboard .seller-duplicate-warning strong {
+  display:block !important;
+  color:#fff1d6 !important;
+  font-size:16px !important;
+  line-height:1.45 !important;
+  font-weight:800 !important;
+}
+.seller-dashboard .seller-duplicate-warning span {
+  display:block !important;
+  color:#f3c987 !important;
+  font-size:14px !important;
+  line-height:1.65 !important;
+  font-weight:600 !important;
+  overflow-wrap:anywhere !important;
+}
+.seller-dashboard .registry-panel {
+  padding:14px !important;
+  gap:10px !important;
+}
+.seller-dashboard .registry-panel .registry-title,
+.seller-dashboard .registry-panel .registry-state {
+  font-size:13px !important;
+  line-height:1.5 !important;
+  font-weight:800 !important;
+}
+.seller-dashboard .registry-panel .registry-detail {
+  padding:9px 11px !important;
+  font-size:13px !important;
+  line-height:1.6 !important;
+  font-weight:600 !important;
+  overflow-wrap:anywhere !important;
+}
+.seller-dashboard .listing-ready {
+  padding:11px 13px !important;
+  font-size:13px !important;
+  line-height:1.6 !important;
+  font-weight:700 !important;
+}
+@media (max-width:600px) {
+  .seller-dashboard .seller-duplicate-warning {
+    padding:13px !important;
+    gap:7px !important;
+  }
+  .seller-dashboard .seller-duplicate-warning strong {
+    font-size:15px !important;
+  }
+  .seller-dashboard .seller-duplicate-warning span {
+    font-size:14px !important;
+    line-height:1.65 !important;
+  }
+  .seller-dashboard .registry-panel .registry-title,
+  .seller-dashboard .registry-panel .registry-state {
+    font-size:12px !important;
+  }
+  .seller-dashboard .registry-panel .registry-detail {
+    font-size:13px !important;
+    line-height:1.6 !important;
+  }
+  .seller-dashboard .listing-ready {
+    font-size:12px !important;
+  }
+}
