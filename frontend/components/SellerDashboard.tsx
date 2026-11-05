@@ -52,8 +52,12 @@ function normalizeListingAmount(value: string): string {
   return input.replace(/,/g, "");
 }
 function formatNumericInput(value: string): string {
-  const raw = value.trim().replace(/,/g, "");
-  if (!raw || !/^\d*(?:\.\d*)?$/.test(raw)) return value;
+  const input = value.trim();
+  if (!input || !/^[0-9.,]*$/.test(input)) return value;
+  const validInternational = /^(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)(?:[.][0-9]*)?$/;
+  if (input.includes(",") && !validInternational.test(input)) return value;
+  const raw = input.replace(/,/g, "");
+  if (!/^[0-9]*(?:[.][0-9]*)?$/.test(raw)) return value;
   const [whole = "", fraction] = raw.split(".");
   const grouped = whole.replace(/([0-9])(?=([0-9]{3})+(?![0-9]))/g, "$1,");
   return fraction !== undefined ? grouped + "." + fraction : grouped;
