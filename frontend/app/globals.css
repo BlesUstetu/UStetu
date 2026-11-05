@@ -4037,3 +4037,81 @@ html body .seller-dashboard {
     font-size: 11px !important;
   }
 }
+
+
+/* USTETU typography: flat, crisp text without embossed or extruded effects.
+   Preserve panel backgrounds, borders, and box-shadows; only neutralize text effects. */
+.app-shell :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,dt,dd,li,th,td,a,button,legend,[role="tab"]) {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+
+/* Final global typography override.
+   Higher selector specificity is intentional: older component rules used !important
+   text shadows and text strokes, which could override the earlier scoped reset. */
+html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,dt,dd,li,th,td,a,button,legend,div,em,i,[role="tab"],[role="button"]):not(svg):not(path):not([data-keep-text-effect]) {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+
+/* Final cleanup: remove residual filters that can soften glyphs inside panels.
+   Keep panel-level box-shadows and backdrop surfaces unchanged. */
+html body :is(
+  h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,dt,dd,li,
+  th,td,a,button,legend,em,i,[role="tab"],[role="button"],
+  .listing-table tbody tr
+):not(svg):not(path):not([data-keep-text-effect]) {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+
+/* Pseudo-elements should not reintroduce embossed lettering. */
+html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,th,td,a,button,[role="tab"])::before,
+html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,th,td,a,button,[role="tab"])::after {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+
+
+/* Mobile Buy modal typography calibration.
+   Keep the approved layout and colors; improve small-label legibility only. */
+@media (max-width: 600px) {
+  html body .buy-modal,
+  html body .buy-modal :is(h1,h2,h3,h4,p,span,strong,b,label,small,button,a) {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: geometricPrecision !important;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+    filter: none !important;
+  }
+
+  html body .buy-modal :is(.buy-order-summary span,.buy-balance-grid span,.buy-input-wrap > span,.escrow-progress-top span,.escrow-tx-summary > span) {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+  }
+
+  html body .buy-modal :is(.buy-order-summary strong,.buy-balance-grid strong,.escrow-step > div strong) {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    font-weight: 650 !important;
+  }
+
+  html body .buy-modal :is(.buy-modal-header p,.escrow-progress p,.escrow-network,.escrow-order-id) {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+}
