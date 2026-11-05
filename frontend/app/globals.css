@@ -1888,7 +1888,7 @@ body,.app-shell {
 }
 
 /* USTETU — pronounced 3D depth: raised panels, beveled edges and recessed content */
-:is(.listing-glass,.seller-card,.seller-dashboard,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.inventory-card,.inventory-action-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,.registry-detail,.modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,.detail-grid,.escrow-progress) {
+:is(.listing-glass,.seller-card,.seller-orders,.seller-menu,.seller-nav,.seller-tabs,.seller-overview-shell,.seller-overview,.seller-panel,.seller-panel-content,.seller-section,.seller-content,.inventory-card,.inventory-action-card,.orders-card,.orders-panel,.settings-card,.earnings-card,.payout-card,.buyer-card,.buyer-panel,.buyer-section,.registry-panel,.registry-detail,.modal-panel,.dialog-panel,.token-drawer,.drawer-listing-card,.detail-grid,.escrow-progress) {
   position:relative;
   border:1px solid rgba(0,190,255,.78) !important;
   background:linear-gradient(155deg,rgba(20,55,78,.92) 0%,rgba(7,22,35,.98) 34%,rgba(2,7,13,1) 100%) !important;
