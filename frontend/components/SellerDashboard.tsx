@@ -958,7 +958,7 @@ export default function SellerDashboard() {
           <div className="seller-overview-shell">
             <div className="seller-grid">
               <div className="seller-summary-item"><label>Seller</label><div className="seller-value seller-ok">REGISTERED</div><div className="seller-sub">Permissionless Seller Registry</div></div>
-              <div className="seller-summary-item"><label>Claimable USDC</label><div className="seller-value">{formatDisplayUnits(claimable, paymentDecimals)} USDC</div><div className="seller-compact-value">{formatCompactDisplay(claimable, paymentDecimals)} USDC</div><div className="seller-sub">Available proceeds after settlement</div></div>
+              <div className="seller-summary-item"><label>Claimable USDC</label><div className="seller-value">{formatDisplayUnits(claimable, paymentDecimals)} USDC</div>{formatCompactDisplay(claimable, paymentDecimals) && <div className="seller-compact-value">{formatCompactDisplay(claimable, paymentDecimals)} USDC</div>}<div className="seller-sub">Available proceeds after settlement</div></div>
               <div className="seller-summary-item"><label>Network</label><div className="seller-value">BASE</div><div className="seller-sub">Chain ID {BASE_MAINNET_CHAIN_ID}</div></div>
             </div>
             {activeListingId !== null && listing && (
@@ -968,10 +968,10 @@ export default function SellerDashboard() {
                   <span className={`seller-status ${status === LISTING_STATUS.PAUSED ? "paused" : status === LISTING_STATUS.CLOSED ? "closed" : ""}`}>● {statusLabel}</span>
                 </div>
                 <div className="seller-overview-listing">
-                  <div className="seller-overview-item"><span>Price</span><strong>{formatDisplayUnits(listing.price, paymentDecimals)}</strong><small className="seller-compact-value">{formatCompactDisplay(listing.price, paymentDecimals)} {paymentSymbol}</small><small>{paymentSymbol} / {tokenSymbol}</small></div>
-                  <div className="seller-overview-item"><span>Deposited</span><strong>{formatDisplayUnits(listing.inventoryDeposited, tokenDecimals)}</strong><small className="seller-compact-value">{formatCompactDisplay(listing.inventoryDeposited, tokenDecimals)} {tokenSymbol}</small><small>{tokenSymbol}</small></div>
-                  <div className="seller-overview-item"><span>Available</span><strong>{formatDisplayUnits(available, tokenDecimals)}</strong><small className="seller-compact-value">{formatCompactDisplay(available, tokenDecimals)} {tokenSymbol}</small><small>Can withdraw</small></div>
-                  <div className="seller-overview-item"><span>Locked</span><strong>{formatDisplayUnits(listing.inventoryLocked, tokenDecimals)}</strong><small className="seller-compact-value">{formatCompactDisplay(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</small><small>Active orders</small></div>
+                  <div className="seller-overview-item"><span>Price</span><strong>{formatDisplayUnits(listing.price, paymentDecimals)}</strong>{formatCompactDisplay(listing.price, paymentDecimals) && <small className="seller-compact-value">{formatCompactDisplay(listing.price, paymentDecimals)} {paymentSymbol}</small>}<small>{paymentSymbol} / {tokenSymbol}</small></div>
+                  <div className="seller-overview-item"><span>Deposited</span><strong>{formatDisplayUnits(listing.inventoryDeposited, tokenDecimals)}</strong>{formatCompactDisplay(listing.inventoryDeposited, tokenDecimals) && <small className="seller-compact-value">{formatCompactDisplay(listing.inventoryDeposited, tokenDecimals)} {tokenSymbol}</small>}<small>{tokenSymbol}</small></div>
+                  <div className="seller-overview-item"><span>Available</span><strong>{formatDisplayUnits(available, tokenDecimals)}</strong>{formatCompactDisplay(available, tokenDecimals) && <small className="seller-compact-value">{formatCompactDisplay(available, tokenDecimals)} {tokenSymbol}</small>}<small>Can withdraw</small></div>
+                  <div className="seller-overview-item"><span>Locked</span><strong>{formatDisplayUnits(listing.inventoryLocked, tokenDecimals)}</strong>{formatCompactDisplay(listing.inventoryLocked, tokenDecimals) && <small className="seller-compact-value">{formatCompactDisplay(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</small>}<small>Active orders</small></div>
                 </div>
               </div>
             )}
@@ -1141,10 +1141,10 @@ export default function SellerDashboard() {
                     <span className={`seller-status ${status === LISTING_STATUS.PAUSED ? "paused" : status === LISTING_STATUS.CLOSED ? "closed" : ""}`}>● {statusLabel}</span>
                   </div>
                   <div className="seller-stats">
-                    <div className="seller-stat"><span>Deposited</span><strong>{formatDisplayUnits(listing.inventoryDeposited, tokenDecimals)} {tokenSymbol}</strong></div>
-                    <div className="seller-stat"><span>Available</span><strong>{formatDisplayUnits(available, tokenDecimals)} {tokenSymbol}</strong></div>
-                    <div className="seller-stat"><span>Locked</span><strong>{formatDisplayUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</strong></div>
-                    <div className="seller-stat"><span>Wallet</span><strong>{formatDisplayUnits(tokenBalance, tokenDecimals)} {tokenSymbol}</strong></div>
+                    <div className="seller-stat"><span>Deposited</span><strong>{formatDisplayUnits(listing.inventoryDeposited, tokenDecimals)} {tokenSymbol}</strong>{formatCompactDisplay(listing.inventoryDeposited, tokenDecimals) && <small className="seller-compact-value">{formatCompactDisplay(listing.inventoryDeposited, tokenDecimals)} {tokenSymbol}</small>}</div>
+                    <div className="seller-stat"><span>Available</span><strong>{formatDisplayUnits(available, tokenDecimals)} {tokenSymbol}</strong>{formatCompactDisplay(available, tokenDecimals) && <small className="seller-compact-value">{formatCompactDisplay(available, tokenDecimals)} {tokenSymbol}</small>}</div>
+                    <div className="seller-stat"><span>Locked</span><strong>{formatDisplayUnits(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</strong>{formatCompactDisplay(listing.inventoryLocked, tokenDecimals) && <small className="seller-compact-value">{formatCompactDisplay(listing.inventoryLocked, tokenDecimals)} {tokenSymbol}</small>}</div>
+                    <div className="seller-stat"><span>Wallet</span><strong>{formatDisplayUnits(tokenBalance, tokenDecimals)} {tokenSymbol}</strong>{formatCompactDisplay(tokenBalance, tokenDecimals) && <small className="seller-compact-value">{formatCompactDisplay(tokenBalance, tokenDecimals)} {tokenSymbol}</small>}</div>
                   </div>
                   {isListingOwner && <div className="seller-form" style={{marginTop:14}}>
                     <h2>{tokenSymbol} Inventory</h2>
@@ -1236,7 +1236,7 @@ export default function SellerDashboard() {
 
           {activeMenu === "earnings" && (
                 <div className="seller-card seller-section seller-earnings">
-                  <h2>Seller Earnings</h2><p className="seller-panel-intro">USDC proceeds become available here after eligible orders are settled.</p><div className="seller-value">{claimableQuery.isLoading ? "Loading…" : `${formatDisplayUnits(claimable, paymentDecimals)} USDC`}</div>{!claimableQuery.isLoading && <div className="seller-compact-value">{formatCompactDisplay(claimable, paymentDecimals)} USDC</div>}<p className="seller-note">Claimable USDC from completed settlements, ready to withdraw.</p><div className="seller-earnings-meta"><span>Payout destination</span><strong>{short(seller?.withdrawalWallet)}</strong></div><button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC to Wallet"}</button>
+                  <h2>Seller Earnings</h2><p className="seller-panel-intro">USDC proceeds become available here after eligible orders are settled.</p><div className="seller-value">{claimableQuery.isLoading ? "Loading…" : `${formatDisplayUnits(claimable, paymentDecimals)} USDC`}</div>{!claimableQuery.isLoading && formatCompactDisplay(claimable, paymentDecimals) && <div className="seller-compact-value">{formatCompactDisplay(claimable, paymentDecimals)} USDC</div>}<p className="seller-note">Claimable USDC from completed settlements, ready to withdraw.</p><div className="seller-earnings-meta"><span>Payout destination</span><strong>{short(seller?.withdrawalWallet)}</strong></div><button className="primary" disabled={disabled || claimable === 0n} onClick={() => void withdrawEarnings()}>{claimable === 0n ? "No USDC Available" : "Withdraw USDC to Wallet"}</button>
                 </div>
           )}
 
