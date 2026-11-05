@@ -86,7 +86,7 @@ function normalizeAddress(value: string | null): `0x${string}` | null {
 
 function formatDisplayNumber(value: string): string {
   const [integerPart, fractionPart] = value.split(".");
-  const groupedInteger = integerPart.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+  const groupedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return fractionPart ? `${groupedInteger}.${fractionPart}` : groupedInteger;
 }
 
