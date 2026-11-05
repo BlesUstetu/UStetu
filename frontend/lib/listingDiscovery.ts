@@ -10,6 +10,7 @@ export type DiscoveredListing = {
   min_order_amount: string;
   max_order_amount: string;
   status: "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED";
+  created_at: string | null;
 };
 
 type ListingIndexResponse = {
@@ -43,7 +44,8 @@ function normalizeListing(row: Record<string, unknown>): DiscoveredListing {
     max_order_amount: String(row.max_order_amount ?? "0"),
     status: row.status === "ACTIVE" || row.status === "PAUSED" || row.status === "CLOSED"
       ? row.status
-      : "UNKNOWN"
+      : "UNKNOWN",
+    created_at: typeof row.created_at === "string" ? row.created_at : null
   };
 }
 
