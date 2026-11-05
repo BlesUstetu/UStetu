@@ -3947,3 +3947,14 @@ html body .seller-dashboard {
   line-height: 1.35;
   letter-spacing: .02em;
 }
+
+/* Compact approximate values for Seller and Buyer; exact amounts remain primary. */
+.seller-compact-value {
+  display: block;
+  margin-top: 3px;
+  color: #39d9a5;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: .02em;
+}
