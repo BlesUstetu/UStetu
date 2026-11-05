@@ -36,15 +36,11 @@ function normalizeBuyAmount(value: string): string {
   return input.replace(/,/g, "");
 }
 function formatBuyAmountInput(value: string): string {
-  try {
-    const normalized = normalizeBuyAmount(value);
-    if (!normalized || !/^\d*(?:\.\d*)?$/.test(normalized)) return value;
-    const [whole = "", fraction] = normalized.split(".");
-    const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return fraction !== undefined ? grouped + "." + fraction : grouped;
-  } catch {
-    return value;
-  }
+  const raw = value.trim().replace(/,/g, "");
+  if (!raw || !/^\d*(?:\.\d*)?$/.test(raw)) return value;
+  const [whole = "", fraction] = raw.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fraction !== undefined ? grouped + "." + fraction : grouped;
 }
 
 type StoredRecovery = { chainId: number; escrow: string; listingId: string; buyer: string; orderId: string; startedAt: number; completeHash?: `0x${string}` };
