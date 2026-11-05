@@ -43,9 +43,9 @@ const tokenApprovalAbi = [
 
 // International numeric format: comma for thousands, dot for decimals.
 function normalizeListingAmount(value: string): string {
-  const input = value.trim().replace(/\\s/g, "");
+  const input = value.trim().replace(/\s/g, "");
   if (!input) return "";
-  const internationalNumber = /^(?:\\d+|\\d{1,3}(?:,\\d{3})+)(?:\\.\\d*)?$/;
+  const internationalNumber = /^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?$/;
   if (!internationalNumber.test(input)) {
     throw new Error("Use international number format: comma for thousands and dot for decimals (e.g. 1,234.56).");
   }
@@ -54,10 +54,10 @@ function normalizeListingAmount(value: string): string {
 function formatNumericInput(value: string): string {
   try {
     const normalized = normalizeListingAmount(value);
-    if (!normalized || !/^\\d*(?:\\.\\d*)?$/.test(normalized)) return value;
+    if (!normalized || !/^\d*(?:\.\d*)?$/.test(normalized)) return value;
     const [whole = "", fraction] = normalized.split(".");
-    const grouped = whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
-    return fraction !== undefined ? `${grouped}.${fraction}` : grouped;
+    const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return fraction !== undefined ? grouped + "." + fraction : grouped;
   } catch {
     return value;
   }
