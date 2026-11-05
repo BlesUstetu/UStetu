@@ -3936,3 +3936,104 @@ html body .seller-dashboard {
   background-color: transparent !important;
   background-image: none !important;
 }
+
+/* Compact approximate values are display-only; transaction values remain exact. */
+.buy-compact-value {
+  display: block;
+  margin-top: 3px;
+  color: #39d9a5;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: .02em;
+}
+
+/* Compact approximate values for Seller and Buyer; exact amounts remain primary. */
+.seller-compact-value {
+  display: block;
+  margin-top: 3px;
+  color: #39d9a5;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: .02em;
+}
+
+/* Mobile amount hierarchy: keep exact values readable and compact values secondary. */
+@media (max-width: 600px) {
+  .seller-dashboard .seller-compact-value,
+  .seller-dashboard small.seller-compact-value {
+    display: block;
+    margin-top: 3px;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    font-weight: 650 !important;
+    overflow-wrap: anywhere;
+  }
+
+  .seller-dashboard .seller-overview-listing {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .seller-dashboard .seller-overview-item,
+  .seller-dashboard .seller-stat {
+    min-width: 0 !important;
+    overflow-wrap: anywhere;
+  }
+
+  .seller-dashboard .seller-overview-item > strong,
+  .seller-dashboard .seller-stat > strong {
+    display: block;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    overflow-wrap: anywhere;
+  }
+
+  .buy-modal .buy-order-summary,
+  .buy-modal .buy-balance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .buy-modal .buy-order-summary > div,
+  .buy-modal .buy-balance-grid > div {
+    min-width: 0 !important;
+    padding: 9px !important;
+  }
+
+  .buy-modal .buy-order-summary > div:last-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  .buy-modal .buy-order-summary strong,
+  .buy-modal .buy-balance-grid strong {
+    display: block;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .buy-modal .buy-compact-value {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    margin-top: 3px;
+  }
+}
+
+@media (max-width: 380px) {
+  .seller-dashboard .seller-overview-listing {
+    gap: 6px !important;
+  }
+
+  .buy-modal .buy-order-summary > div,
+  .buy-modal .buy-balance-grid > div {
+    padding: 8px !important;
+  }
+
+  .buy-modal .buy-order-summary strong,
+  .buy-modal .buy-balance-grid strong {
+    font-size: 11px !important;
+  }
+}
