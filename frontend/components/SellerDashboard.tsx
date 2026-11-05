@@ -1204,8 +1204,8 @@ export default function SellerDashboard() {
                 <input value={newPrice} onChange={e => setNewPrice(formatNumericInput(e.target.value))} inputMode="decimal" />
                 <button disabled={disabled} onClick={() => void updatePrice()}>Update Price</button>
                 <div className="seller-inline">
-                  <div><label>Min Order</label><input value={minOrder} onChange={e => setMinOrder(e.target.value)} inputMode="decimal" /></div>
-                  <div><label>Max Order</label><input value={maxOrder} onChange={e => setMaxOrder(e.target.value)} inputMode="decimal" /></div>
+                  <div><label>Min Order</label><input value={minOrder} onChange={e => setMinOrder(formatNumericInput(e.target.value))} inputMode="decimal" /></div>
+                  <div><label>Max Order</label><input value={maxOrder} onChange={e => setMaxOrder(formatNumericInput(e.target.value))} inputMode="decimal" /></div>
                 </div>
                 <button disabled={disabled} onClick={() => void updateLimits()}>Update Limits</button>
                 {isListingOwner && (
