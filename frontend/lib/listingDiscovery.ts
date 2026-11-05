@@ -10,6 +10,7 @@ export type DiscoveredListing = {
   min_order_amount: string;
   max_order_amount: string;
   status: "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED";
+  created_at: string | null;
 };
 
 type ListingIndexResponse = {
@@ -43,7 +44,8 @@ function normalizeListing(row: Record<string, unknown>): DiscoveredListing {
     max_order_amount: String(row.max_order_amount ?? "0"),
     status: row.status === "ACTIVE" || row.status === "PAUSED" || row.status === "CLOSED"
       ? row.status
-      : "UNKNOWN"
+      : "UNKNOWN",
+    created_at: typeof row.created_at === "string" ? row.created_at : null
   };
 }
 
@@ -70,15 +72,26 @@ async function readIndex(
  * fail-closed until the endpoint confirms the index is current.
  */
 export async function discoverListingsOnChain(
-  onProgress?: (listings: DiscoveredListing[]) => void
+  onProgress?: (listings: DiscoveredListing[]) => void,
+  forceRefresh = false
 ): Promise<DiscoveredListing[]> {
   const now = Date.now();
-  if (cached && now - cached.at < CACHE_MS) {
+  if (!forceRefresh && cached && now - cached.at < CACHE_MS) {
     onProgress?.(cached.listings);
     return cached.listings;
   }
   if (inFlight) {
-    const listings = await inFlight;
+    await inFlight;
+    if (!forceRefresh && cached) {
+      onProgress?.(cached.listings);
+      return cached.listings;
+    }
+  }
+
+  if (forceRefresh) {
+    const result = await readIndex({}, false);
+    const listings = (result.listings ?? []).map(normalizeListing);
+    cached = { at: Date.now(), listings };
     onProgress?.(listings);
     return listings;
   }
