@@ -42,12 +42,33 @@ const tokenApprovalAbi = [
 ] as const;
 
 function normalizeListingAmount(value: string): string {
-  const trimmed = value.trim();
-  // Accept Indonesian/English thousands grouping (e.g. 1.000.000 or 1,000,000)
-  // while preserving ordinary decimals such as 0.01.
-  if (/^\\d{1,3}(?:\\.\\d{3})+$/.test(trimmed)) return trimmed.replace(/\\./g, "");
-  if (/^\\d{1,3}(?:,\\d{3})+$/.test(trimmed)) return trimmed.replace(/,/g, "");
-  return trimmed;
+  const input = value.trim().replace(/\\s/g, "");
+  if (!input) return "";
+  const lastDot = input.lastIndexOf(".");
+  const lastComma = input.lastIndexOf(",");
+  if (lastDot >= 0 && lastComma >= 0) {
+    const decimalSeparator = lastDot > lastComma ? "." : ",";
+    const groupingSeparator = decimalSeparator === "." ? "," : ".";
+    return input.split(groupingSeparator).join("").replace(decimalSeparator, ".");
+  }
+  const separator = lastDot >= 0 ? "." : lastComma >= 0 ? "," : "";
+  if (!separator) return input;
+  const parts = input.split(separator);
+  if (parts.length > 2) {
+    if (parts.slice(1).every((part) => part.length === 3)) return parts.join("");
+    const fraction = parts.pop() ?? "";
+    return parts.join("") + "." + fraction;
+  }
+  const [whole, fraction = ""] = parts;
+  if (fraction.length === 3 && whole.length <= 3) return whole + fraction;
+  return whole + "." + fraction;
+}
+function formatNumericInput(value: string): string {
+  const normalized = normalizeListingAmount(value);
+  if (!normalized || !/^\\d*(?:\\.\\d*)?$/.test(normalized)) return value;
+  const [whole = "", fraction] = normalized.split(".");
+  const grouped = whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+  return fraction !== undefined ? `${grouped}.${fraction}` : grouped;
 }
 function formatDisplayUnits(value: bigint, decimals: number): string {
   const [integerPart, fractionPart] = formatUnits(value, decimals).split(".");
@@ -606,7 +627,7 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!listing || !tokenAddress || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
-      const raw = parseUnits(depositAmount || "0", tokenDecimals);
+      const raw = parseUnits(normalizeListingAmount(depositAmount || "0"), tokenDecimals);
       if (raw <= 0n) throw new Error("Inventory amount must be greater than 0.");
       if (tokenAllowance < raw) {
         await transact("Approve inventory", () => writeContractAsync({
@@ -631,7 +652,7 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
-      const raw = parseUnits(withdrawAmount || "0", tokenDecimals);
+      const raw = parseUnits(normalizeListingAmount(withdrawAmount || "0"), tokenDecimals);
       if (raw <= 0n || raw > available) throw new Error("Withdrawal amount exceeds available inventory.");
       await transact("Withdraw inventory", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
@@ -648,7 +669,7 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
-      const raw = parseUnits(newPrice || "0", paymentDecimals);
+      const raw = parseUnits(normalizeListingAmount(newPrice || "0"), paymentDecimals);
       if (raw <= 0n) throw new Error("Price must be greater than 0.");
       await transact("Update price", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
@@ -665,8 +686,8 @@ export default function SellerDashboard() {
     try {
       await ensureSeller();
       if (!listing || !isListingOwner) throw new Error("Listing not found or not owned by this wallet.");
-      const min = parseUnits(minOrder || "0", tokenDecimals);
-      const max = parseUnits(maxOrder || "0", tokenDecimals);
+      const min = parseUnits(normalizeListingAmount(minOrder || "0"), tokenDecimals);
+      const max = parseUnits(normalizeListingAmount(maxOrder || "0"), tokenDecimals);
       if (min <= 0n || max < min) throw new Error("Order limits are invalid.");
       await transact("Update limits", () => writeContractAsync({
         address: USTETU_ESCROW_ADDRESS,
@@ -1078,12 +1099,12 @@ export default function SellerDashboard() {
 
                   <div className={createTokenRegistered ? "" : "listing-form-disabled"}>
                     <div className="seller-inline">
-                      <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
-                      <div><label>Inventory{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingInventory} onChange={e => setListingInventory(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                      <div><label>Price ({paymentSymbol} / token)</label><input value={listingPrice} onChange={e => setListingPrice(formatNumericInput(e.target.value))} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                      <div><label>Inventory{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingInventory} onChange={e => setListingInventory(formatNumericInput(e.target.value))} inputMode="decimal" disabled={!createTokenRegistered} /></div>
                     </div>
                     <div className="seller-inline">
-                      <div><label>Min Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMin} onChange={e => setListingMin(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
-                      <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(e.target.value)} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                      <div><label>Min Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMin} onChange={e => setListingMin(formatNumericInput(e.target.value))} inputMode="decimal" disabled={!createTokenRegistered} /></div>
+                      <div><label>Max Order{createTokenMetadataReady ? ` (${createTokenSymbol})` : ""}</label><input value={listingMax} onChange={e => setListingMax(formatNumericInput(e.target.value))} inputMode="decimal" disabled={!createTokenRegistered} /></div>
                     </div>
 
                     {createTokenRegistered && <div className="listing-ready">✓ Registry verified — listing parameters are ready.</div>}
@@ -1128,15 +1149,15 @@ export default function SellerDashboard() {
                       <div className="inventory-action-card">
                         <div className="inventory-action-title"><strong>Add inventory</strong><span>Deposit tokens from your connected wallet</span></div>
                         <label>Amount to add ({tokenSymbol})</label>
-                        <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} inputMode="decimal" placeholder="Enter deposit amount" />
+                        <input value={depositAmount} onChange={e => setDepositAmount(formatNumericInput(e.target.value))} inputMode="decimal" placeholder="Enter deposit amount" />
                         <button disabled={disabled || !depositAmount.trim()} onClick={() => void addInventory()}>Add Inventory</button>
                       </div>
                       <div className="inventory-action-card">
                         <div className="inventory-action-title"><strong>Withdraw inventory</strong><span>Only available, unlocked tokens can be withdrawn</span></div>
                         <label>Amount to withdraw ({tokenSymbol})</label>
-                        <input value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} inputMode="decimal" placeholder="Enter withdrawal amount" />
+                        <input value={withdrawAmount} onChange={e => setWithdrawAmount(formatNumericInput(e.target.value))} inputMode="decimal" placeholder="Enter withdrawal amount" />
                         <div className="inventory-action-buttons">
-                          <button disabled={disabled || available === 0n} onClick={() => setWithdrawAmount(formatUnits(available, tokenDecimals))}>Use Available</button>
+                          <button disabled={disabled || available === 0n} onClick={() => setWithdrawAmount(formatNumericInput(formatUnits(available, tokenDecimals)))}>Use Available</button>
                           <button className="primary" disabled={disabled || available === 0n || !withdrawAmount.trim()} onClick={() => void withdrawInventory()}>Withdraw {tokenSymbol}</button>
                         </div>
                       </div>
@@ -1180,7 +1201,7 @@ export default function SellerDashboard() {
               <h2>Listing Settings</h2><p className="seller-panel-intro">Manage the price, order-size limits, and availability of your selected listing. Changes are submitted on-chain.</p>
               <div className="seller-form">
                 <label>Price ({paymentSymbol} / {tokenSymbol})</label>
-                <input value={newPrice} onChange={e => setNewPrice(e.target.value)} inputMode="decimal" />
+                <input value={newPrice} onChange={e => setNewPrice(formatNumericInput(e.target.value))} inputMode="decimal" />
                 <button disabled={disabled} onClick={() => void updatePrice()}>Update Price</button>
                 <div className="seller-inline">
                   <div><label>Min Order</label><input value={minOrder} onChange={e => setMinOrder(e.target.value)} inputMode="decimal" /></div>
