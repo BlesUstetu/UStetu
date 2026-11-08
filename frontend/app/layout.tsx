@@ -12,6 +12,7 @@ import "../components/MobileResponsive.css";
 export const metadata: Metadata = {
   title: "USTETU — Own What’s Next.",
   description: "USTETU Web3 marketplace on Base Mainnet.",
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
