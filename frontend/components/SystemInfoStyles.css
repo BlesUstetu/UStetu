@@ -44,3 +44,36 @@ html[data-theme="light"] .system-info-panel{background:linear-gradient(rgba(247,
  .system-info-panel .system-section-title p,.system-info-panel .system-note,.system-info-panel .system-trust-points span,.system-info-panel .system-confirm-banner span,.system-info-panel .system-seller-note,.system-info-panel .system-guide-step p,.system-info-panel .system-time-grid span,.system-info-panel .system-info-warning p,.system-info-panel .system-trust-footer{font-size:12px!important;line-height:1.7!important}
  .system-info-panel .system-guide-step strong{font-size:12px!important}
 }
+
+/* USTETU THEME GLOBAL PASS */
+
+
+/* USTETU Center: full light-theme palette, including legacy fixed-color text. */
+html[data-theme="light"] .system-info-panel { background:#f8fbff !important;color:#263b53 !important;border-color:rgba(48,75,108,.16) !important; }
+html[data-theme="light"] .system-center-tabs { background:linear-gradient(145deg,#edf4fa,#e5eef7) padding-box,linear-gradient(110deg,rgba(24,145,190,.28),rgba(105,92,210,.20)) border-box;box-shadow:0 8px 22px rgba(32,55,82,.07); }
+html[data-theme="light"] .system-center-tabs button { color:#64788e; }
+html[data-theme="light"] .system-center-tabs button.active { color:#176b91;border-color:rgba(24,145,190,.28);background:#fff; }
+html[data-theme="light"] .system-inner-card,
+html[data-theme="light"] .system-guide-step,
+html[data-theme="light"] .system-trust-points>div,
+html[data-theme="light"] .system-tech-item {
+  background:#fff !important;color:#40536a !important;border-color:rgba(48,75,108,.14) !important;
+}
+html[data-theme="light"] .system-info-panel .system-section-title h3,
+html[data-theme="light"] .system-info-panel .system-guide-step strong { color:#20344b !important; }
+html[data-theme="light"] .system-info-panel .system-section-title p,
+html[data-theme="light"] .system-info-panel .system-note,
+html[data-theme="light"] .system-info-panel .system-trust-points span,
+html[data-theme="light"] .system-info-panel .system-confirm-banner span,
+html[data-theme="light"] .system-info-panel .system-seller-note,
+html[data-theme="light"] .system-info-panel .system-guide-step p,
+html[data-theme="light"] .system-info-panel .system-time-grid span,
+html[data-theme="light"] .system-info-panel .system-info-warning p,
+html[data-theme="light"] .system-info-panel .system-trust-footer { color:#5b6f85 !important; }
+html[data-theme="light"] .system-info-panel .system-contract-row strong { color:#20344b !important; }
+html[data-theme="light"] .system-info-panel .system-contract-row span,
+html[data-theme="light"] .system-info-panel .system-tech-item span { color:#65798f !important; }
+html[data-theme="light"] .system-info-panel .system-confirm-banner,
+html[data-theme="light"] .system-info-panel .system-seller-note,
+html[data-theme="light"] .system-info-panel .system-info-warning { background:#edf5fb !important;color:#40536a !important;border-color:rgba(48,125,170,.18) !important; }
+html[data-theme="light"] .system-info-backdrop { background:rgba(28,44,64,.24); }
