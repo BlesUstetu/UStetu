@@ -96,19 +96,19 @@ export default function Header({ showSellerOrders = false, showHome = true, show
               <span className="ustetu-header-menu-section-label">NAVIGATION</span>
               {showHome && (
                 <a href={`${DEPLOY_BASE}/`} className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
-                  <span className="ustetu-header-menu-icon">⌂</span>
+                  <span className="ustetu-header-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3.5 10 8.5-7 8.5 7v10a1 1 0 0 1-1 1h-5.5v-7h-4v7H4.5a1 1 0 0 1-1-1z"/></svg></span>
                   <span>Home</span>
                 </a>
               )}
               {showSellerCenter && (
                 <a href={`${DEPLOY_BASE}/seller/`} className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
-                  <span className="ustetu-header-menu-icon">◆</span>
+                  <span className="ustetu-header-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9 4.5 4h15L21 9"/><path d="M4 9v11h16V9M3 9h18M9 20v-7h6v7"/></svg></span>
                   <span>Seller Center</span>
                 </a>
               )}
               {showSellerOrders && (
                 <a href={`${DEPLOY_BASE}/seller/orders/`} className="ustetu-header-menu-link" onClick={() => setMenuOpen(false)}>
-                  <span className="ustetu-header-menu-icon">▣</span>
+                  <span className="ustetu-header-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg></span>
                   <span>Orders</span>
                 </a>
               )}
@@ -147,12 +147,12 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         .ustetu-header-menu-tools .language-control{width:100%;min-width:0}
         .ustetu-header-menu-tools .language-trigger{width:100%;min-height:38px;justify-content:flex-start;padding:0 11px}
         .ustetu-header-menu-tools .icon-button{width:42px;height:38px;min-width:42px}
-        .ustetu-header-menu-center .system-info-trigger{display:flex;width:100%;min-height:40px;justify-content:flex-start;gap:10px;margin:0;padding:0 11px;border:1px solid rgba(72,210,255,.18);border-radius:10px;background:linear-gradient(145deg,rgba(10,20,38,.82),rgba(8,12,25,.92));color:#dcecff;font-size:10px;font-weight:750;letter-spacing:.06em;box-shadow:none}
-        .ustetu-header-menu-center .system-info-trigger:hover{border-color:rgba(72,210,255,.42);background:rgba(14,32,52,.96)}
+        .ustetu-header-menu-center .system-info-trigger{display:flex;width:100%;min-height:40px;justify-content:flex-start;gap:10px;margin:0;padding:0 11px;border:1px solid rgba(72,210,255,.18);border-radius:10px;background:linear-gradient(145deg,rgba(10,20,38,.82),rgba(8,12,25,.92));color:#dcecff;font-size:12px;font-weight:650;letter-spacing:.02em;box-shadow:none}
+        .ustetu-header-menu-center .system-info-trigger:hover{border-color:rgba(72,210,255,.42);background:rgba(14,32,52,.96)}\n        .ustetu-header-menu-center .system-info-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px;width:22px;height:22px;border:1px solid rgba(72,210,255,.35);border-radius:7px;color:#8ff6ff;font-size:13px;line-height:1;text-shadow:none}
         .ustetu-header-menu-nav{display:grid;gap:6px;padding-top:11px}
         .ustetu-header-menu-link{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 11px;border:1px solid transparent;border-radius:10px;background:linear-gradient(145deg,rgba(10,20,38,.72),rgba(8,12,25,.82)) padding-box,linear-gradient(135deg,rgba(72,210,255,.18),rgba(105,92,255,.18),rgba(235,86,255,.10)) border-box;color:#dcecff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.035em;transition:transform .16s ease,background .16s ease}
         .ustetu-header-menu-link:hover{transform:translateX(2px);background:linear-gradient(145deg,rgba(12,25,48,.92),rgba(10,14,31,.94)) padding-box,linear-gradient(135deg,rgba(72,210,255,.42),rgba(105,92,255,.34),rgba(235,86,255,.22)) border-box}
-        .ustetu-header-menu-icon{display:inline-flex;width:18px;justify-content:center;color:#8ff6ff;text-shadow:0 0 8px rgba(72,210,255,.55)}
+        .ustetu-header-menu-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px;width:22px;height:22px;color:#8ff6ff}.ustetu-header-menu-icon svg{display:block;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
         .wallet-connect-control{display:inline-flex;align-items:center}
         .ustetu-wallet-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 12px;border:1px solid transparent;border-radius:11px;background:linear-gradient(145deg,rgba(10,20,38,.96),rgba(8,12,25,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.72),rgba(105,92,255,.64),rgba(235,86,255,.50)) border-box;color:#f4f8ff;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.055em;white-space:nowrap;cursor:pointer;box-shadow:0 0 18px rgba(72,168,255,.10),inset 0 1px 0 rgba(255,255,255,.08);transition:transform .2s ease,background .2s ease,box-shadow .2s ease,color .2s ease}
         .ustetu-wallet-button:hover{background:linear-gradient(145deg,rgba(12,25,48,.98),rgba(10,14,31,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.90),rgba(105,92,255,.78),rgba(235,86,255,.64)) border-box;transform:translateY(-1px);box-shadow:0 0 24px rgba(72,168,255,.16),0 0 36px rgba(105,92,255,.08),inset 0 1px 0 rgba(255,255,255,.10)}
@@ -194,7 +194,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
           .ustetu-header-menu-center .system-info-trigger{min-height:42px}
           .ustetu-header-menu-nav{gap:7px;padding-top:10px}
           .ustetu-header-menu-link{min-height:43px;padding:0 12px;font-size:12px}
-          .ustetu-header-menu-icon{width:20px}
+          .ustetu-header-menu-icon{width:22px;flex-basis:22px}.ustetu-header-menu-icon svg{width:18px;height:18px}
         }
         @media(max-width:360px){
           .ustetu-header-menu{right:6px;width:calc(100vw - 12px);padding:9px}
