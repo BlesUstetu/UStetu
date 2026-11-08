@@ -119,7 +119,7 @@ jobs:
                   "settings": original_input["settings"],
               }
               filename = target["contract"] + ".standard-input.json"
-              Path(filename).write_text(json.dumps(standard_input, separators=(",", ":")) + "\\n")
+              Path(filename).write_text(json.dumps(standard_input, separators=(",", ":")) + "\n")
 
               summary = {
                   "contractAddress": target["address"],
