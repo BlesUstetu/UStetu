@@ -1,0 +1,136 @@
+name: Prepare UStetu Escrow Mainnet Verification JSON
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ustetu-escrow-mainnet-verification
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Compile Escrow source and package verification input
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install pinned forge-std
+        run: forge install foundry-rs/forge-std@v1.9.7
+
+      - name: Confirm build configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^solc_version = "0\.8\.30"$' foundry.toml
+          grep -Eq '^optimizer = true$' foundry.toml
+          grep -Eq '^optimizer_runs = 200$' foundry.toml
+          test -f contracts/core/UStetuEscrow.sol
+          echo "Foundry configuration matches the intended Solidity 0.8.30 / optimizer 200 settings."
+
+      - name: Compile with build information only
+        run: forge build --build-info
+
+      - name: Extract and validate Escrow Standard JSON Input
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          target_file = "contracts/core/UStetuEscrow.sol"
+          target_contract = "UStetuEscrow"
+          candidates = []
+
+          for path in Path("out/build-info").glob("*.json"):
+              info = json.loads(path.read_text())
+              contracts = info.get("output", {}).get("contracts", {})
+              if target_contract in contracts.get(target_file, {}):
+                  candidates.append((path, info))
+
+          if len(candidates) != 1:
+              raise SystemExit(
+                  f"Expected exactly one build-info entry for {target_file}:{target_contract}; "
+                  f"found {len(candidates)}"
+              )
+
+          build_info_path, info = candidates[0]
+          standard_input = info.get("input")
+          if not isinstance(standard_input, dict):
+              raise SystemExit("Build-info does not contain compiler Standard JSON input")
+
+          if standard_input.get("language") != "Solidity":
+              raise SystemExit("Unexpected compiler input language")
+
+          settings = standard_input.get("settings", {})
+          optimizer = settings.get("optimizer", {})
+          if optimizer.get("enabled") is not True or optimizer.get("runs") != 200:
+              raise SystemExit(f"Unexpected optimizer settings: {optimizer}")
+
+          solc_version = info.get("solcVersion", "")
+          if not solc_version.startswith("0.8.30+commit.73712a01"):
+              raise SystemExit(f"Unexpected compiler version: {solc_version}")
+
+          if target_file not in standard_input.get("sources", {}):
+              raise SystemExit(f"Compiler input is missing {target_file}")
+
+          Path("UStetuEscrow.standard-input.json").write_text(
+              json.dumps(standard_input, separators=(",", ":")) + "\n"
+          )
+
+          summary = {
+              "contractAddress": "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae",
+              "chainId": 8453,
+              "contractFile": target_file,
+              "contractName": target_contract,
+              "compilerVersion": solc_version,
+              "optimizer": optimizer,
+              "evmVersion": settings.get("evmVersion", "compiler default"),
+              "buildInfoFile": str(build_info_path),
+              "sourceCount": len(standard_input["sources"]),
+              "note": "Compilation artifact only. No deployment or on-chain transaction is performed."
+          }
+          Path("UStetuEscrow.build-info-summary.json").write_text(
+              json.dumps(summary, indent=2) + "\n"
+          )
+
+          print(json.dumps(summary, indent=2))
+          PY
+
+      - name: Upload verification artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ustetu-escrow-mainnet-verification
+          path: |
+            UStetuEscrow.standard-input.json
+            UStetuEscrow.build-info-summary.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish artifact location
+        shell: bash
+        run: |
+          {
+            echo "## UStetu Escrow Mainnet verification input"
+            echo ""
+            echo "Compilation and packaging completed. No deployment was performed."
+            echo ""
+            echo "[Download workflow artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload.outputs.artifact-id }})"
+            echo ""
+            echo "Artifact ID: ${{ steps.upload.outputs.artifact-id }}"
+          } >> "$GITHUB_STEP_SUMMARY"
