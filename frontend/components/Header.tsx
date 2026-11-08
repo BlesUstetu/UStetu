@@ -272,6 +272,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         html[data-theme="light"] .ustetu-header-menu-tools .language-option.is-active{background:#e8f1f9;color:#152b43}
         html[data-theme="light"] .ustetu-header-menu-tools .language-option small{color:#657b94}
       `}
+      </style>
     </header>
   );
 }
