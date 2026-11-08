@@ -15,6 +15,7 @@ export default function ThemeLanguageControls() {
     const isDark = savedTheme ? savedTheme === "dark" : true;
     setDark(isDark);
     document.documentElement.dataset.theme = isDark ? "dark" : "light";
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 
     const close = (event: MouseEvent) => {
       if (!languageRef.current?.contains(event.target as Node)) {
@@ -29,6 +30,7 @@ export default function ThemeLanguageControls() {
     const next = !dark;
     setDark(next);
     document.documentElement.dataset.theme = next ? "dark" : "light";
+    document.documentElement.style.colorScheme = next ? "dark" : "light";
     window.localStorage.setItem("ustetu-theme", next ? "dark" : "light");
   }
 
