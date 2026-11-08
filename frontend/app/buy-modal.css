@@ -24,3 +24,22 @@
 @keyframes ustetu-modal-fade { from{opacity:0} to{opacity:1} }
 @keyframes ustetu-modal-in { from{opacity:0;transform:translateY(12px) scale(.985)} to{opacity:1;transform:translateY(0) scale(1)} }
 @media (max-width:560px) { .fixed.inset-0{padding:12px !important}.fixed.inset-0 > div{width:calc(100vw - 24px) !important;max-height:calc(100vh - 24px) !important;padding:19px !important;border-radius:20px !important}.fixed.inset-0 > div > div:nth-child(2) > div:nth-child(3){grid-template-columns:1fr !important} }
+
+/* USTETU THEME GLOBAL PASS */
+
+
+/* Global light-theme support for the transaction confirmation modal. */
+html[data-theme="light"] .fixed.inset-0 > div {
+  background:linear-gradient(145deg,#fff,#f1f6fb) !important;
+  color:#20344b !important;
+  border-color:rgba(48,75,108,.17) !important;
+  box-shadow:0 24px 70px rgba(35,55,80,.20) !important;
+}
+html[data-theme="light"] .fixed.inset-0 h2,
+html[data-theme="light"] .fixed.inset-0 > div > div:nth-child(2) > div:nth-child(3) > div > div:last-child { color:#20344b !important; }
+html[data-theme="light"] .fixed.inset-0 p,
+html[data-theme="light"] .fixed.inset-0 label,
+html[data-theme="light"] .fixed.inset-0 > div > div:nth-child(2) > div:nth-child(3) > div > div:first-child { color:#64778d !important; }
+html[data-theme="light"] .fixed.inset-0 input { background:#fff !important;color:#20344b !important;border-color:rgba(48,75,108,.18) !important; }
+html[data-theme="light"] .fixed.inset-0 > div > div:first-child button { background:#edf3f8 !important;color:#40536a !important;border-color:rgba(48,75,108,.16) !important; }
+html[data-theme="light"] .fixed.inset-0 a { color:#426c91 !important; }
