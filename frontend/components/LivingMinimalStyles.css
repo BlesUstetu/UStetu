@@ -359,3 +359,28 @@ html[data-theme="dark"] .listing-glass {
     0 0 32px rgba(54,130,255,.07),
     inset 0 1px rgba(255,255,255,.07);
 }
+
+/* USTETU THEME GLOBAL PASS */
+
+
+/* Shared Living Minimal / Seller / Buyer panels: light theme surfaces. */
+html[data-theme="light"] .living-panel,
+html[data-theme="light"] .living-card,
+html[data-theme="light"] .seller-panel,
+html[data-theme="light"] .buyer-panel,
+html[data-theme="light"] .orders-panel {
+  background:#fff !important;color:#263b53 !important;border-color:rgba(48,75,108,.15) !important;
+  box-shadow:0 12px 32px rgba(36,58,82,.07);
+}
+html[data-theme="light"] .living-panel h1,
+html[data-theme="light"] .living-panel h2,
+html[data-theme="light"] .living-panel h3,
+html[data-theme="light"] .living-card h3,
+html[data-theme="light"] .seller-panel h2,
+html[data-theme="light"] .buyer-panel h2,
+html[data-theme="light"] .orders-panel h2 { color:#20344b !important; }
+html[data-theme="light"] .living-panel p,
+html[data-theme="light"] .living-card p,
+html[data-theme="light"] .seller-panel p,
+html[data-theme="light"] .buyer-panel p,
+html[data-theme="light"] .orders-panel p { color:#60758b; }
