@@ -80,6 +80,8 @@ jobs:
           optimizer = settings.get("optimizer", {})
           if optimizer.get("enabled") is not True or optimizer.get("runs") != 200:
               raise SystemExit(f"Unexpected optimizer settings: {optimizer}")
+          if settings.get("evmVersion") != "osaka":
+              raise SystemExit(f"Unexpected EVM version: {settings.get('evmVersion')}; expected osaka from the deployment Foundry toolchain")
 
           solc_version = info.get("solcVersion", "")
           if solc_version != "0.8.30":
