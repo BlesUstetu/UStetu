@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Eq '^solc_version = "0\\.8\\.30"$' foundry.toml
+          grep -Eq '^solc_version = "0\.8\.30"$' foundry.toml
           grep -Eq '^optimizer = true$' foundry.toml
           grep -Eq '^optimizer_runs = 200$' foundry.toml
           test -f contracts/core/UStetuRegistry.sol
