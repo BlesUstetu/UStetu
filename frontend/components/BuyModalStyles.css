@@ -289,3 +289,34 @@ html[data-theme="light"] .buy-modal {
   border-color:rgba(255,209,102,.20);
   background:rgba(255,209,102,.045);
 }
+
+/* USTETU THEME GLOBAL PASS */
+
+
+/* Complete light palette for Buy / Escrow modal surfaces and fields. */
+html[data-theme="light"] .buy-modal,
+html[data-theme="light"] .buy-modal-content {
+  background:#f8fbff !important;color:#263b53 !important;border-color:rgba(48,75,108,.16) !important;
+}
+html[data-theme="light"] .buy-modal h1,
+html[data-theme="light"] .buy-modal h2,
+html[data-theme="light"] .buy-modal h3,
+html[data-theme="light"] .buy-modal strong { color:#20344b; }
+html[data-theme="light"] .buy-modal p,
+html[data-theme="light"] .buy-modal label,
+html[data-theme="light"] .buy-modal small { color:#65788e; }
+html[data-theme="light"] .buy-modal .buy-order-summary div,
+html[data-theme="light"] .buy-modal .buy-balance-grid>div,
+html[data-theme="light"] .buy-modal .escrow-step {
+  background:#fff !important;border-color:rgba(48,75,108,.13) !important;color:#40536a;
+}
+html[data-theme="light"] .buy-modal .buy-input-wrap,
+html[data-theme="light"] .buy-modal input,
+html[data-theme="light"] .buy-modal textarea {
+  background:#fff !important;color:#20344b !important;border-color:rgba(48,75,108,.18) !important;
+}
+html[data-theme="light"] .buy-modal .buy-input-wrap span,
+html[data-theme="light"] .buy-modal .buy-modal-kicker,
+html[data-theme="light"] .buy-modal .buy-section-kicker { color:#356ea9; }
+html[data-theme="light"] .buy-modal .buy-tx-list a { background:#f0f5fa;color:#356ea9; }
+html[data-theme="light"] .buy-modal-overlay { background:rgba(28,44,64,.28); }
