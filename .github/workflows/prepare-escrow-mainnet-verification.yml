@@ -1,4 +1,4 @@
-name: Prepare UStetu Escrow Mainnet Verification JSON
+name: Prepare UStetu Mainnet Verification JSONs
 
 on:
   workflow_dispatch:
@@ -7,19 +7,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: ustetu-escrow-mainnet-verification
+  group: ustetu-mainnet-verification
   cancel-in-progress: false
 
 jobs:
   prepare:
-    name: Compile Escrow source and package verification input
+    name: Compile deployment sources and package verification inputs
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
-      - name: Checkout repository source
+      - name: Checkout exact Mainnet deployment source
         uses: actions/checkout@v4
         with:
+          ref: bbc8ab3a3b6daeeaa4f5baddb4925db7025c4c3e
           submodules: recursive
           fetch-depth: 1
 
@@ -31,20 +32,22 @@ jobs:
       - name: Install pinned forge-std
         run: forge install foundry-rs/forge-std@v1.9.7
 
-      - name: Confirm build configuration
+      - name: Confirm deployment build configuration
         shell: bash
         run: |
           set -euo pipefail
-          grep -Eq '^solc_version = "0\.8\.30"$' foundry.toml
+          grep -Eq '^solc_version = "0\\.8\\.30"$' foundry.toml
           grep -Eq '^optimizer = true$' foundry.toml
           grep -Eq '^optimizer_runs = 200$' foundry.toml
+          test -f contracts/core/UStetuRegistry.sol
+          test -f contracts/core/UStetuSellerRegistry.sol
           test -f contracts/core/UStetuEscrow.sol
-          echo "Foundry configuration matches the intended Solidity 0.8.30 / optimizer 200 settings."
+          echo "Pinned deployment source and Solidity 0.8.30 / optimizer 200 configuration confirmed."
 
-      - name: Compile with build information only
+      - name: Compile with build information
         run: forge build --build-info
 
-      - name: Extract and validate Escrow Standard JSON Input
+      - name: Extract and validate all three Standard JSON inputs
         shell: bash
         run: |
           set -euo pipefail
@@ -52,75 +55,104 @@ jobs:
           import json
           from pathlib import Path
 
-          target_file = "contracts/core/UStetuEscrow.sol"
-          target_contract = "UStetuEscrow"
-          candidates = []
+          targets = [
+              {
+                  "file": "contracts/core/UStetuRegistry.sol",
+                  "contract": "UStetuRegistry",
+                  "address": "0x237023EC6A39e59CEbd1D231777308c354ba542F",
+              },
+              {
+                  "file": "contracts/core/UStetuSellerRegistry.sol",
+                  "contract": "UStetuSellerRegistry",
+                  "address": "0x2e8512a3c9953E5B2f061a4FF694637f78740468",
+              },
+              {
+                  "file": "contracts/core/UStetuEscrow.sol",
+                  "contract": "UStetuEscrow",
+                  "address": "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae",
+              },
+          ]
 
+          build_infos = []
           for path in Path("out/build-info").glob("*.json"):
               info = json.loads(path.read_text())
-              contracts = info.get("output", {}).get("contracts", {})
-              if target_contract in contracts.get(target_file, {}):
-                  candidates.append((path, info))
+              build_infos.append((path, info))
 
-          if len(candidates) != 1:
-              raise SystemExit(
-                  f"Expected exactly one build-info entry for {target_file}:{target_contract}; "
-                  f"found {len(candidates)}"
+          summaries = []
+          for target in targets:
+              candidates = []
+              for path, info in build_infos:
+                  contracts = info.get("output", {}).get("contracts", {})
+                  if target["contract"] in contracts.get(target["file"], {}):
+                      candidates.append((path, info))
+
+              if len(candidates) != 1:
+                  raise SystemExit(
+                      f'Expected exactly one build-info entry for {target["file"]}:{target["contract"]}; '
+                      f'found {len(candidates)}'
+                  )
+
+              build_info_path, info = candidates[0]
+              original_input = info.get("input")
+              if not isinstance(original_input, dict):
+                  raise SystemExit(f'No Standard JSON input for {target["contract"]}')
+
+              settings = original_input.get("settings", {})
+              optimizer = settings.get("optimizer", {})
+              if optimizer.get("enabled") is not True or optimizer.get("runs") != 200:
+                  raise SystemExit(f'Unexpected optimizer settings for {target["contract"]}: {optimizer}')
+              if settings.get("evmVersion") != "osaka":
+                  raise SystemExit(
+                      f'Unexpected EVM version for {target["contract"]}: {settings.get("evmVersion")}; expected osaka'
+                  )
+              if info.get("solcVersion") != "0.8.30":
+                  raise SystemExit(
+                      f'Unexpected compiler version for {target["contract"]}: {info.get("solcVersion")}'
+                  )
+              if target["file"] not in original_input.get("sources", {}):
+                  raise SystemExit(f'Missing source {target["file"]}')
+
+              # Keep only Solidity Standard JSON top-level fields.
+              standard_input = {
+                  "language": original_input["language"],
+                  "sources": original_input["sources"],
+                  "settings": original_input["settings"],
+              }
+              filename = target["contract"] + ".standard-input.json"
+              Path(filename).write_text(json.dumps(standard_input, separators=(",", ":")) + "\\n")
+
+              summary = {
+                  "contractAddress": target["address"],
+                  "chainId": 8453,
+                  "contractFile": target["file"],
+                  "contractName": target["contract"],
+                  "compilerVersion": info["solcVersion"],
+                  "optimizer": optimizer,
+                  "evmVersion": settings["evmVersion"],
+                  "deploymentSourceCommit": "bbc8ab3a3b6daeeaa4f5baddb4925db7025c4c3e",
+                  "foundryVersion": "1.8.3",
+                  "buildInfoFile": str(build_info_path),
+                  "sourceCount": len(standard_input["sources"]),
+                  "standardJsonTopLevelKeys": list(standard_input.keys()),
+              }
+              Path(target["contract"] + ".build-info-summary.json").write_text(
+                  json.dumps(summary, indent=2) + "\\n"
               )
+              summaries.append(summary)
 
-          build_info_path, info = candidates[0]
-          standard_input = info.get("input")
-          if not isinstance(standard_input, dict):
-              raise SystemExit("Build-info does not contain compiler Standard JSON input")
-
-          if standard_input.get("language") != "Solidity":
-              raise SystemExit("Unexpected compiler input language")
-
-          settings = standard_input.get("settings", {})
-          optimizer = settings.get("optimizer", {})
-          if optimizer.get("enabled") is not True or optimizer.get("runs") != 200:
-              raise SystemExit(f"Unexpected optimizer settings: {optimizer}")
-          if settings.get("evmVersion") != "osaka":
-              raise SystemExit(f"Unexpected EVM version: {settings.get('evmVersion')}; expected osaka from the deployment Foundry toolchain")
-
-          solc_version = info.get("solcVersion", "")
-          if solc_version != "0.8.30":
-              raise SystemExit(f"Unexpected compiler version: {solc_version}; expected 0.8.30")
-
-          if target_file not in standard_input.get("sources", {}):
-              raise SystemExit(f"Compiler input is missing {target_file}")
-
-          Path("UStetuEscrow.standard-input.json").write_text(
-              json.dumps(standard_input, separators=(",", ":")) + "\n"
-          )
-
-          summary = {
-              "contractAddress": "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae",
-              "chainId": 8453,
-              "contractFile": target_file,
-              "contractName": target_contract,
-              "compilerVersion": solc_version,
-              "optimizer": optimizer,
-              "evmVersion": settings.get("evmVersion", "compiler default"),
-              "deploymentSourceCommit": "bbc8ab3a3b6daeeaa4f5baddb4925db7025c4c3e",
-              "foundryVersion": "1.8.3",
-              "buildInfoFile": str(build_info_path),
-              "sourceCount": len(standard_input["sources"]),
-              "note": "Compilation artifact only. No deployment or on-chain transaction is performed."
-          }
-          Path("UStetuEscrow.build-info-summary.json").write_text(
-              json.dumps(summary, indent=2) + "\n"
-          )
-
-          print(json.dumps(summary, indent=2))
+          print(json.dumps(summaries, indent=2))
           PY
 
-      - name: Upload verification artifact
+      - name: Upload verification artifacts
         id: upload
         uses: actions/upload-artifact@v4
         with:
-          name: ustetu-escrow-mainnet-verification
+          name: ustetu-mainnet-verification
           path: |
+            UStetuRegistry.standard-input.json
+            UStetuRegistry.build-info-summary.json
+            UStetuSellerRegistry.standard-input.json
+            UStetuSellerRegistry.build-info-summary.json
             UStetuEscrow.standard-input.json
             UStetuEscrow.build-info-summary.json
           if-no-files-found: error
@@ -130,9 +162,9 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## UStetu Escrow Mainnet verification input"
+            echo "## UStetu Mainnet verification inputs"
             echo ""
-            echo "Compilation and packaging completed. No deployment was performed."
+            echo "Generated from the exact Mainnet deployment source commit. No deployment or on-chain transaction was performed."
             echo ""
             echo "[Download workflow artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload.outputs.artifact-id }})"
             echo ""
