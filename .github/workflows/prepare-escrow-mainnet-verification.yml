@@ -26,7 +26,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: stable
+          version: v1.8.3
 
       - name: Install pinned forge-std
         run: forge install foundry-rs/forge-std@v1.9.7
@@ -100,6 +100,8 @@ jobs:
               "compilerVersion": solc_version,
               "optimizer": optimizer,
               "evmVersion": settings.get("evmVersion", "compiler default"),
+              "deploymentSourceCommit": "bbc8ab3a3b6daeeaa4f5baddb4925db7025c4c3e",
+              "foundryVersion": "1.8.3",
               "buildInfoFile": str(build_info_path),
               "sourceCount": len(standard_input["sources"]),
               "note": "Compilation artifact only. No deployment or on-chain transaction is performed."
