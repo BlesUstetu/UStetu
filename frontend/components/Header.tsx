@@ -165,6 +165,24 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         @media(min-width:761px){.topbar{width:min(1440px,calc(100% - 64px)) !important;box-sizing:border-box;padding-left:15px}.topbar-left,.topbar-right{display:none !important}}
         @media(max-width:760px){.ustetu-header-brand{display:flex;align-items:center;flex:0 1 auto;min-width:0}.ustetu-header-brand-link{gap:5px}.ustetu-header-brand-link .ustetu-logo{width:23px;height:34px}.ustetu-header-brand-link .brand{font-size:14px;letter-spacing:.12em}.ustetu-header-actions{margin-left:auto;gap:6px}.ustetu-menu-button{width:35px;height:35px;flex:0 0 auto}.ustetu-wallet-button{min-height:35px;padding:0 9px;font-size:10px;flex:0 0 auto}.ustetu-wallet-icon{width:15px;height:15px;font-size:8px}}
         @media(max-width:430px){.topbar{padding:8px 9px}.ustetu-header-brand-link .ustetu-logo{width:20px;height:31px}.ustetu-header-brand-link .brand{font-size:13px}.ustetu-header-actions{gap:6px}.ustetu-wallet-button{padding:0 8px;font-size:9px}.ustetu-wallet-label{max-width:82px;overflow:hidden;text-overflow:ellipsis}.ustetu-header-menu{right:9px;width:min(326px,calc(100vw - 18px))}}
+        @media(max-width:600px){
+          .topbar{position:sticky !important;isolation:isolate;min-height:54px;gap:8px}
+          .ustetu-header-menu{top:calc(100% + 6px);right:8px;width:min(360px,calc(100vw - 16px));max-height:calc(100dvh - 76px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;padding:11px;border-radius:15px}
+          .ustetu-header-menu-head{min-height:28px;padding-bottom:8px}
+          .ustetu-header-menu-section{gap:6px;padding:9px 1px}
+          .ustetu-header-menu-tools .header-controls{grid-template-columns:minmax(0,1fr) 40px;gap:7px}
+          .ustetu-header-menu-tools .language-trigger{min-height:40px;padding:0 10px}
+          .ustetu-header-menu-tools .icon-button{width:40px;height:40px;min-width:40px}
+          .ustetu-header-menu-center .system-info-trigger{min-height:42px}
+          .ustetu-header-menu-nav{gap:7px;padding-top:10px}
+          .ustetu-header-menu-link{min-height:43px;padding:0 12px;font-size:12px}
+          .ustetu-header-menu-icon{width:20px}
+        }
+        @media(max-width:360px){
+          .ustetu-header-menu{right:6px;width:calc(100vw - 12px);padding:9px}
+          .ustetu-header-menu-section{padding:8px 1px}
+          .ustetu-header-menu-link{min-height:41px}
+        }
       `}</style>
     </header>
   );
