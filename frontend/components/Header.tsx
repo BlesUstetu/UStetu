@@ -224,53 +224,6 @@ export default function Header({ showSellerOrders = false, showHome = true, show
           .ustetu-wallet-button{gap:5px;padding-left:7px;padding-right:7px;font-size:8px}.ustetu-wallet-outline{width:16px;height:16px}.ustetu-wallet-outline svg{width:16px;height:16px}
         }
 
-        /* Header menu theme parity: keep the same hierarchy in dark and light modes. */
-        html[data-theme="light"] .ustetu-header-menu{
-          background:linear-gradient(145deg,rgba(250,253,255,.985),rgba(238,245,252,.985)) padding-box,
-            linear-gradient(135deg,rgba(24,160,205,.52),rgba(105,92,210,.38),rgba(190,86,190,.22)) border-box;
-          box-shadow:0 20px 54px rgba(32,55,82,.18),0 0 24px rgba(54,130,190,.07),inset 0 1px rgba(255,255,255,.92);
-        }
-        html[data-theme="light"] .ustetu-header-menu-title{color:#52677f}
-        html[data-theme="light"] .ustetu-header-menu-section-label{color:#657b94}
-        html[data-theme="light"] .ustetu-header-menu-section{border-bottom-color:rgba(48,76,108,.13)}
-        html[data-theme="light"] .ustetu-header-menu-link{
-          background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(239,245,251,.96)) padding-box,
-            linear-gradient(135deg,rgba(24,160,205,.25),rgba(105,92,210,.18)) border-box;
-          color:#20334a;
-        }
-        html[data-theme="light"] .ustetu-header-menu-link:hover{
-          background:linear-gradient(145deg,#fff,#eaf3fb) padding-box,
-            linear-gradient(135deg,rgba(24,160,205,.48),rgba(105,92,210,.34)) border-box;
-        }
-        html[data-theme="light"] .ustetu-header-menu-icon{color:#147fa5}
-        html[data-theme="light"] .ustetu-header-menu-center .system-info-trigger{
-          background:linear-gradient(145deg,#fff,#edf4fa);
-          color:#20334a;border-color:rgba(24,145,190,.25);
-        }
-        html[data-theme="light"] .ustetu-header-menu-center .system-info-icon{
-          color:#147fa5;border-color:rgba(24,145,190,.32);
-        }
-        html[data-theme="light"] .ustetu-header-menu-tools .icon-button{
-          background:linear-gradient(145deg,#fff,#edf3f9) padding-box,
-            linear-gradient(135deg,rgba(24,160,205,.42),rgba(105,92,210,.28)) border-box;
-          color:#344b64;box-shadow:0 2px 8px rgba(32,55,82,.08);
-        }
-        html[data-theme="light"] .ustetu-header-menu-tools .language-control{
-          background:linear-gradient(145deg,#fff,#edf3f9) padding-box,
-            linear-gradient(135deg,rgba(24,160,205,.48),rgba(105,92,210,.30)) border-box !important;
-          box-shadow:0 2px 8px rgba(32,55,82,.08) !important;
-        }
-        html[data-theme="light"] .ustetu-header-menu-tools .language-trigger{color:#263c54 !important}
-        html[data-theme="light"] .ustetu-header-menu-tools .language-globe{color:#147fa5 !important;text-shadow:none !important}
-        html[data-theme="light"] .ustetu-header-menu-tools .language-chevron{color:#627a94}
-        html[data-theme="light"] .ustetu-header-menu-tools .language-options{
-          background:rgba(250,253,255,.98) !important;border-color:rgba(48,76,108,.16) !important;
-          box-shadow:0 12px 30px rgba(32,55,82,.16) !important;
-        }
-        html[data-theme="light"] .ustetu-header-menu-tools .language-option{color:#344b64}
-        html[data-theme="light"] .ustetu-header-menu-tools .language-option:hover,
-        html[data-theme="light"] .ustetu-header-menu-tools .language-option.is-active{background:#e8f1f9;color:#152b43}
-        html[data-theme="light"] .ustetu-header-menu-tools .language-option small{color:#657b94}
       `}
       </style>
     </header>
