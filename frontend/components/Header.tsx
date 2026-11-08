@@ -224,8 +224,6 @@ export default function Header({ showSellerOrders = false, showHome = true, show
           .ustetu-wallet-button{gap:5px;padding-left:7px;padding-right:7px;font-size:8px}.ustetu-wallet-outline{width:16px;height:16px}.ustetu-wallet-outline svg{width:16px;height:16px}
         }
 
-      `}
-
         /* Header menu theme parity: keep the same hierarchy in dark and light modes. */
         html[data-theme="light"] .ustetu-header-menu{
           background:linear-gradient(145deg,rgba(250,253,255,.985),rgba(238,245,252,.985)) padding-box,
@@ -273,8 +271,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         html[data-theme="light"] .ustetu-header-menu-tools .language-option:hover,
         html[data-theme="light"] .ustetu-header-menu-tools .language-option.is-active{background:#e8f1f9;color:#152b43}
         html[data-theme="light"] .ustetu-header-menu-tools .language-option small{color:#657b94}
-
-      </style>
+      `}
     </header>
   );
 }
