@@ -82,8 +82,8 @@ jobs:
               raise SystemExit(f"Unexpected optimizer settings: {optimizer}")
 
           solc_version = info.get("solcVersion", "")
-          if not solc_version.startswith("0.8.30+commit.73712a01"):
-              raise SystemExit(f"Unexpected compiler version: {solc_version}")
+          if solc_version != "0.8.30":
+              raise SystemExit(f"Unexpected compiler version: {solc_version}; expected 0.8.30")
 
           if target_file not in standard_input.get("sources", {}):
               raise SystemExit(f"Compiler input is missing {target_file}")
