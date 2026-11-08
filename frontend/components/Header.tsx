@@ -49,7 +49,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
                 >
                   {!connected ? (
                     <button type="button" className="ustetu-wallet-button" onClick={openConnectModal}>
-                      <span className="ustetu-wallet-icon" aria-hidden="true">◉</span>
+                      <span className="ustetu-wallet-icon ustetu-wallet-outline" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H20v14H6.5A2.5 2.5 0 0 1 4 16.5z"/><path d="M4 8h13.5A2.5 2.5 0 0 1 20 10.5v3a2.5 2.5 0 0 1-2.5 2.5H16"/><path d="M16 12h.01"/></svg></span>
                       <span className="ustetu-wallet-label">CONNECT WALLET</span>
                     </button>
                   ) : chain.unsupported ? (
@@ -157,12 +157,12 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         .ustetu-wallet-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 12px;border:1px solid transparent;border-radius:11px;background:linear-gradient(145deg,rgba(10,20,38,.96),rgba(8,12,25,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.72),rgba(105,92,255,.64),rgba(235,86,255,.50)) border-box;color:#f4f8ff;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.055em;white-space:nowrap;cursor:pointer;box-shadow:0 0 18px rgba(72,168,255,.10),inset 0 1px 0 rgba(255,255,255,.08);transition:transform .2s ease,background .2s ease,box-shadow .2s ease,color .2s ease}
         .ustetu-wallet-button:hover{background:linear-gradient(145deg,rgba(12,25,48,.98),rgba(10,14,31,.98)) padding-box,linear-gradient(135deg,rgba(72,210,255,.90),rgba(105,92,255,.78),rgba(235,86,255,.64)) border-box;transform:translateY(-1px);box-shadow:0 0 24px rgba(72,168,255,.16),0 0 36px rgba(105,92,255,.08),inset 0 1px 0 rgba(255,255,255,.10)}
         .ustetu-wallet-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid rgba(72,210,255,.72);border-radius:50%;color:#8ff6ff;font-size:9px;line-height:1;text-shadow:0 0 8px rgba(72,210,255,.60)}
-        .ustetu-wallet-connected-icon{color:#45f0a5;border-color:rgba(69,240,165,.7)}
+        .ustetu-wallet-connected-icon{color:#45f0a5;border-color:rgba(69,240,165,.7)}\n        .ustetu-wallet-outline{border:0;border-radius:0;width:18px;height:18px;color:#8ff6ff}\n        .ustetu-wallet-outline svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
         .ustetu-wallet-label{line-height:1}
         .ustetu-wallet-wrong-network{color:#ffd166}
         .ustetu-wallet-wrong-network .ustetu-wallet-icon{color:#ffd166;border-color:rgba(255,209,102,.75)}
         @media(min-width:761px){.topbar{width:min(1440px,calc(100% - 64px)) !important;box-sizing:border-box;padding-left:15px}.topbar-left,.topbar-right{display:none !important}}
-        @media(max-width:760px){.ustetu-header-brand{display:flex;align-items:center;flex:0 1 auto;min-width:0}.ustetu-header-brand-link{gap:5px}.ustetu-header-brand-link .ustetu-logo{width:23px;height:34px}.ustetu-header-brand-link .brand{font-size:14px;letter-spacing:.12em}.ustetu-header-actions{margin-left:auto;gap:6px}.ustetu-menu-button{width:35px;height:35px;flex:0 0 auto}.ustetu-wallet-button{min-height:35px;padding:0 9px;font-size:10px;flex:0 0 auto}.ustetu-wallet-icon{width:15px;height:15px;font-size:8px}}
+        @media(max-width:760px){.ustetu-header-brand{display:flex;align-items:center;flex:0 1 auto;min-width:0}.ustetu-header-brand-link{gap:5px}.ustetu-header-brand-link .ustetu-logo{width:23px;height:34px}.ustetu-header-brand-link .brand{font-size:14px;letter-spacing:.12em}.ustetu-header-actions{margin-left:auto;gap:6px}.ustetu-menu-button{width:35px;height:35px;flex:0 0 auto}.ustetu-wallet-button{min-height:35px;padding:0 9px;font-size:10px;flex:0 0 auto}.ustetu-wallet-icon{width:15px;height:15px;font-size:8px}.ustetu-wallet-outline{width:17px;height:17px}.ustetu-wallet-outline svg{width:17px;height:17px}}
         @media(max-width:430px){.topbar{padding:8px 9px}.ustetu-header-brand-link .ustetu-logo{width:20px;height:31px}.ustetu-header-brand-link .brand{font-size:13px}.ustetu-header-actions{gap:6px}.ustetu-wallet-button{padding:0 8px;font-size:9px}.ustetu-wallet-label{max-width:82px;overflow:hidden;text-overflow:ellipsis}.ustetu-header-menu{right:9px;width:min(326px,calc(100vw - 18px))}}
 
         /* Normalize menu typography for phone-sized screens. */
@@ -219,7 +219,7 @@ export default function Header({ showSellerOrders = false, showHome = true, show
         }
         @media(max-width:360px){
           .ustetu-header-menu{left:6px;right:6px}
-          .ustetu-wallet-button{gap:5px;padding-left:7px;padding-right:7px;font-size:8px}
+          .ustetu-wallet-button{gap:5px;padding-left:7px;padding-right:7px;font-size:8px}.ustetu-wallet-outline{width:16px;height:16px}.ustetu-wallet-outline svg{width:16px;height:16px}
         }
 
       `}</style>
