@@ -4115,3 +4115,43 @@ html body :is(h1,h2,h3,h4,h5,h6,p,span,strong,b,label,small,th,td,a,button,[role
     line-height: 1.45 !important;
   }
 }
+
+
+/* Mobile Marketplace: values inside listing cards must render flat and crisp.
+   This selector intentionally outranks legacy embossed panel typography rules. */
+@media (max-width: 600px) {
+  html body .listing-glass .listing-mobile-cards .mobile-listing-card :is(
+    .mobile-listing-stats > div > strong,
+    .mobile-listing-meta .mono,
+    .mobile-listing-meta strong,
+    .mobile-listing-head .token-cell strong,
+    .mobile-listing-head .token-cell span,
+    .mobile-listing-network,
+    .mobile-listing-network *,
+    .token-cell strong,
+    .token-cell span
+  ) {
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+    filter: none !important;
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
+    text-rendering: auto !important;
+    opacity: 1 !important;
+  }
+
+  html body .listing-glass .listing-mobile-cards .mobile-listing-card .mobile-listing-stats > div > strong {
+    color: #f4f8fc !important;
+    font-size: 13px !important;
+    font-weight: 650 !important;
+    line-height: 1.35 !important;
+    letter-spacing: 0 !important;
+  }
+
+  html body .listing-glass .listing-mobile-cards .mobile-listing-card .mobile-listing-meta .mono {
+    color: #edf4fb !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+  }
+}
