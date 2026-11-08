@@ -76,7 +76,6 @@ export default function Header({ showSellerOrders = false, showHome = true, show
           <div className="ustetu-header-menu">
             <div className="ustetu-header-menu-head">
               <span className="ustetu-header-menu-title">QUICK MENU</span>
-              <button type="button" className="ustetu-menu-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>×</button>
             </div>
 
             <section className="ustetu-header-menu-section" aria-label="Preferences">
@@ -202,6 +201,27 @@ export default function Header({ showSellerOrders = false, showHome = true, show
           .ustetu-header-menu-section{padding:8px 1px}
           .ustetu-header-menu-link{min-height:41px}
         }
+        
+        /* Mobile menu corrections: one close control, visible Center label, balanced header. */
+        @media(max-width:600px){
+          .ustetu-header-menu-head{justify-content:flex-start;min-height:25px}
+          .ustetu-menu-close{display:none !important}
+          .ustetu-header-menu-center .system-info-trigger{font-size:12px !important;letter-spacing:.02em !important;justify-content:flex-start !important;gap:9px !important;padding:0 11px !important}
+          .ustetu-header-menu-center .system-info-trigger>span:last-child{display:inline-flex !important;align-items:center;font-size:12px !important;line-height:1.3 !important}
+          .ustetu-header-menu-center .system-info-trigger .system-info-icon{font-size:14px !important;flex:0 0 auto}
+          .ustetu-header-menu-tools .header-controls{grid-template-columns:minmax(0,1fr) 40px;max-width:100%}
+          .ustetu-header-menu-tools .language-control{min-width:0}
+          .ustetu-header-menu-tools .language-trigger{box-sizing:border-box}
+          .ustetu-header-menu{left:8px;right:8px;width:auto;max-width:none}
+          .ustetu-wallet-label{max-width:none !important;overflow:visible !important;text-overflow:clip !important}
+          .ustetu-wallet-button{padding-left:9px;padding-right:9px;font-size:9px;letter-spacing:.025em}
+          .ustetu-header-actions{gap:6px}
+        }
+        @media(max-width:360px){
+          .ustetu-header-menu{left:6px;right:6px}
+          .ustetu-wallet-button{gap:5px;padding-left:7px;padding-right:7px;font-size:8px}
+        }
+
       `}</style>
     </header>
   );
