@@ -46,6 +46,7 @@ type ListingRow = {
   status: "UNKNOWN" | "ACTIVE" | "PAUSED" | "CLOSED" | "SUSPENDED";
   finalized: boolean;
   available_inventory: string | number;
+  created_at: string | null;
 };
 
 export async function GET(request: Request) {
@@ -101,10 +102,13 @@ export async function GET(request: Request) {
     const token = url.searchParams.get("token")?.toLowerCase();
     let query = db
       .from("listings")
-      .select("listing_id_text:listing_id::text,seller,token_id,token_contract,payment_token,price,inventory_deposited,inventory_locked,min_order_amount,max_order_amount,status,finalized,available_inventory")
+      .select("listing_id_text:listing_id::text,seller,token_id,token_contract,payment_token,price,inventory_deposited,inventory_locked,min_order_amount,max_order_amount,status,finalized,available_inventory,created_at")
       .eq("chain_id", CHAIN_ID)
       .eq("contract_address", ESCROW_ADDRESS)
-      .order("last_block_number", { ascending: false });
+      // created_at is sourced from the immutable on-chain Listing.createdAt,
+      // unlike last_block_number which changes whenever listing activity occurs.
+      .order("created_at", { ascending: false, nullsFirst: false })
+      .order("listing_id", { ascending: false });
 
     // Marketplace display only needs finalized rows. Duplicate checks pass both
     // seller and token and must also see the indexer's recent, not-yet-finalized
