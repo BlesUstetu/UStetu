@@ -101,7 +101,7 @@ async function withRpcFallback<T>(
 }
 
 async function fetchChunkLogs(fromBlock: number, toBlock: number, providers: JsonRpcProvider[]): Promise<IndexedLog[]> {
-  return withRpcFallback(providers, `logs ${fromBlock}-${toBlock}`, async (provider) => {
+  return withRpcFallback(validProviders, `logs ${fromBlock}-${toBlock}`, async (provider) => {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock, toBlock });
@@ -155,7 +155,7 @@ async function processChunk(
   const orderIds = [...new Set(parsedLogs.filter((item) => ORDER_EVENTS.has(item.name)).map((item) => String(item.args[0])))];
   const orderListingIds = new Map<string, bigint>();
   await mapLimit(orderIds, MAX_CONCURRENCY, async (orderId) => {
-    const order = await withRpcFallback(providers, `getOrder ${orderId}`, (rpc) =>
+    const order = await withRpcFallback(validProviders, `getOrder ${orderId}`, (rpc) =>
       new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getOrder(BigInt(orderId))
     );
     orderListingIds.set(orderId, order.listingId as bigint);
@@ -190,12 +190,12 @@ async function processChunk(
   for (const item of parsedLogs) latestByListing.set(String(item.listingId), item.log);
   const listingIds = [...latestByListing.keys()];
   const listingRows = await mapLimit(listingIds, MAX_CONCURRENCY, async (listingId) => {
-    const raw = await withRpcFallback(providers, `getListing ${listingId}`, (rpc) =>
+    const raw = await withRpcFallback(validProviders, `getListing ${listingId}`, (rpc) =>
       new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getListing(BigInt(listingId))
     );
     const tokenId = BigInt(raw.tokenId.toString());
     const tokenIdBytes32 = zeroPadValue(toBeHex(tokenId), 32);
-    const token = await withRpcFallback(providers, `registry getToken ${tokenId}`, (rpc) =>
+    const token = await withRpcFallback(validProviders, `registry getToken ${tokenId}`, (rpc) =>
       new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, rpc).getToken(tokenIdBytes32)
     );
     const log = latestByListing.get(listingId)!;
@@ -264,7 +264,22 @@ export async function GET(request: Request) {
   });
 
   try {
-    const latest = await withRpcFallback(providers, "latest block number", (rpc) => rpc.getBlockNumber());
+    const validProviders: JsonRpcProvider[] = [];
+    const providerErrors: string[] = [];
+    for (const [index, provider] of providers.entries()) {
+      try {
+        const network = await provider.getNetwork();
+        if (Number(network.chainId) !== CHAIN_ID) throw new Error(`Wrong chain ID: ${network.chainId}`);
+        validProviders.push(provider);
+      } catch (error) {
+        providerErrors.push(`provider #${index + 1}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    if (validProviders.length === 0) {
+      throw new Error(`No configured RPC endpoint is connected to Base mainnet. ${providerErrors.join(" | ")}`);
+    }
+
+    const latest = await withRpcFallback(validProviders, "latest block number", (rpc) => rpc.getBlockNumber());
     const target = latest - Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
     const { data: state, error: stateError } = await db
       .from("indexer_state")
@@ -290,7 +305,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: true, message: "Already caught up", latestBlock: latest, indexedThrough: cursor, caughtUp: true });
     }
 
-    const paymentToken = await withRpcFallback(providers, "paymentToken", (rpc) =>
+    const paymentToken = await withRpcFallback(validProviders, "paymentToken", (rpc) =>
       new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).paymentToken()
     );
     const endBlock = Math.min(cursor + MAX_BLOCKS_PER_RUN, target);
@@ -301,7 +316,7 @@ export async function GET(request: Request) {
 
     for (let start = fromBlock; start <= endBlock; start += RPC_LOG_CHUNK_SIZE) {
       const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, endBlock);
-      const result = await processChunk(start, end, providers, db, String(paymentToken));
+      const result = await processChunk(start, end, validProviders, db, String(paymentToken));
       logsFound += result.logsFound;
       eventsProcessed += result.eventsProcessed;
       listingsUpdated += result.listingsUpdated;
