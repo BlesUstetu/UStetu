@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { JsonRpcProvider } from "ethers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,19 +16,25 @@ async function getLatestBaseBlock(): Promise<number> {
     process.env.BASE_RPC_FALLBACK_URL_2
   ].filter((url, index, all): url is string => Boolean(url) && all.indexOf(url) === index);
   const errors: string[] = [];
-  for (const [providerIndex, url] of urls.entries()) {
-    const provider = new JsonRpcProvider(url, CHAIN_ID);
+  for (const [index, url] of urls.entries()) {
     try {
-      const network = await provider.getNetwork();
-      if (Number(network.chainId) !== CHAIN_ID) throw new Error(`Wrong chain ID: ${network.chainId}`);
-      return await provider.getBlockNumber();
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+        signal: AbortSignal.timeout(2500),
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error(`RPC HTTP ${response.status}`);
+      const payload = await response.json() as { result?: string; error?: { message?: string } };
+      if (payload.error) throw new Error(payload.error.message || "RPC returned an error");
+      if (!payload.result || !/^0x[0-9a-f]+$/i.test(payload.result)) throw new Error("RPC returned an invalid block number");
+      return Number(BigInt(payload.result));
     } catch (error) {
-      errors.push(`provider #${providerIndex + 1}: ${error instanceof Error ? error.message.slice(0, 180) : String(error)}`);
-    } finally {
-      provider.destroy();
+      errors.push(`provider #${index + 1}: ${error instanceof Error ? error.message.slice(0, 140) : String(error)}`);
     }
   }
-  throw new Error(`All Base RPC providers failed to verify the latest block. ${errors.join(" | ")}`);
+  throw new Error(`Base RPC freshness check failed. ${errors.join(" | ")}`);
 }
 
 type ListingRow = {
@@ -50,12 +55,19 @@ type ListingRow = {
 
 export async function GET(request: Request) {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) {
-    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY." }, { status: 503 });
+  // Prefer the server-only service role when configured. Preview intentionally
+  // uses the public anon key with read-only RLS policies for this SELECT-only route.
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured." }, { status: 503 });
   }
 
-  const db = createClient(supabaseUrl, serviceKey, {
+  const url = new URL(request.url);
+  const seller = url.searchParams.get("seller")?.toLowerCase();
+  const token = url.searchParams.get("token")?.toLowerCase();
+  const isDuplicateCheck = Boolean(seller && token);
+
+  const db = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
   try {
@@ -65,40 +77,33 @@ export async function GET(request: Request) {
       .eq("chain_id", CHAIN_ID)
       .eq("contract_address", ESCROW_ADDRESS)
       .maybeSingle();
-
     if (stateError) throw stateError;
-    // The indexer projection is useful for displaying already-finalized listings
-    // even while it is catching up. Freshness is enforced separately for writes
-    // (seller + token duplicate checks) by the client.
+
+    // Normal marketplace browsing is a database read only: it never waits for Base RPC.
+    // RPC freshness is checked only on the seller+token duplicate-guard request.
     let latestBlock: number | null = null;
     let latestBlockError: string | null = null;
-    try {
-      latestBlock = await getLatestBaseBlock();
-    } catch (error) {
-      latestBlockError = error instanceof Error ? error.message : "Base RPC is unavailable.";
-      console.warn("Listing discovery freshness check unavailable", latestBlockError);
+    if (isDuplicateCheck) {
+      try {
+        latestBlock = await getLatestBaseBlock();
+      } catch (error) {
+        latestBlockError = error instanceof Error ? error.message : "Base RPC is unavailable.";
+      }
     }
 
-    const requiredThrough = latestBlock === null
-      ? null
-      : Math.max(0, latestBlock - CONFIRMATIONS);
+    const requiredThrough = latestBlock === null ? null : Math.max(0, latestBlock - CONFIRMATIONS);
     const indexedThrough = Number(state?.last_scanned_block ?? 0);
     const updatedAt = state?.updated_at ? Date.parse(state.updated_at) : 0;
     const stateIsFresh = Boolean(
-      state &&
-      Number.isFinite(updatedAt) &&
+      state && Number.isFinite(updatedAt) &&
+      Date.now() - updatedAt >= 0 &&
       Date.now() - updatedAt <= INDEXER_MAX_AGE_MS
     );
     const ready = Boolean(
-      state &&
-      requiredThrough !== null &&
-      indexedThrough >= requiredThrough &&
-      stateIsFresh
+      state && stateIsFresh &&
+      (!isDuplicateCheck || (requiredThrough !== null && indexedThrough >= requiredThrough))
     );
 
-    const url = new URL(request.url);
-    const seller = url.searchParams.get("seller")?.toLowerCase();
-    const token = url.searchParams.get("token")?.toLowerCase();
     let query = db
       .from("listings")
       .select("listing_id_text:listing_id::text,seller,token_id,token_contract,payment_token,price,inventory_deposited,inventory_locked,min_order_amount,max_order_amount,status,finalized,available_inventory")
@@ -106,38 +111,24 @@ export async function GET(request: Request) {
       .eq("contract_address", ESCROW_ADDRESS)
       .order("last_block_number", { ascending: false });
 
-    // Marketplace display only needs finalized rows. Duplicate checks pass both
-    // seller and token and must also see the indexer's recent, not-yet-finalized
-    // projection rows to avoid allowing a duplicate during the confirmation lag.
-    if (!(seller && token)) query = query.eq("finalized", true);
-
+    if (!isDuplicateCheck) query = query.eq("finalized", true);
     if (seller) query = query.eq("seller", seller);
     if (token) query = query.eq("token_contract", token);
 
-    const rows: ListingRow[] = [];
-    const pageSize = 500;
-    for (let offset = 0; ; offset += pageSize) {
-      const { data, error } = await query.range(offset, offset + pageSize - 1);
-      if (error) throw error;
-      const page = (data ?? []) as ListingRow[];
-      rows.push(...page);
-      if (page.length < pageSize) break;
-      if (rows.length > 5000) {
-        return NextResponse.json({ ok: false, ready: false, error: "Listing index result exceeds safe response size." }, { status: 503 });
-      }
-    }
+    const { data, error } = await query.limit(5000);
+    if (error) throw error;
+    const rows = (data ?? []) as ListingRow[];
 
     return NextResponse.json({
       ok: true,
-      // "ready" is deliberately strict: callers that create listings must
-      // require a fully current index before duplicate checks can pass.
       ready,
-      // Finalized rows remain safe to display while the indexer catches up.
       displayReady: true,
       indexStatus: ready ? "current" : "syncing",
       freshnessError: ready ? null : latestBlockError
         ? "Base RPC freshness check is temporarily unavailable."
-        : "Indexer is behind the latest finalized Base blocks.",
+        : isDuplicateCheck
+          ? "Indexer is behind the latest finalized Base blocks."
+          : "Indexer heartbeat is stale; duplicate checks remain blocked.",
       indexedThrough: state?.last_scanned_block ?? null,
       requiredThrough,
       latestBlock,
