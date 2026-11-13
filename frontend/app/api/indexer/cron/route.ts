@@ -10,99 +10,10 @@ const START_BLOCK = 51_811_281;
 const ESCROW_ADDRESS = "0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae";
 const REGISTRY_ADDRESS = "0x237023EC6A39e59CEbd1D231777308c354ba542F";
 const CONFIRMATIONS = 12;
-const MAX_BLOCKS_PER_RUN = 800;
-const RPC_LOG_CHUNK_SIZE = 8;
-const RPC_REQUEST_DELAY_MS = 200;
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function withRpcFallback<T>(
-  providers: JsonRpcProvider[],
-  label: string,
-  operation: (provider: JsonRpcProvider) => Promise<T>
-): Promise<T> {
-  const errors: string[] = [];
-  for (const [providerIndex, provider] of providers.entries()) {
-    try {
-      const network = await provider.getNetwork();
-      if (Number(network.chainId) !== CHAIN_ID) throw new Error(`RPC endpoint returned wrong chain ID: ${network.chainId}`);
-      return await operation(provider);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      errors.push(`provider #${providerIndex + 1}: ${message.slice(0, 220)}`);
-    }
-  }
-  throw new Error(`All Base RPC providers failed for ${label}. ${errors.join(" | ")}`);
-}
-
-function isRateLimitError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return /429|rate.?limit|compute units per second|request limit reached/i.test(message);
-}
-
-type IndexedLog = {
-  blockNumber: number;
-  blockHash: string;
-  transactionHash: string;
-  index: number;
-  topics: string[];
-  data: string;
-};
-
-async function fetchRpcLogs(
-  fromBlock: number,
-  toBlock: number,
-  providers: JsonRpcProvider[]
-): Promise<IndexedLog[]> {
-  const allLogs: IndexedLog[] = [];
-  for (let start = fromBlock; start <= toBlock; start += RPC_LOG_CHUNK_SIZE) {
-    const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, toBlock);
-    let result: Awaited<ReturnType<JsonRpcProvider["getLogs"]>> | undefined;
-    const providerErrors: string[] = [];
-    for (const [providerIndex, provider] of providers.entries()) {
-      try {
-        const network = await provider.getNetwork();
-        if (Number(network.chainId) !== CHAIN_ID) {
-          throw new Error(`RPC endpoint returned wrong chain ID: ${network.chainId}`);
-        }
-        // Pace requests and retry rate-limited calls with exponential backoff.
-        for (let attempt = 0; attempt < 4; attempt++) {
-          try {
-            result = await provider.getLogs({
-              address: ESCROW_ADDRESS,
-              fromBlock: start,
-              toBlock: end
-            });
-            break;
-          } catch (error) {
-            if (!isRateLimitError(error) || attempt === 3) throw error;
-            await wait(500 * (2 ** attempt));
-          }
-        }
-        break;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        providerErrors.push(`provider #${providerIndex + 1}: ${message.slice(0, 220)}`);
-      }
-    }
-    if (!result) {
-      throw new Error(`All Base RPC providers failed for blocks ${start}-${end}. ${providerErrors.join(" | ")}`);
-    }
-    // Keep request rate below common free-tier RPC burst limits.
-    await wait(RPC_REQUEST_DELAY_MS);
-    allLogs.push(...result.map((log) => ({
-      blockNumber: log.blockNumber,
-      blockHash: log.blockHash,
-      transactionHash: log.transactionHash,
-      index: log.index,
-      topics: [...log.topics],
-      data: log.data
-    })));
-  }
-  return allLogs;
-}
+// Keep each invocation short. The cursor is committed after every chunk.
+const MAX_BLOCKS_PER_RUN = 200;
+const RPC_LOG_CHUNK_SIZE = 25;
+const MAX_CONCURRENCY = 4;
 
 const ESCROW_ABI = [
   "event InventoryDeposited(uint256 indexed listingId,address indexed seller,address indexed token,uint256 amount)",
@@ -123,18 +34,210 @@ const ESCROW_ABI = [
 const REGISTRY_ABI = [
   "function getToken(bytes32 tokenId) view returns (uint256 chainId,address contractAddress,uint8 decimalsSnapshot,address registeredBy,uint64 registeredAt)"
 ] as const;
+const SUPPORTED_EVENTS = new Set([
+  "InventoryDeposited", "InventoryWithdrawn", "ListingPriceUpdated",
+  "ListingOrderLimitsUpdated", "ListingPaused", "ListingResumed",
+  "ListingClosed", "OrderCreated", "OrderCompleted", "OrderExpired", "AutoReleased"
+]);
+const ORDER_EVENTS = new Set(["OrderCompleted", "OrderExpired", "AutoReleased"]);
+
+type IndexedLog = {
+  blockNumber: number;
+  blockHash: string;
+  transactionHash: string;
+  index: number;
+  topics: string[];
+  data: string;
+};
 
 function jsonValue(value: unknown): unknown {
   if (typeof value === "bigint") return value.toString();
   if (Array.isArray(value)) return value.map(jsonValue);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, jsonValue(v)]));
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, jsonValue(item)]));
   }
   return value;
 }
+
 function statusName(value: unknown): "ACTIVE" | "PAUSED" | "CLOSED" | "UNKNOWN" {
   const n = Number(value);
   return n === 0 ? "ACTIVE" : n === 1 ? "PAUSED" : n === 2 ? "CLOSED" : "UNKNOWN";
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /429|rate.?limit|compute units per second|request limit reached/i.test(message);
+}
+
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const output = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= items.length) return;
+      output[index] = await fn(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return output;
+}
+
+async function withRpcFallback<T>(
+  providers: JsonRpcProvider[],
+  label: string,
+  operation: (provider: JsonRpcProvider) => Promise<T>
+): Promise<T> {
+  const errors: string[] = [];
+  for (const [index, provider] of providers.entries()) {
+    try {
+      return await operation(provider);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      errors.push(`provider #${index + 1}: ${message.slice(0, 180)}`);
+    }
+  }
+  throw new Error(`All Base RPC providers failed for ${label}. ${errors.join(" | ")}`);
+}
+
+async function fetchChunkLogs(fromBlock: number, toBlock: number, providers: JsonRpcProvider[]): Promise<IndexedLog[]> {
+  return withRpcFallback(providers, `logs ${fromBlock}-${toBlock}`, async (provider) => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock, toBlock });
+        return logs.map((log) => ({
+          blockNumber: log.blockNumber,
+          blockHash: log.blockHash,
+          transactionHash: log.transactionHash,
+          index: log.index,
+          topics: [...log.topics],
+          data: log.data
+        }));
+      } catch (error) {
+        if (!isRateLimitError(error) || attempt === 2) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 350 * (2 ** attempt)));
+      }
+    }
+    return [];
+  });
+}
+
+async function processChunk(
+  fromBlock: number,
+  toBlock: number,
+  providers: JsonRpcProvider[],
+  db: ReturnType<typeof createClient>,
+  paymentToken: string
+): Promise<{ logsFound: number; eventsProcessed: number; listingsUpdated: number }> {
+  const logs = await fetchChunkLogs(fromBlock, toBlock, providers);
+  const escrowInterfaces = new Contract(ESCROW_ADDRESS, ESCROW_ABI, providers[0]).interface;
+  const parsedLogs: Array<{ log: IndexedLog; name: string; args: any; listingId?: bigint }> = [];
+
+  for (const log of logs) {
+    const parsed = escrowInterfaces.parseLog(log);
+    if (!parsed || !SUPPORTED_EVENTS.has(parsed.name)) continue;
+    parsedLogs.push({ log, name: parsed.name, args: parsed.args });
+  }
+
+  if (parsedLogs.length === 0) {
+    const { error } = await db.from("indexer_state").upsert({
+      chain_id: CHAIN_ID,
+      contract_address: ESCROW_ADDRESS.toLowerCase(),
+      last_scanned_block: toBlock,
+      last_finalized_block: toBlock,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "chain_id,contract_address" });
+    if (error) throw error;
+    return { logsFound: logs.length, eventsProcessed: 0, listingsUpdated: 0 };
+  }
+
+  // Resolve order -> listing once per unique order, not once for every event.
+  const orderIds = [...new Set(parsedLogs.filter((item) => ORDER_EVENTS.has(item.name)).map((item) => String(item.args[0])))];
+  const orderListingIds = new Map<string, bigint>();
+  await mapLimit(orderIds, MAX_CONCURRENCY, async (orderId) => {
+    const order = await withRpcFallback(providers, `getOrder ${orderId}`, (rpc) =>
+      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getOrder(BigInt(orderId))
+    );
+    orderListingIds.set(orderId, order.listingId as bigint);
+  });
+
+  for (const item of parsedLogs) {
+    if (item.name === "OrderCreated") item.listingId = item.args[1] as bigint;
+    else if (ORDER_EVENTS.has(item.name)) item.listingId = orderListingIds.get(String(item.args[0]));
+    else item.listingId = item.args[0] as bigint;
+    if (item.listingId === undefined) throw new Error(`Could not resolve listing for ${item.name}`);
+  }
+
+  const eventRows = parsedLogs.map(({ log, name, args }) => ({
+    chain_id: CHAIN_ID,
+    contract_address: ESCROW_ADDRESS.toLowerCase(),
+    block_number: log.blockNumber,
+    block_hash: log.blockHash,
+    transaction_hash: log.transactionHash,
+    log_index: log.index,
+    event_name: name,
+    payload: jsonValue(args.toObject()),
+    finalized_at: new Date().toISOString(),
+    removed: false
+  }));
+  const { error: eventError } = await db.from("indexer_events").upsert(eventRows, {
+    onConflict: "chain_id,contract_address,transaction_hash,log_index",
+    ignoreDuplicates: true
+  });
+  if (eventError) throw eventError;
+
+  const latestByListing = new Map<string, IndexedLog>();
+  for (const item of parsedLogs) latestByListing.set(String(item.listingId), item.log);
+  const listingIds = [...latestByListing.keys()];
+  const listingRows = await mapLimit(listingIds, MAX_CONCURRENCY, async (listingId) => {
+    const raw = await withRpcFallback(providers, `getListing ${listingId}`, (rpc) =>
+      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getListing(BigInt(listingId))
+    );
+    const tokenId = BigInt(raw.tokenId.toString());
+    const tokenIdBytes32 = zeroPadValue(toBeHex(tokenId), 32);
+    const token = await withRpcFallback(providers, `registry getToken ${tokenId}`, (rpc) =>
+      new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, rpc).getToken(tokenIdBytes32)
+    );
+    const log = latestByListing.get(listingId)!;
+    return {
+      chain_id: CHAIN_ID,
+      contract_address: ESCROW_ADDRESS.toLowerCase(),
+      listing_id: listingId,
+      seller: String(raw.seller).toLowerCase(),
+      token_id: tokenId.toString(),
+      token_contract: String(token.contractAddress).toLowerCase(),
+      payment_token: paymentToken.toLowerCase(),
+      price: raw.price.toString(),
+      inventory_deposited: raw.inventoryDeposited.toString(),
+      inventory_locked: raw.inventoryLocked.toString(),
+      min_order_amount: raw.minOrderAmount.toString(),
+      max_order_amount: raw.maxOrderAmount.toString(),
+      status: statusName(raw.status),
+      created_at: Number(raw.createdAt) ? new Date(Number(raw.createdAt) * 1000).toISOString() : null,
+      updated_at: Number(raw.updatedAt) ? new Date(Number(raw.updatedAt) * 1000).toISOString() : null,
+      last_block_number: log.blockNumber,
+      last_transaction_hash: log.transactionHash,
+      last_log_index: log.index,
+      finalized: true
+    };
+  });
+
+  const { error: listingError } = await db.from("listings").upsert(listingRows, {
+    onConflict: "chain_id,contract_address,listing_id"
+  });
+  if (listingError) throw listingError;
+
+  // Commit cursor only after both the canonical event ledger and projection succeed.
+  const { error: stateError } = await db.from("indexer_state").upsert({
+    chain_id: CHAIN_ID,
+    contract_address: ESCROW_ADDRESS.toLowerCase(),
+    last_scanned_block: toBlock,
+    last_finalized_block: toBlock,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "chain_id,contract_address" });
+  if (stateError) throw stateError;
+
+  return { logsFound: logs.length, eventsProcessed: parsedLogs.length, listingsUpdated: listingRows.length };
 }
 
 export async function GET(request: Request) {
@@ -155,128 +258,67 @@ export async function GET(request: Request) {
     process.env.BASE_RPC_FALLBACK_URL || "https://base-rpc.publicnode.com",
     process.env.BASE_RPC_FALLBACK_URL_2
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
-  const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
   const providers = rpcUrls.map((url) => new JsonRpcProvider(url, CHAIN_ID));
-  const escrow = new Contract(ESCROW_ADDRESS, ESCROW_ABI, providers[0]);
   const db = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
   try {
     const latest = await withRpcFallback(providers, "latest block number", (rpc) => rpc.getBlockNumber());
-    const target = latest - confirmations;
+    const target = latest - Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
     const { data: state, error: stateError } = await db
       .from("indexer_state")
-      .select("last_scanned_block,last_finalized_block")
+      .select("last_scanned_block")
       .eq("chain_id", CHAIN_ID)
       .eq("contract_address", ESCROW_ADDRESS.toLowerCase())
       .maybeSingle();
     if (stateError) throw stateError;
 
-    const from = state ? Number(state.last_scanned_block) + 1 : START_BLOCK;
-    if (from > target) {
-      return NextResponse.json({ ok: true, message: "Already caught up", fromBlock: from, latestBlock: latest, indexedThrough: state?.last_scanned_block ?? null });
-    }
-    // Query event logs in bounded RPC chunks and try configured fallback providers on failures.
-    // Keep each run bounded to avoid provider range limits and Vercel timeouts.
-    let to = Math.min(from + MAX_BLOCKS_PER_RUN - 1, target);
-    let logs: IndexedLog[] = await fetchRpcLogs(from, to, providers);
-    // "to" is already capped at latest - confirmations, so every scanned block is finalized.
-    const finalizedThrough = to;
-    let processed = 0;
-
-    for (const log of logs) {
-      const parsed = escrow.interface.parseLog(log);
-      if (!parsed) continue;
-      const name = parsed.name;
-      const supported = new Set(["InventoryDeposited","InventoryWithdrawn","ListingPriceUpdated","ListingOrderLimitsUpdated","ListingPaused","ListingResumed","ListingClosed","OrderCreated","OrderCompleted","OrderExpired","AutoReleased"]);
-      if (!supported.has(name)) continue;
-
-      let listingId: bigint;
-      if (name === "OrderCreated") listingId = parsed.args[1] as bigint;
-      else if (name === "OrderCompleted" || name === "OrderExpired" || name === "AutoReleased") {
-        const order = await withRpcFallback(providers, "getOrder", (rpc) =>
-          new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getOrder(parsed.args[0] as bigint)
-        );
-        listingId = order.listingId as bigint;
-      } else listingId = parsed.args[0] as bigint;
-
-      const { error: eventError } = await db.from("indexer_events").upsert({
+    let cursor = state ? Number(state.last_scanned_block) : START_BLOCK;
+    if (!Number.isSafeInteger(cursor) || cursor < START_BLOCK) cursor = START_BLOCK;
+    const fromBlock = cursor + 1;
+    if (fromBlock > target) {
+      // Refresh heartbeat while caught up; discovery duplicate checks use this timestamp.
+      const { error } = await db.from("indexer_state").upsert({
         chain_id: CHAIN_ID,
         contract_address: ESCROW_ADDRESS.toLowerCase(),
-        block_number: log.blockNumber,
-        block_hash: log.blockHash,
-        transaction_hash: log.transactionHash,
-        log_index: log.index,
-        event_name: name,
-        payload: jsonValue(parsed.args.toObject()),
-        finalized_at: log.blockNumber <= finalizedThrough ? new Date().toISOString() : null,
-        removed: false
-      }, { onConflict: "chain_id,contract_address,transaction_hash,log_index", ignoreDuplicates: true });
-      if (eventError) throw eventError;
-
-      const raw = await withRpcFallback(providers, "getListing", (rpc) =>
-        new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getListing(listingId)
-      );
-      const tokenIdBytes32 = zeroPadValue(toBeHex(BigInt(raw.tokenId.toString())), 32);
-      const token = await withRpcFallback(providers, "registry getToken", (rpc) =>
-        new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, rpc).getToken(tokenIdBytes32)
-      );
-      const paymentToken = await withRpcFallback(providers, "paymentToken", (rpc) =>
-        new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).paymentToken()
-      );
-      const { error: listingError } = await db.from("listings").upsert({
-        chain_id: CHAIN_ID,
-        contract_address: ESCROW_ADDRESS.toLowerCase(),
-        listing_id: listingId.toString(),
-        seller: String(raw.seller).toLowerCase(),
-        token_id: BigInt(raw.tokenId.toString()).toString(),
-        token_contract: String(token.contractAddress).toLowerCase(),
-        payment_token: String(paymentToken).toLowerCase(),
-        price: raw.price.toString(),
-        inventory_deposited: raw.inventoryDeposited.toString(),
-        inventory_locked: raw.inventoryLocked.toString(),
-        min_order_amount: raw.minOrderAmount.toString(),
-        max_order_amount: raw.maxOrderAmount.toString(),
-        status: statusName(raw.status),
-        created_at: Number(raw.createdAt) ? new Date(Number(raw.createdAt) * 1000).toISOString() : null,
-        updated_at: Number(raw.updatedAt) ? new Date(Number(raw.updatedAt) * 1000).toISOString() : null,
-        last_block_number: log.blockNumber,
-        last_transaction_hash: log.transactionHash,
-        last_log_index: log.index,
-        finalized: log.blockNumber <= finalizedThrough
-      }, { onConflict: "chain_id,contract_address,listing_id" });
-      if (listingError) throw listingError;
-      processed++;
+        last_scanned_block: cursor,
+        last_finalized_block: cursor,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "chain_id,contract_address" });
+      if (error) throw error;
+      return NextResponse.json({ ok: true, message: "Already caught up", latestBlock: latest, indexedThrough: cursor, caughtUp: true });
     }
 
-    const { error: saveError } = await db.from("indexer_state").upsert({
-      chain_id: CHAIN_ID,
-      contract_address: ESCROW_ADDRESS.toLowerCase(),
-      last_scanned_block: to,
-      last_finalized_block: finalizedThrough,
-      updated_at: new Date().toISOString()
-    }, { onConflict: "chain_id,contract_address" });
-    if (saveError) throw saveError;
+    const paymentToken = await withRpcFallback(providers, "paymentToken", (rpc) =>
+      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).paymentToken()
+    );
+    const endBlock = Math.min(cursor + MAX_BLOCKS_PER_RUN, target);
+    let logsFound = 0;
+    let eventsProcessed = 0;
+    let listingsUpdated = 0;
+    let chunksProcessed = 0;
 
-    return NextResponse.json({ ok: true, fromBlock: from, toBlock: to, latestBlock: latest, logsFound: logs.length, eventsProcessed: processed, caughtUp: to >= target });
+    for (let start = fromBlock; start <= endBlock; start += RPC_LOG_CHUNK_SIZE) {
+      const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, endBlock);
+      const result = await processChunk(start, end, providers, db, String(paymentToken));
+      logsFound += result.logsFound;
+      eventsProcessed += result.eventsProcessed;
+      listingsUpdated += result.listingsUpdated;
+      chunksProcessed++;
+    }
+
+    const indexedThrough = endBlock;
+    return NextResponse.json({
+      ok: true, fromBlock, toBlock: indexedThrough, latestBlock: latest,
+      logsFound, eventsProcessed, listingsUpdated, chunksProcessed,
+      caughtUp: indexedThrough >= target
+    });
   } catch (error) {
-    const candidate = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown; status?: unknown };
-    const message = error instanceof Error
-      ? error.message
-      : typeof candidate?.message === "string"
-        ? candidate.message
-        : JSON.stringify(error) || "Indexer failed";
-    const details = {
-      message,
-      code: candidate?.code ?? null,
-      details: candidate?.details ?? null,
-      hint: candidate?.hint ?? null,
-      status: candidate?.status ?? null
-    };
-    console.error("UStetu cron indexer failed", JSON.stringify(details));
-    return NextResponse.json({ ok: false, error: message, code: details.code, details: details.details, hint: details.hint }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("UStetu cron indexer failed", message);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   } finally {
-    for (const rpcProvider of providers) rpcProvider.destroy();
+    for (const provider of providers) provider.destroy();
   }
 }
