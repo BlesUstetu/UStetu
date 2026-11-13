@@ -55,8 +55,10 @@ type ListingRow = {
 
 export async function GET(request: Request) {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) {
+  // Prefer the server-only service role when configured. Preview intentionally
+  // uses the public anon key with read-only RLS policies for this SELECT-only route.
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ ok: false, ready: false, error: "Listing index is not configured." }, { status: 503 });
   }
 
@@ -65,7 +67,7 @@ export async function GET(request: Request) {
   const token = url.searchParams.get("token")?.toLowerCase();
   const isDuplicateCheck = Boolean(seller && token);
 
-  const db = createClient(supabaseUrl, serviceKey, {
+  const db = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
   try {
