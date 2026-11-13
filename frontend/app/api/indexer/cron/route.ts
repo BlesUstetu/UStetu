@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Contract, JsonRpcProvider, toBeHex, zeroPadValue } from "ethers";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -126,7 +126,7 @@ async function processChunk(
   fromBlock: number,
   toBlock: number,
   providers: JsonRpcProvider[],
-  db: ReturnType<typeof createClient>,
+  db: SupabaseClient<any>,
   paymentToken: string
 ): Promise<{ logsFound: number; eventsProcessed: number; listingsUpdated: number }> {
   const logs = await fetchChunkLogs(fromBlock, toBlock, providers);
