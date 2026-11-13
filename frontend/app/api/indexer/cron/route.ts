@@ -101,7 +101,7 @@ async function withRpcFallback<T>(
 }
 
 async function fetchChunkLogs(fromBlock: number, toBlock: number, providers: JsonRpcProvider[]): Promise<IndexedLog[]> {
-  return withRpcFallback(validProviders, `logs ${fromBlock}-${toBlock}`, async (provider) => {
+  return withRpcFallback(providers, `logs ${fromBlock}-${toBlock}`, async (provider) => {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const logs = await provider.getLogs({ address: ESCROW_ADDRESS, fromBlock, toBlock });
@@ -155,7 +155,7 @@ async function processChunk(
   const orderIds = [...new Set(parsedLogs.filter((item) => ORDER_EVENTS.has(item.name)).map((item) => String(item.args[0])))];
   const orderListingIds = new Map<string, bigint>();
   await mapLimit(orderIds, MAX_CONCURRENCY, async (orderId) => {
-    const order = await withRpcFallback(validProviders, `getOrder ${orderId}`, (rpc) =>
+    const order = await withRpcFallback(providers, `getOrder ${orderId}`, (rpc) =>
       new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getOrder(BigInt(orderId))
     );
     orderListingIds.set(orderId, order.listingId as bigint);
@@ -190,12 +190,12 @@ async function processChunk(
   for (const item of parsedLogs) latestByListing.set(String(item.listingId), item.log);
   const listingIds = [...latestByListing.keys()];
   const listingRows = await mapLimit(listingIds, MAX_CONCURRENCY, async (listingId) => {
-    const raw = await withRpcFallback(validProviders, `getListing ${listingId}`, (rpc) =>
+    const raw = await withRpcFallback(providers, `getListing ${listingId}`, (rpc) =>
       new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getListing(BigInt(listingId))
     );
     const tokenId = BigInt(raw.tokenId.toString());
     const tokenIdBytes32 = zeroPadValue(toBeHex(tokenId), 32);
-    const token = await withRpcFallback(validProviders, `registry getToken ${tokenId}`, (rpc) =>
+    const token = await withRpcFallback(providers, `registry getToken ${tokenId}`, (rpc) =>
       new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, rpc).getToken(tokenIdBytes32)
     );
     const log = latestByListing.get(listingId)!;
