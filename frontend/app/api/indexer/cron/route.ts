@@ -326,13 +326,11 @@ export async function GET(request: Request) {
     const fromBlock = cursor + 1;
     if (fromBlock > target) {
       // Refresh heartbeat while caught up; discovery duplicate checks use this timestamp.
-      const { error } = await db.from("indexer_state").upsert({
-        chain_id: CHAIN_ID,
-        contract_address: ESCROW_ADDRESS.toLowerCase(),
-        last_scanned_block: cursor,
-        last_finalized_block: cursor,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "chain_id,contract_address" });
+      const { error } = await db.from("indexer_state")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("chain_id", CHAIN_ID)
+        .eq("contract_address", ESCROW_ADDRESS.toLowerCase())
+        .eq("last_scanned_block", cursor);
       if (error) throw error;
       return NextResponse.json({ ok: true, message: "Already caught up", latestBlock: latest, indexedThrough: cursor, caughtUp: true });
     }
