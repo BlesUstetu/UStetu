@@ -122,14 +122,42 @@ async function fetchChunkLogs(fromBlock: number, toBlock: number, providers: Jso
   });
 }
 
+async function commitCursor(
+  db: SupabaseClient<any>,
+  expectedPreviousBlock: number,
+  nextBlock: number
+): Promise<void> {
+  // Compare-and-swap prevents overlapping cron invocations from moving the cursor backwards.
+  const { data, error } = await db
+    .from("indexer_state")
+    .update({
+      last_scanned_block: nextBlock,
+      last_finalized_block: nextBlock,
+      updated_at: new Date().toISOString()
+    })
+    .eq("chain_id", CHAIN_ID)
+    .eq("contract_address", ESCROW_ADDRESS.toLowerCase())
+    .eq("last_scanned_block", expectedPreviousBlock)
+    .select("last_scanned_block");
+  if (error) throw error;
+  if (!data || data.length !== 1) {
+    throw new Error(
+      `Indexer cursor changed concurrently; expected ${expectedPreviousBlock}. This invocation stopped safely.`
+    );
+  }
+}
+
 async function processChunk(
   fromBlock: number,
   toBlock: number,
+  expectedPreviousBlock: number,
   providers: JsonRpcProvider[],
   db: SupabaseClient<any>,
   paymentToken: string
 ): Promise<{ logsFound: number; eventsProcessed: number; listingsUpdated: number }> {
-  const logs = await fetchChunkLogs(fromBlock, toBlock, providers);
+  const logs = (await fetchChunkLogs(fromBlock, toBlock, providers)).sort(
+    (a, b) => a.blockNumber - b.blockNumber || a.index - b.index
+  );
   const escrowInterfaces = new Contract(ESCROW_ADDRESS, ESCROW_ABI, providers[0]).interface;
   const parsedLogs: Array<{ log: IndexedLog; name: string; args: any; listingId?: bigint }> = [];
 
@@ -140,14 +168,7 @@ async function processChunk(
   }
 
   if (parsedLogs.length === 0) {
-    const { error } = await db.from("indexer_state").upsert({
-      chain_id: CHAIN_ID,
-      contract_address: ESCROW_ADDRESS.toLowerCase(),
-      last_scanned_block: toBlock,
-      last_finalized_block: toBlock,
-      updated_at: new Date().toISOString()
-    }, { onConflict: "chain_id,contract_address" });
-    if (error) throw error;
+    await commitCursor(db, expectedPreviousBlock, toBlock);
     return { logsFound: logs.length, eventsProcessed: 0, listingsUpdated: 0 };
   }
 
@@ -156,7 +177,7 @@ async function processChunk(
   const orderListingIds = new Map<string, bigint>();
   await mapLimit(orderIds, MAX_CONCURRENCY, async (orderId) => {
     const order = await withRpcFallback(providers, `getOrder ${orderId}`, (rpc) =>
-      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getOrder(BigInt(orderId))
+      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getOrder(BigInt(orderId), { blockTag: toBlock })
     );
     orderListingIds.set(orderId, order.listingId as bigint);
   });
@@ -191,12 +212,12 @@ async function processChunk(
   const listingIds = [...latestByListing.keys()];
   const listingRows = await mapLimit(listingIds, MAX_CONCURRENCY, async (listingId) => {
     const raw = await withRpcFallback(providers, `getListing ${listingId}`, (rpc) =>
-      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getListing(BigInt(listingId))
+      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).getListing(BigInt(listingId), { blockTag: toBlock })
     );
     const tokenId = BigInt(raw.tokenId.toString());
     const tokenIdBytes32 = zeroPadValue(toBeHex(tokenId), 32);
     const token = await withRpcFallback(providers, `registry getToken ${tokenId}`, (rpc) =>
-      new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, rpc).getToken(tokenIdBytes32)
+      new Contract(REGISTRY_ADDRESS, REGISTRY_ABI, rpc).getToken(tokenIdBytes32, { blockTag: toBlock })
     );
     const log = latestByListing.get(listingId)!;
     return {
@@ -228,14 +249,7 @@ async function processChunk(
   if (listingError) throw listingError;
 
   // Commit cursor only after both the canonical event ledger and projection succeed.
-  const { error: stateError } = await db.from("indexer_state").upsert({
-    chain_id: CHAIN_ID,
-    contract_address: ESCROW_ADDRESS.toLowerCase(),
-    last_scanned_block: toBlock,
-    last_finalized_block: toBlock,
-    updated_at: new Date().toISOString()
-  }, { onConflict: "chain_id,contract_address" });
-  if (stateError) throw stateError;
+  await commitCursor(db, expectedPreviousBlock, toBlock);
 
   return { logsFound: logs.length, eventsProcessed: parsedLogs.length, listingsUpdated: listingRows.length };
 }
@@ -281,7 +295,7 @@ export async function GET(request: Request) {
 
     const latest = await withRpcFallback(validProviders, "latest block number", (rpc) => rpc.getBlockNumber());
     const target = latest - Number(process.env.INDEXER_CONFIRMATIONS || CONFIRMATIONS);
-    const { data: state, error: stateError } = await db
+    let { data: state, error: stateError } = await db
       .from("indexer_state")
       .select("last_scanned_block")
       .eq("chain_id", CHAIN_ID)
@@ -289,7 +303,25 @@ export async function GET(request: Request) {
       .maybeSingle();
     if (stateError) throw stateError;
 
-    let cursor = state ? Number(state.last_scanned_block) : START_BLOCK;
+    if (!state) {
+      const { error: seedError } = await db.from("indexer_state").upsert({
+        chain_id: CHAIN_ID,
+        contract_address: ESCROW_ADDRESS.toLowerCase(),
+        last_scanned_block: START_BLOCK - 1,
+        last_finalized_block: START_BLOCK - 1,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "chain_id,contract_address", ignoreDuplicates: true });
+      if (seedError) throw seedError;
+      const seeded = await db.from("indexer_state")
+        .select("last_scanned_block")
+        .eq("chain_id", CHAIN_ID)
+        .eq("contract_address", ESCROW_ADDRESS.toLowerCase())
+        .single();
+      if (seeded.error) throw seeded.error;
+      state = seeded.data;
+    }
+
+    let cursor = Number(state.last_scanned_block);
     if (!Number.isSafeInteger(cursor) || cursor < START_BLOCK) cursor = START_BLOCK;
     const fromBlock = cursor + 1;
     if (fromBlock > target) {
@@ -306,7 +338,7 @@ export async function GET(request: Request) {
     }
 
     const paymentToken = await withRpcFallback(validProviders, "paymentToken", (rpc) =>
-      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).paymentToken()
+      new Contract(ESCROW_ADDRESS, ESCROW_ABI, rpc).paymentToken({ blockTag: target })
     );
     const endBlock = Math.min(cursor + MAX_BLOCKS_PER_RUN, target);
     let logsFound = 0;
@@ -316,7 +348,7 @@ export async function GET(request: Request) {
 
     for (let start = fromBlock; start <= endBlock; start += RPC_LOG_CHUNK_SIZE) {
       const end = Math.min(start + RPC_LOG_CHUNK_SIZE - 1, endBlock);
-      const result = await processChunk(start, end, validProviders, db, String(paymentToken));
+      const result = await processChunk(start, end, start - 1, validProviders, db, String(paymentToken));
       logsFound += result.logsFound;
       eventsProcessed += result.eventsProcessed;
       listingsUpdated += result.listingsUpdated;
