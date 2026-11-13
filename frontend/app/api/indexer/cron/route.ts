@@ -309,7 +309,7 @@ export async function GET(request: Request) {
         contract_address: ESCROW_ADDRESS.toLowerCase(),
         last_scanned_block: START_BLOCK - 1,
         last_finalized_block: START_BLOCK - 1,
-        updated_at: new Date().toISOString()
+        updated_at: new Date(Date.now() - 76_000).toISOString()
       }, { onConflict: "chain_id,contract_address", ignoreDuplicates: true });
       if (seedError) throw seedError;
       const seeded = await db.from("indexer_state")
@@ -319,6 +319,25 @@ export async function GET(request: Request) {
         .single();
       if (seeded.error) throw seeded.error;
       state = seeded.data;
+    }
+
+    // updated_at doubles as a short lease: Vercel kills this route after 60s,
+    // so a 75s lease prevents overlapping 2-minute cron invocations without a schema change.
+    const leaseNow = new Date();
+    const leaseCutoff = new Date(leaseNow.getTime() - 75_000).toISOString();
+    const { data: leaseRows, error: leaseError } = await db.from("indexer_state")
+      .update({ updated_at: leaseNow.toISOString() })
+      .eq("chain_id", CHAIN_ID)
+      .eq("contract_address", ESCROW_ADDRESS.toLowerCase())
+      .lt("updated_at", leaseCutoff)
+      .select("last_scanned_block");
+    if (leaseError) throw leaseError;
+    if (!leaseRows || leaseRows.length !== 1) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: "Another indexer invocation holds the processing lease."
+      }, { status: 202 });
     }
 
     let cursor = Number(state.last_scanned_block);
