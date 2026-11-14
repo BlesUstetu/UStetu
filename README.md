@@ -6,7 +6,63 @@ UStetu is a **non-custodial, permissionless Web3 P2P marketplace** for token lis
 
 V1 is intentionally focused on **Base Mainnet** with a deterministic payment asset, immutable marketplace fee, seller-controlled listings, and no platform admin/owner authority.
 
-> **V1 status: pre-mainnet. Contracts have not been deployed to Base Mainnet yet.**
+> **V1 status: Base Mainnet deployment and transaction testing are in progress.** The UST token and marketplace contracts have project-recorded deployment addresses on Base Mainnet. See [Mainnet Deployment Status](#mainnet-deployment-status). Deployment, source verification, and production readiness are separate checks.
+
+## Technology Stack
+
+The application is organized into a Next.js frontend, a TypeScript event-indexing backend, Supabase data storage, and Solidity smart contracts for Base Mainnet.
+
+| Layer | Technology | Responsibility |
+|---|---|---|
+| Frontend framework | Next.js 16 | Web application and routing |
+| UI library | React 19 | Interactive marketplace interface |
+| Language | TypeScript 5.9 | Typed frontend and backend code |
+| Wallet connection | RainbowKit 2.2 | Wallet connection UI |
+| Web3 React integration | Wagmi 2 | Wallet and contract hooks |
+| EVM client | Viem 2 | Typed EVM reads, writes, and chain utilities |
+| Contract interaction | Ethers.js 6 | EVM provider, contract, and event utilities |
+| Server state | TanStack React Query 5 | Asynchronous data fetching and caching |
+| Database client | Supabase JS 2 | Access to indexed marketplace data |
+| Backend runtime | Node.js | Indexer and API execution |
+| Backend language | TypeScript | Indexer and API implementation |
+| Smart contract language | Solidity 0.8.30 | Registry and Escrow contracts |
+| Contract development | Foundry | Compilation, testing, and deployment tooling |
+| Contract security library | OpenZeppelin Contracts | SafeERC20 and ReentrancyGuard primitives |
+| Data store | Supabase | Indexed event and marketplace discovery data |
+| Blockchain | Base Mainnet | On-chain registration, listing, and settlement |
+
+The frontend dependency manifest also includes x402 packages for EVM and SVM ecosystems. Their presence in the manifest does not, by itself, establish that x402 payment flows are enabled in the live product. Describe that capability as shipped only after confirming its application-level integration.
+
+### High-Level Architecture
+
+```text
+Seller / Buyer
+      |
+      v
+Next.js + React + TypeScript
+      |
+      +---- Wallet connection: RainbowKit + Wagmi
+      |
+      +---- EVM interaction: Viem / Ethers.js
+      |                  |
+      |                  v
+      |            Base Mainnet
+      |            - UStetuRegistry
+      |            - UStetuSellerRegistry
+      |            - UStetuEscrow
+      |            - Native USDC
+      |
+      +---- Marketplace discovery API
+                         |
+                         v
+                  Node.js + TypeScript
+                    Event Indexer
+                         |
+                         v
+                      Supabase
+```
+
+The indexer and Supabase support discovery and presentation. They are not authoritative for escrow balances, order status, or settlement. Those values must be read from or validated against Base Mainnet contracts.
 
 ## Security Audit Status
 
@@ -580,28 +636,50 @@ See the corresponding `.env.example` files for environment configuration.
 
 ## Mainnet Deployment Status
 
-**Core USTETU V1 marketplace contracts: audited and deployment-controlled.**
+The USTETU token and UStetu marketplace contracts have project-recorded Base Mainnet deployment addresses. Seller and Buyer transaction flows have also been exercised. Successful test transactions demonstrate tested flows; they are not, by themselves, evidence of broad public adoption.
 
-The core marketplace audit is complete and locked. The deployed USTETU token is separate from the marketplace core and is already deployed on Base Mainnet.
+### Network
 
-Before deployment:
+- Network: Base Mainnet
+- Chain ID: `8453`
+- Explorer: [BaseScan](https://basescan.org/)
 
-1. Complete the final source and test review.
-2. Complete an independent security review where available.
-3. Prepare the production deployer wallet and gas.
-4. Set the immutable `USTETU_FEE_RECIPIENT`.
-5. Deploy:
-   - `UStetuRegistry`
-   - `UStetuSellerRegistry`
-   - `UStetuEscrow`
-6. Record the deployment transaction hashes and deployment block.
-7. Verify the contracts on BaseScan.
-8. Configure backend and frontend with the real contract addresses.
-9. Start the indexer from the deployment block with the required confirmation depth.
-10. Run a controlled Base Mainnet smoke test before opening the marketplace publicly.
+### Project-Recorded Contract Addresses
 
-**No production contract addresses should be invented or copied into the repository before the actual deployment.**
+| Contract | Address | Explorer |
+|---|---|---|
+| UST token | `0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557` | [BaseScan](https://basescan.org/address/0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557) |
+| UStetuRegistry | `0x237023EC6A39e59CEbd1D231777308c354ba542F` | [BaseScan](https://basescan.org/address/0x237023EC6A39e59CEbd1D231777308c354ba542F) |
+| UStetuSellerRegistry | `0x2e8512a3c9953E5B2f061a4FF694637f78740468` | [BaseScan](https://basescan.org/address/0x2e8512a3c9953E5B2f061a4FF694637f78740468) |
+| UStetuEscrow | `0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae` | [BaseScan](https://basescan.org/address/0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae) |
+| Native USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | [BaseScan](https://basescan.org/address/0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) |
 
+The addresses above are the project's recorded deployment references. Before relying on this README for a grant application or production release, independently confirm each address, deployed bytecode, contract identity, and verification status on BaseScan and against current deployment records.
+
+### UST Token Deployment
+
+- Deployment transaction: [BaseScan transaction](https://basescan.org/tx/0x0ed9e8d688fa125cdffe7b49fc1b5dbfbe2e25aacae714793b42d380b68693bf)
+- Solidity compiler: 0.8.30
+- Optimization: enabled, 200 runs
+- Source verification: previously recorded as completed
+- BaseScan Token Information review: ticket #851349, previously recorded as submitted and awaiting review
+
+Token metadata review is an explorer-side process and does not change the deployed token contract.
+
+### Marketplace Deployment Readiness
+
+Maintain the deployment and release checklist against the actual production state:
+
+1. Confirm the deployed Registry, Seller Registry, and Escrow addresses against BaseScan.
+2. Confirm source verification and compiler settings for each marketplace contract.
+3. Confirm the immutable payment token and fee-recipient configuration.
+4. Confirm frontend and backend production environment variables point to the intended contracts.
+5. Confirm the indexer starts from the correct deployment block and applies the configured confirmation depth.
+6. Run controlled Seller and Buyer smoke tests on Base Mainnet.
+7. Record transaction hashes and observed outcomes.
+8. Confirm monitoring, recovery procedures, and public-launch readiness.
+
+Do not describe the marketplace as fully launched, independently audited, or broadly adopted unless the corresponding evidence is available. The audit status in this README refers to the project's documented review baseline; it is not a third-party audit certification unless a public independent audit report exists.
 ## Testing Status
 
 The V1 repository includes unit and integration-style Foundry tests for:
@@ -656,10 +734,11 @@ The multi-chain architecture may be developed later as separate deployments and/
 - [x] USTETU token Base Mainnet deployment
 - [x] USTETU token source verification
 - [x] USTETU token ownership verification
-- [ ] Core marketplace Base Mainnet deployment
-- [ ] Core marketplace contract verification
-- [ ] Mainnet smoke test
-- [ ] Public production launch
+- [x] Core marketplace Base Mainnet deployment addresses recorded
+- [ ] Confirm current source verification for all marketplace contracts
+- [ ] Reconcile production frontend/backend configuration with deployed addresses
+- [ ] Complete and document final production smoke-test evidence
+- [ ] Public production launch readiness confirmation
 
 ### Phase 2 — Future Expansion
 
