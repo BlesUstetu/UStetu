@@ -4168,3 +4168,22 @@ html[data-theme="light"] .tagline,
 html[data-theme="light"] .marketplace-heading p {
   color:#53657a;
 }
+
+
+/* Buyer Purchase Center: explain the next on-chain action above the primary CTA. */
+.buy-modal .buy-action-hint {
+  margin: 0 0 12px;
+  color: #a9b8ca;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.buy-modal .buy-submit {
+  min-height: 50px;
+  letter-spacing: .02em;
+}
+@media (max-width: 600px) {
+  .buy-modal .buy-action-hint {
+    font-size: 11px;
+    line-height: 1.55;
+  }
+}
