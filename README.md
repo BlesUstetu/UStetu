@@ -6,7 +6,7 @@ UStetu is a **non-custodial, permissionless Web3 P2P marketplace** for token lis
 
 V1 is intentionally focused on **Base Mainnet** with a deterministic payment asset, immutable marketplace fee, seller-controlled listings, and no platform admin/owner authority.
 
-> **V1 status: Base Mainnet deployment and transaction testing are in progress.** The UST token and marketplace contracts have project-recorded deployment addresses on Base Mainnet. See [Mainnet Deployment Status](#mainnet-deployment-status). Deployment, source verification, and production readiness are separate checks.
+> **V1 status: Base Mainnet deployment and transaction testing are in progress.** The marketplace contracts have project-recorded deployment addresses on Base Mainnet. See [Mainnet Deployment Status](#mainnet-deployment-status). Deployment, source verification, and production readiness are separate checks.
 
 ## Technology Stack
 
@@ -202,67 +202,6 @@ The following protocol behavior is locked after the completed audit:
 17. no public Admin UI
 
 Any change to these items requires a new explicit protocol review and security review.
-
----
-
-## USTETU Token Audit
-
-The native USTETU token was reviewed separately from the locked marketplace protocol.
-
-### Token Security Result
-
-**USTETU Token — PASS**
-
-Token properties:
-
-| Property | Result |
-|---|---|
-| Name | USTETU |
-| Symbol | UST |
-| Network | Base Mainnet |
-| Decimals | 18 |
-| Fixed supply | 88,000,000 UST |
-| Public mint | None |
-| Transfer tax | None |
-| Blacklist | None |
-| Pause | None |
-| Upgradeability | None |
-| Owner / Admin | None |
-| Public burn function | None |
-
-The dedicated token test suite passed **7/7 tests**, covering fixed supply, deployer allocation, metadata, transfer behavior, transferFrom behavior, allowance enforcement, balance protection, exact transfer amounts, and total-supply preservation.
-
-### Deployed USTETU Token
-
-Contract:
-
-0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557
-
-Deployment transaction:
-
-0x0ed9e8d688fa125cdffe7b49fc1b5dbfbe2e25aacae714793b42d380b68693bf
-
-The token source was successfully verified with Solidity 0.8.30, optimization enabled, runs 200, MIT license, and no constructor arguments.
-
----
-
-## BaseScan Verification Status
-
-The USTETU token has completed:
-
-- source-code verification
-- creator/ownership verification
-- Token Information submission
-
-BaseScan review ticket:
-
-**#851349**
-
-Current stage:
-
-**Submitted — awaiting BaseScan review.**
-
-Token metadata submission is an off-chain explorer process and does not change the deployed token contract.
 
 ---
 
@@ -636,7 +575,7 @@ See the corresponding `.env.example` files for environment configuration.
 
 ## Mainnet Deployment Status
 
-The USTETU token and UStetu marketplace contracts have project-recorded Base Mainnet deployment addresses. Seller and Buyer transaction flows have also been exercised. Successful test transactions demonstrate tested flows; they are not, by themselves, evidence of broad public adoption.
+The UStetu marketplace contracts have project-recorded Base Mainnet deployment addresses. Seller and Buyer transaction flows have also been exercised. Successful test transactions demonstrate tested flows; they are not, by themselves, evidence of broad public adoption.
 
 ### Network
 
@@ -648,23 +587,12 @@ The USTETU token and UStetu marketplace contracts have project-recorded Base Mai
 
 | Contract | Address | Explorer |
 |---|---|---|
-| UST token | `0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557` | [BaseScan](https://basescan.org/address/0xdF9Fa2E56c97C91090E1bAe422e830E19A94c557) |
 | UStetuRegistry | `0x237023EC6A39e59CEbd1D231777308c354ba542F` | [BaseScan](https://basescan.org/address/0x237023EC6A39e59CEbd1D231777308c354ba542F) |
 | UStetuSellerRegistry | `0x2e8512a3c9953E5B2f061a4FF694637f78740468` | [BaseScan](https://basescan.org/address/0x2e8512a3c9953E5B2f061a4FF694637f78740468) |
 | UStetuEscrow | `0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae` | [BaseScan](https://basescan.org/address/0x0ffE00bAe47d6b4AD9d6A12ec649dd8866f130ae) |
 | Native USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | [BaseScan](https://basescan.org/address/0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) |
 
 The addresses above are the project's recorded deployment references. Before relying on this README for a grant application or production release, independently confirm each address, deployed bytecode, contract identity, and verification status on BaseScan and against current deployment records.
-
-### UST Token Deployment
-
-- Deployment transaction: [BaseScan transaction](https://basescan.org/tx/0x0ed9e8d688fa125cdffe7b49fc1b5dbfbe2e25aacae714793b42d380b68693bf)
-- Solidity compiler: 0.8.30
-- Optimization: enabled, 200 runs
-- Source verification: previously recorded as completed
-- BaseScan Token Information review: ticket #851349, previously recorded as submitted and awaiting review
-
-Token metadata review is an explorer-side process and does not change the deployed token contract.
 
 ### Marketplace Deployment Readiness
 
@@ -730,10 +658,6 @@ The multi-chain architecture may be developed later as separate deployments and/
 - [x] CI validation
 - [x] Protocol security audit completed
 - [x] Audit baseline locked
-- [x] USTETU token security review
-- [x] USTETU token Base Mainnet deployment
-- [x] USTETU token source verification
-- [x] USTETU token ownership verification
 - [x] Core marketplace Base Mainnet deployment addresses recorded
 - [ ] Confirm current source verification for all marketplace contracts
 - [ ] Reconcile production frontend/backend configuration with deployed addresses
