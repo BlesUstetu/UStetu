@@ -4187,3 +4187,21 @@ html[data-theme="light"] .marketplace-heading p {
     line-height: 1.55;
   }
 }
+
+
+/* Desktop token-information drawer: align the close control with the token identity row. */
+@media (min-width: 701px) {
+  html body .token-drawer {
+    position: fixed;
+  }
+  html body .token-drawer .drawer-topline {
+    position: absolute;
+    top: 88px;
+    right: 24px;
+    z-index: 2;
+    margin: 0;
+  }
+  html body .token-drawer .drawer-token-head {
+    padding-right: 48px;
+  }
+}
